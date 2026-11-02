@@ -184,3 +184,15 @@ Command: `ains target add ains-sandbox AINSSB sandbox` from the workstation with
 | T-I15-1 `repository_dispatch` → intake-ack | PASS: run 41495999419 succeeded, comment "Accepted into the AI-native lane…" on `AINSSB-1` |
 | smoke story | `AINSSB-1` "Sandbox smoke story" created via the new `JiraClient.create_issue` (label `sandbox`, not AI-native); the acceptance story will therefore be `AINSSB-2` |
 
+### Live checks after onboarding (no Claude token needed) · compose config mount · I17 docs
+
+| Test | Result |
+|------|--------|
+| T-I12-5 `docker compose run --rm orchestrator ains doctor` | all checks green except `env CLAUDE_CODE_OAUTH_TOKEN: missing` (expected until the token is provided): config, GH_TOKEN, JIRA_*, no `ANTHROPIC_*`, git, gh, claude 2.1.316, specify 1.2.6, work dir, `gh auth`, Jira as Niloy Ray |
+| finding | the first container run showed 0 targets: `targets.yaml` was baked into the image at build time. Fixed in `docker-compose.yml`: `targets.yaml`, `flows/`, `agents/` and `claude-settings.json` are now mounted read-only, so `ains target add` takes effect on the next poll without a rebuild. Verified: `ains targets list` inside the container shows `AINSSB` |
+| T-I3-6 live Jira (`AINS_LIVE=1 pytest -m live`): `/myself`, JQL search, comment on `AINSSB-1` | PASS |
+| T-I4-6 / T-I11-6 live GitHub: clone sandbox, branch `AINSSB-1-ci-smoke`, commit `AINSSB-1: …`, push, open PR #1 as niloyray | PASS |
+| T-I14-2 thin `ci.yml` → reusable CI on PR #1, first run | FAIL: all steps passed (no pyproject, no tests, no Dockerfile yet, each skipped as designed) but the `setup-uv` post-step errored "Cache path … does not exist" and failed the job. Fixed: `enable-cache: false` in `reusable-ci-python.yml`; empty commit pushed to retrigger; result in the next entry |
+| housekeeping | the two `release` runs triggered by the template pushes to `main` were waiting on the staging environment approval (G4 works) and were cancelled, because template pushes are not stories |
+| I17 | `docs/gates.md` and `docs/targets.md` written |
+

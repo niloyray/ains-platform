@@ -191,7 +191,7 @@ On Rework (G1, G2) or "changes requested" (G3) the orchestrator spawns the same 
 | **G4 staging** | PR merged, image built | GitHub | Environment `staging` required reviewer | Actions waits; Jira status `Staging` |
 | **G5 production** | staging deployed | GitHub | Environment `production` required reviewer | Actions waits; on completion Jira `Done` |
 
-Jira workflow: `To Do → Ready → Specifying → Spec Review → Plan Review → Implementing → Code Review → Staging → Done`, plus `Rework` reachable from any review status, plus `Blocked`. When a gate is `off`, the orchestrator auto-transitions through its review status and leaves a comment "G<n> auto-approved (gate off for this target)" so the trace shows the skip. Gate settings are per target in `targets.yaml`, so different PoCs can test different levels of autonomy, which is itself a research variable.
+Jira workflow: `To Do → Ready → Specifying → Spec Review → Planning → Plan Review → Implementing → Code Review → Staging → Done`, plus `Rework` reachable from any review status, plus `Blocked`. A human approves G1 by moving the story to **Planning** and G2 by moving it to **Implementing**. When a gate is `off`, the orchestrator auto-transitions through its review status and leaves a comment "G<n> auto-approved (gate off for this target)" so the trace shows the skip. Gate settings are per target in `targets.yaml`, so different PoCs can test different levels of autonomy, which is itself a research variable.
 
 ---
 
@@ -228,7 +228,7 @@ What `ains target add` must do in Jira for **any** project. Built once, exercise
 |----------|--------|-------|--------------|--------|
 | 3.1 | Create a team-managed Kanban project from `<jira-key>` and `<jira-name>` via REST; idempotent if it exists | Claude | T-I16-5 | `[ ]` |
 | 3.2 | Workflow statuses (section 2f): To Do, Ready, Specifying, Spec Review, Plan Review, Implementing, Code Review, Staging, Done, Rework, Blocked; REST where team-managed projects allow it, otherwise print the exact UI steps and verify afterwards by reading the statuses back | Claude | status list read back | `[ ]` |
-| 3.3 | Custom field **Execution Lane**, single select `Human` / `AI-native`, on the Story screen; created once site-wide, attached per project | Claude | field id recorded in `targets.yaml` | `[ ]` |
+| 3.3 | Lane marker: the label `ai-native` on the story (the `Execution Lane` custom field is not creatable via REST for team-managed projects; the plan allowed a label) | Claude | field id recorded in `targets.yaml` | `[ ]` |
 | 3.4 | Automation rule "AI-native intake ack" per project: trigger = transition to Ready AND Execution Lane = AI-native; action = Send web request `POST https://api.github.com/repos/niloyray/ains-platform/dispatches`, body `{"event_type":"jira-story-ready","client_payload":{"key":"{{issue.key}}"}}`, header `Authorization: Bearer <GitHub PAT>`; Automation has no public create API, so the command prints the rule definition and a checklist, then verifies with a test story | Claude | rule URL and test run | `[ ]` |
 | 3.5 | No Jira project, epic or story for the platform itself (D13) | — | — | `[x]` |
 | 3.6 | `ains target remove` deletes the project (or archives it if deletion is restricted) and the rule, and reports what it could not undo | Claude | T-I16-6 | `[ ]` |
@@ -296,7 +296,7 @@ Not part of Phase 1. Listed here only so the hand-off is explicit; these rows mo
 
 | Sub-step | Action | Owner | Verification | Status |
 |----------|--------|-------|--------------|--------|
-| 8.1 | Story `AINSSB-1 "Repository scaffold: README section and health-check script"` in the sandbox project, Execution Lane AI-native, small unambiguous description; all five gates on (O4) | Claude | story URL | `[ ]` |
+| 8.1 | Story `AINSSB-2 "Repository scaffold: README section and health-check script"` in the sandbox project (`AINSSB-1` is the smoke story used by the live tests), Execution Lane AI-native, small unambiguous description; all five gates on (O4) | Claude | story URL | `[ ]` |
 | 8.2 | Transition to Ready. Observe: intake-ack comment, claim (Specifying), spec agent, draft PR with `spec.md`, status `Spec Review` (phases 1 to 3) | Claude (observe) | timestamps | `[ ]` |
 | 8.3 | **G1:** user reads `spec.md`, transitions to `Spec Approved` (or `Rework` once, to prove the loop) | user | transition | `[ ]` |
 | 8.4 | Observe plan agent, `plan.md`, `tasks.md` committed, status `Plan Review` (phase 4) | Claude (observe) | timestamps | `[ ]` |
@@ -348,12 +348,12 @@ Never in: committed files, this plan, PR bodies, logs.
 | Step | Title | Status | Blocked by | Evidence |
 |------|-------|--------|------------|----------|
 | 1 | Confirm open decisions | `[ ]` | user | |
-| 2 | GitHub account and platform repo | `[ ]` | — | |
-| 3 | Project onboarding capability, Jira side | `[ ]` | — | |
-| 4 | Orchestrator container, four stage agents, PR watcher | `[ ]` | O3 | |
-| 5 | Spec Kit in container and templates | `[ ]` | 4 | |
-| 6 | Reusable workflow definitions and `ains target add` / `remove` | `[ ]` | 2, 3 | |
-| 6a | Sandbox project onboarded, second onboarding and removal proven | `[ ]` | 6 | |
+| 2 | GitHub account and platform repo | `[x]` | — | commits fb6dc39, 99c43f8; issues #1–#9 |
+| 3 | Project onboarding capability, Jira side | `[~]` | — | project via REST; statuses and rule need the UI (by design) |
+| 4 | Orchestrator container, four stage agents, PR watcher | `[~]` | O3 | 88 offline tests green; image built; doctor green except the token (log) |
+| 5 | Spec Kit in container and templates | `[~]` | 4 | specify 1.2.6 in image and on the workstation; skills in sandbox |
+| 6 | Reusable workflow definitions and `ains target add` / `remove` | `[~]` | 2, 3 | workflows pushed, actionlint clean, intake-ack proven (T-I15-1) |
+| 6a | Sandbox project onboarded, second onboarding and removal proven | `[~]` | 6 | ains-sandbox + AINSSB created; Jira statuses and rule manual; second onboarding pending |
 | 7 | Onboarding `ains-poc` | deferred to Phase 2 | — | |
 | 8 | Acceptance run on the sandbox through all five gates and the review agent | `[ ]` | 3 to 6a | |
 | 9 | Divergence, gates and targets docs | `[ ]` | 8 | |
