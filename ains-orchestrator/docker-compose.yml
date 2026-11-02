@@ -14,6 +14,11 @@ services:
       AINS_POLL_SECONDS: ${AINS_POLL_SECONDS:-60}
     volumes:
       - ains-workspaces:/work
+      # config is mounted, not baked: `ains target add` edits take effect on the next poll without a rebuild
+      - ./targets.yaml:/app/targets.yaml:ro
+      - ./flows:/app/flows:ro
+      - ./agents:/app/agents:ro
+      - ./claude-settings.json:/app/claude-settings.json:ro
     restart: unless-stopped
     # no ports: intake is by polling (D3); nothing reaches this container from outside
     stop_grace_period: 2m

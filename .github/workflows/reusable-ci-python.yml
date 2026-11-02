@@ -48,6 +48,7 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ inputs.python-version }}
+          enable-cache: false   # onboarded repos may have nothing to cache yet; the post-step would fail
       - name: Install
         run: |
           if [ -f pyproject.toml ]; then uv sync --all-groups; else echo "no pyproject.toml, nothing to install"; fi
