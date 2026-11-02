@@ -167,12 +167,12 @@ All four are the same harness, a fresh `claude -p` process spawned by the orches
 
 | Stage agent | Spawned when | Skill / prompt | Reads | Writes | Orchestrator then waits for |
 |-------------|--------------|----------------|-------|--------|-----------------------------|
-| spec | story claimed | `/speckit-specify` | story text, `CLAUDE.md` | `specs/<KEY>/spec.md`; draft PR opened | G1 in Jira |
-| plan | G1 approved | `/speckit-plan`, `/speckit-tasks` | `spec.md` | `plan.md`, `tasks.md` | G2 in Jira |
-| implement | G2 approved | `/speckit-implement`, `--permission-mode acceptEdits`, `--max-turns` cap | `tasks.md`, repo | code, tests, commits prefixed `<KEY>:`; PR marked ready | CI and the review agent |
+| spec | story claimed | `/speckit.specify` | story text, `CLAUDE.md` | `specs/<KEY>/spec.md`; draft PR opened | G1 in Jira |
+| plan | G1 approved | `/speckit.plan`, `/speckit.tasks` | `spec.md` | `plan.md`, `tasks.md` | G2 in Jira |
+| implement | G2 approved | `/speckit.implement`, `--permission-mode acceptEdits`, `--max-turns` cap | `tasks.md`, repo | code, tests, commits prefixed `<KEY>:`; PR marked ready | CI and the review agent |
 | review | PR ready, or Human-lane PR labelled `ai-review` | `/code-review` on the diff, test run, read-only permissions | diff, CI result, `spec.md`, `plan.md` | a PR review via `gh`: comments, approve or request changes; **never merges** | G3 human approval on the PR |
 
-On Rework (G1, G2) or "changes requested" (G3) the orchestrator spawns the same stage's agent again with the human comment appended to its input.
+On Rework (G1, G2) or "changes requested" (G3; in label approval mode the label `g3-rework` plus a PR comment) the orchestrator spawns the same stage's agent again with the human comment appended to its input. A failed CI check at G3 is handled without a human: the implement agent is re-spawned with the failed-step log, at most twice, then the story is Blocked.
 
 ### 2e. Architecture diagrams
 
@@ -187,11 +187,11 @@ On Rework (G1, G2) or "changes requested" (G3) the orchestrator spawns the same 
 | **G1 spec** | `spec` wrote `specs/<KEY>/spec.md` | Jira | Draft PR opened with only `spec.md`; Jira status `Spec Review`; comment links the PR. Human transitions to `Spec Approved` or `Rework` with a comment | polls status; on `Rework` re-spawns `spec` with the comment as input |
 | **G2 plan** | `plan` wrote `plan.md`, `tasks.md` | Jira | same draft PR updated; status `Plan Review`; human transitions to `Plan Approved` or `Rework` | same |
 | *(review stage)* | `implement` pushed code, PR marked ready, CI ran | — | review agent posts its PR review (D14) | spawns the review agent, then waits for G3 |
-| **G3 code** | review agent posted | GitHub | PR review approval by a human + CI green; status `Code Review` | polls PR; on "changes requested" re-spawns `implement` with the review comments |
+| **G3 code** | review agent posted | GitHub | PR approval by a human (`review` mode: PR approval; `label` mode: label `g3-approved`) + check `ci / ci` green; status `Code Review` | polls PR; on "changes requested" / `g3-rework` re-spawns `implement` with the human text; on CI failure re-spawns `implement` with the failed log (max 2 rounds) |
 | **G4 staging** | PR merged, image built | GitHub | Environment `staging` required reviewer | Actions waits; Jira status `Staging` |
 | **G5 production** | staging deployed | GitHub | Environment `production` required reviewer | Actions waits; on completion Jira `Done` |
 
-Jira workflow: `To Do → Ready → Specifying → Spec Review → Planning → Plan Review → Implementing → Code Review → Staging → Done`, plus `Rework` reachable from any review status, plus `Blocked`. A human approves G1 by moving the story to **Planning** and G2 by moving it to **Implementing**. When a gate is `off`, the orchestrator auto-transitions through its review status and leaves a comment "G<n> auto-approved (gate off for this target)" so the trace shows the skip. Gate settings are per target in `targets.yaml`, so different PoCs can test different levels of autonomy, which is itself a research variable.
+Jira workflow: `To Do → Ready → Specifying → Spec Review → Plan Review → Implementing → Code Review → Staging → Done`, plus `Rework` reachable from any review status, plus `Blocked`. When a gate is `off`, the orchestrator auto-transitions through its review status and leaves a comment "G<n> auto-approved (gate off for this target)" so the trace shows the skip. Gate settings are per target in `targets.yaml`, so different PoCs can test different levels of autonomy, which is itself a research variable.
 
 ---
 
@@ -228,7 +228,7 @@ What `ains target add` must do in Jira for **any** project. Built once, exercise
 |----------|--------|-------|--------------|--------|
 | 3.1 | Create a team-managed Kanban project from `<jira-key>` and `<jira-name>` via REST; idempotent if it exists | Claude | T-I16-5 | `[ ]` |
 | 3.2 | Workflow statuses (section 2f): To Do, Ready, Specifying, Spec Review, Plan Review, Implementing, Code Review, Staging, Done, Rework, Blocked; REST where team-managed projects allow it, otherwise print the exact UI steps and verify afterwards by reading the statuses back | Claude | status list read back | `[ ]` |
-| 3.3 | Lane marker: the label `ai-native` on the story (the `Execution Lane` custom field is not creatable via REST for team-managed projects; the plan allowed a label) | Claude | field id recorded in `targets.yaml` | `[ ]` |
+| 3.3 | Custom field **Execution Lane**, single select `Human` / `AI-native`, on the Story screen; created once site-wide, attached per project | Claude | field id recorded in `targets.yaml` | `[ ]` |
 | 3.4 | Automation rule "AI-native intake ack" per project: trigger = transition to Ready AND Execution Lane = AI-native; action = Send web request `POST https://api.github.com/repos/niloyray/ains-platform/dispatches`, body `{"event_type":"jira-story-ready","client_payload":{"key":"{{issue.key}}"}}`, header `Authorization: Bearer <GitHub PAT>`; Automation has no public create API, so the command prints the rule definition and a checklist, then verifies with a test story | Claude | rule URL and test run | `[ ]` |
 | 3.5 | No Jira project, epic or story for the platform itself (D13) | — | — | `[x]` |
 | 3.6 | `ains target remove` deletes the project (or archives it if deletion is restricted) and the rule, and reports what it could not undo | Claude | T-I16-6 | `[ ]` |
@@ -296,7 +296,7 @@ Not part of Phase 1. Listed here only so the hand-off is explicit; these rows mo
 
 | Sub-step | Action | Owner | Verification | Status |
 |----------|--------|-------|--------------|--------|
-| 8.1 | Story `AINSSB-2 "Repository scaffold: README section and health-check script"` in the sandbox project (`AINSSB-1` is the smoke story used by the live tests), Execution Lane AI-native, small unambiguous description; all five gates on (O4) | Claude | story URL | `[ ]` |
+| 8.1 | Story `AINSSB-1 "Repository scaffold: README section and health-check script"` in the sandbox project, Execution Lane AI-native, small unambiguous description; all five gates on (O4) | Claude | story URL | `[ ]` |
 | 8.2 | Transition to Ready. Observe: intake-ack comment, claim (Specifying), spec agent, draft PR with `spec.md`, status `Spec Review` (phases 1 to 3) | Claude (observe) | timestamps | `[ ]` |
 | 8.3 | **G1:** user reads `spec.md`, transitions to `Spec Approved` (or `Rework` once, to prove the loop) | user | transition | `[ ]` |
 | 8.4 | Observe plan agent, `plan.md`, `tasks.md` committed, status `Plan Review` (phase 4) | Claude (observe) | timestamps | `[ ]` |
@@ -348,12 +348,12 @@ Never in: committed files, this plan, PR bodies, logs.
 | Step | Title | Status | Blocked by | Evidence |
 |------|-------|--------|------------|----------|
 | 1 | Confirm open decisions | `[ ]` | user | |
-| 2 | GitHub account and platform repo | `[x]` | — | commits fb6dc39, 99c43f8; issues #1–#9 |
-| 3 | Project onboarding capability, Jira side | `[~]` | — | project via REST; statuses and rule need the UI (by design) |
-| 4 | Orchestrator container, four stage agents, PR watcher | `[~]` | O3 | 88 offline tests green; image built; doctor green except the token (log) |
-| 5 | Spec Kit in container and templates | `[~]` | 4 | specify 1.2.6 in image and on the workstation; skills in sandbox |
-| 6 | Reusable workflow definitions and `ains target add` / `remove` | `[~]` | 2, 3 | workflows pushed, actionlint clean, intake-ack proven (T-I15-1) |
-| 6a | Sandbox project onboarded, second onboarding and removal proven | `[~]` | 6 | ains-sandbox + AINSSB created; Jira statuses and rule manual; second onboarding pending |
+| 2 | GitHub account and platform repo | `[ ]` | — | |
+| 3 | Project onboarding capability, Jira side | `[ ]` | — | |
+| 4 | Orchestrator container, four stage agents, PR watcher | `[ ]` | O3 | |
+| 5 | Spec Kit in container and templates | `[ ]` | 4 | |
+| 6 | Reusable workflow definitions and `ains target add` / `remove` | `[ ]` | 2, 3 | |
+| 6a | Sandbox project onboarded, second onboarding and removal proven | `[ ]` | 6 | |
 | 7 | Onboarding `ains-poc` | deferred to Phase 2 | — | |
 | 8 | Acceptance run on the sandbox through all five gates and the review agent | `[ ]` | 3 to 6a | |
 | 9 | Divergence, gates and targets docs | `[ ]` | 8 | |
@@ -434,7 +434,7 @@ I2 to I5 are independent and can be built in any order. I6, I7, I11 need I2 to I
 | I6 | **Poller** | A1 | `poller.py`: every `AINS_POLL_SECONDS` run the JQL from 2c, skip keys with an open session, claim = transition → Specifying + comment with session id, insert session | a Ready story is claimed exactly once even with two poll cycles overlapping | ½ session |
 | I7 | **Flow state machine + gates** | A2, G1–G5 | `flow.py`: stages and gates from `flows/story.yaml`; states `spec → G1 → plan → G2 → implement → review → G3 → merge → released` + `rework(stage)` + `blocked`; gate evaluation per target (`on` waits, `off` auto-passes with a Jira comment); Rework and "changes requested" return to the previous stage with the human comment attached | table-driven tests for every transition, gate on/off, Rework from G1/G2, changes requested at G3 | 1 session |
 | I8 | **Agent runner** (Claude Code CLI stage agents) | A2–A4 | `agent.py`: spawn `claude -p` from the agent template with a **minimal env** (`PATH`, `HOME`, `CLAUDE_CODE_OAUTH_TOKEN`, nothing `ANTHROPIC_*`), cwd `/work/<KEY>`, `--output-format json`, per-stage `--permission-mode`, `--max-turns`, `--settings /app/claude-settings.json`; capture JSON result and cost fields into `events`; one retry after back-off; never `--bare` | fake `claude` on `PATH` proves the env is minimal and args are correct; live test `claude -p "say ok"` inside the container shows subscription auth | 1 session |
-| I9 | **Stage prompts + Spec Kit** | A3 | `agents/stages/spec.md`, `plan.md`, `implement.md`, `review.md`: each names the Spec Kit skill to run (`/speckit-specify`, `/speckit-plan` + `/speckit-tasks`, `/speckit-implement`, `/code-review`), the inputs, the expected outputs and the stop rule; `claude-settings.json` allowlists `git`, `gh`, `uv`, `pytest` and denies network tools for the review stage | each prompt run against the `ains-poc` scaffold produces the expected files or review; outputs checked by file existence and a schema for the review comment | 1 session |
+| I9 | **Stage prompts + Spec Kit** | A3 | `agents/stages/spec.md`, `plan.md`, `implement.md`, `review.md`: each names the Spec Kit skill to run (`/speckit.specify`, `/speckit.plan` + `/speckit.tasks`, `/speckit.implement`, `/code-review`), the inputs, the expected outputs and the stop rule; `claude-settings.json` allowlists `git`, `gh`, `uv`, `pytest` and denies network tools for the review stage | each prompt run against the `ains-poc` scaffold produces the expected files or review; outputs checked by file existence and a schema for the review comment | 1 session |
 | I10 | **PR watcher + review stage** | A6, D14 | `watcher.py`: every poll cycle list open PRs of each target; for a PR that is ready and belongs to a session, or carries `review_label`, spawn the review agent once per head SHA; post the result as a PR review via I4; record `reviewed_sha`; then the state machine waits for a human approval (G3) and green `ci` before merge | a PR pushed twice gets exactly two reviews; a Human-lane PR with the label gets one; approval by the agent alone never merges | 1 session |
 | I11 | **Workspace manager** | A5 | `workspace.py`: clone target into `/work/<KEY>/`, create branch `<KEY>-<slug>`, commit with `<KEY>:` prefix, push, open draft PR, mark ready, squash merge after G3, delete workspace on Done; disk quota check | end-to-end on a throwaway repo behind an env flag; unit tests with the fake `gh` | ½ session |
 | I12 | **CLI `ains`** | diagram "Container" | `cli.py` (typer): `ains agent list`, `ains flow list`, `ains targets list`, `ains session dispatch <KEY>`, `ains session advance <KEY>`, `ains session status <KEY>`, `ains poll [--once]`, `ains doctor` (checks tokens, `gh auth`, `claude -p`, `specify check`) | `ains doctor` green inside the container; every command has a `--dry-run` | ½ session |

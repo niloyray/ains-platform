@@ -88,7 +88,10 @@ Columns: ID · level · test · expected result · evidence.
 | T-I4-4 | L1 | list PRs with label `ai-review` | parsed into PR number, head SHA, ready flag | pytest |
 | T-I4-5 | L1 | `gh` exit 1 | wrapped error carries stderr; no retry on 4xx, one retry on network error | pytest |
 | T-I4-6 | L4 | `AINS_LIVE=1`: `gh auth status` with the PAT, open and close a draft PR on `ains-sandbox` | works as niloyray | evidence log |
-| Exit | | T-I4-1 to T-I4-6 green | | |
+| T-I4-7 | L1 | `pr view` whose check is named `ci / ci` (reusable workflow called from job `ci`) | `checks["ci"]` holds the conclusion; `ci_green` false on FAILURE | pytest |
+| T-I4-8 | L1 | `--log-failed` text with setup lines, the ruff output, `##[error]`, then service-container teardown | excerpt holds the ruff output and the error marker, not the teardown, no `job<TAB>step<TAB>` prefixes or timestamps | pytest |
+| T-I4-9 | L1 | `ci_failure_log` | `gh run list --workflow ci --branch <b> --limit 1` then `gh run view <id> --log-failed`; result starts with the run URL and conclusion | pytest |
+| Exit | | T-I4-1 to T-I4-9 green | | |
 
 ### I5 Session store (SQLite on /work)
 
@@ -126,6 +129,9 @@ Columns: ID · level · test · expected result · evidence.
 | T-I7-7 | L1 | story moved from Blocked back to Ready by a human | resumes at the blocked stage, not from spec | pytest |
 | T-I7-8 | L2 | full dry-run of the fixture story with all gates off | `released` in under one minute; events log has every transition | output |
 | T-I7-9 | L2 | full dry-run with all gates on and a scripted approver | same, with five waits recorded | output |
+| T-I7-10 | L1 | `ci` check FAILURE at `wait_g3` | returns to `implement`; the failed-step log excerpt is in the agent input; `ci_rework_rounds` = 1; Jira comment "CI failed … round 1 of 2" | pytest |
+| T-I7-11 | L1 | third CI failure in a row | `blocked` with "a human must look at the branch" | pytest |
+| T-I7-12 | L1 | label mode: PR carries `g3-rework` and a human comment | label removed; returns to `implement` with the comment text | pytest |
 | Exit | | all green; T-I7-8 is the regression test for every later change | | |
 
 ### I8 Agent runner (Claude Code CLI stage agents)
@@ -151,7 +157,7 @@ Columns: ID · level · test · expected result · evidence.
 | T-I9-4 | L0 | `claude-settings.json` | allowlist contains `Bash(git *)`, `Bash(gh *)`, `Bash(uv *)`, `Bash(pytest *)`; review stage profile denies `WebFetch`, `WebSearch`, `Edit`, `Write` | pytest reads the file |
 | T-I9-5 | L4 | `AINS_LIVE=1`: real `spec` run on `ains-sandbox` with a two-line story | a sensible `spec.md` under 20 turns; cost field present | evidence log, the file |
 | T-I9-6 | L4 | real `review` run on a sandbox PR with one planted bug | the bug is named in the review; verdict `request_changes` | evidence log, the PR |
-| T-I9-7 | L3 | in the container: `claude -p "/speckit-specify --help"` style probe and `/code-review` availability | both skills resolve (Spec Kit commands from the target repo, review skill from the image) | evidence log |
+| T-I9-7 | L3 | in the container: `claude -p "/speckit.specify --help"` style probe and `/code-review` availability | both skills resolve (Spec Kit commands from the target repo, review skill from the image) | evidence log |
 | Exit | | all green; T-I9-5 and T-I9-6 run once | | |
 
 ### I10 PR watcher + review stage
