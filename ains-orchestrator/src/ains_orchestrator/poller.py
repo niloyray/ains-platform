@@ -90,7 +90,11 @@ class Poller:
             e for e in self.store.events(key) if e.kind in ("stage.done", "claimed", "gate.rework", "gate.passed")
         ]
         stage = _stage_before_block(self.store.get_session(key), events)
-        self.store.update_session(key, stage=stage, attempts=0, last_error=None)
+        session = self.store.get_session(key)
+        gs = dict(session.gate_state) if session else {}
+        if _last_agent_ok(self.store.events(key), stage):
+            gs["skip_agent"] = stage
+        self.store.update_session(key, stage=stage, attempts=0, last_error=None, gate_state=gs)
         self.store.add_event(key, "resumed", {"stage": stage})
         rep.stepped[key] = f"resumed at {stage}"
 
@@ -107,6 +111,16 @@ class Poller:
             except AinsError as e:
                 rep.errors.append(f"{s.key}: {e}")
                 log.warning("step %s failed: %s", s.key, e)
+
+
+def _last_agent_ok(events, stage: str) -> bool:
+    """True when the most recent agent run of `stage` finished ok (its output is still in the workspace)."""
+    for e in reversed(events):
+        if e.kind == "agent.done" and e.detail.get("stage") == stage:
+            return bool(e.detail.get("ok"))
+        if e.kind == "agent.start" and e.detail.get("stage") == stage:
+            return False
+    return False
 
 
 def _stage_before_block(session, events) -> str:

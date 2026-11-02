@@ -113,3 +113,25 @@ def test_T_I7_7_blocked_story_resumes_at_blocked_stage(world):
     assert resumed and resumed[-1].detail["stage"] == "plan"
     assert store.get_session("AINSSB-1").stage in ("plan", "wait_g2")
     assert [r[0] for r in agents.runs].count("spec") == 1
+
+
+def test_resume_after_post_agent_failure_skips_the_agent(world):
+    """The spec agent succeeded but the push failed: on resume the agent must not run again."""
+    jira, p, store, agents, gh = world["jira"], world["poller"], world["store"], world["agents"], world["gh"]
+    jira.add_issue("AINSSB-1", "Scaffold")
+
+    def failing_push(cwd, branch):
+        raise __import__("ains_orchestrator.errors", fromlist=["GitHubError"]).GitHubError(
+            "push failed: no credentials"
+        )
+
+    gh.push = failing_push
+    p.cycle()  # claim, spec agent ok, push fails -> blocked
+    assert store.get_session("AINSSB-1").stage == "blocked"
+    assert [r[0] for r in agents.runs] == ["spec"]
+    gh.push = lambda cwd, branch: gh.calls.append(f"push {branch}")
+    jira.set_status("AINSSB-1", "Ready")
+    p.cycle()  # resume: outputs present, agent skipped, push succeeds
+    s = store.get_session("AINSSB-1")
+    assert s.stage == "wait_g1" and [r[0] for r in agents.runs] == ["spec"]
+    assert any(e.kind == "agent.skipped" for e in store.events("AINSSB-1"))

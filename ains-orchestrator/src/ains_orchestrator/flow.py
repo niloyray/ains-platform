@@ -212,10 +212,17 @@ class FlowEngine:
         self, s: Session, story: Story, stage: str, *, gate: str, review_status: str, next_stage: str
     ) -> str:
         self._ensure_ws(s, story)
-        res = self._run_agent(stage, s, story)
-        if not res.ok:
-            return self._retry_or_block(s, stage, res.error)
-        missing = self.ws.has_files(s.key, *[p.format(key=s.key) for p in STAGE_OUTPUTS[stage]])
+        expected = [p.format(key=s.key) for p in STAGE_OUTPUTS[stage]]
+        if s.gate_state.get("skip_agent") == stage and expected and not self.ws.has_files(s.key, *expected):
+            gs = dict(s.gate_state)
+            gs.pop("skip_agent", None)
+            self.store.update_session(s.key, gate_state=gs)
+            self.store.add_event(s.key, "agent.skipped", {"stage": stage, "reason": "outputs present after resume"})
+        else:
+            res = self._run_agent(stage, s, story)
+            if not res.ok:
+                return self._retry_or_block(s, stage, res.error)
+        missing = self.ws.has_files(s.key, *expected)
         if missing:
             return self._retry_or_block(s, stage, f"agent finished without producing {missing}")
         self.ws.commit(s.key, stage, f"{stage} output")
