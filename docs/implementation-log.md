@@ -312,3 +312,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | session surgery | the orchestrator was stopped mid round 2; the AINSSB-2 row was reset to `wait_g3` with `ci_rework_rounds = 0` and a `manual.reset` event explaining why, so the fixed excerpt gets its two rounds. Container rebuilt and restarted |
 | lesson for the platform | every agent run must leave its reply in the event log; an agent that reports success without changing the tree should be visible as such (`stage.done` with unchanged sha) |
 
+### CI rework round 1 succeeded (after the excerpt fix)
+
+| Item | Detail |
+|------|--------|
+| events | `gate.rework` (CI) with the ruff output in the excerpt → implement agent, 8 turns, 16 s, USD 0.05 → `stage.done` sha `dcfb214` → CI running → review |
+| agent reply (now persisted) | added `check=False` to the `subprocess.run` call in `tests/test_healthcheck.py`; `uv run pytest` 2 passed; **could not run `uvx ruff check .`: "This command requires approval"** |
+| fix | `Bash(uvx ruff*)` added to the platform `claude-settings.json` (mounted, no rebuild) and to the onboarding template; the sandbox's `.claude/settings.json` updated to match. The prompt tells agents to lint with `uvx ruff`, so the allowlist must permit it |
+

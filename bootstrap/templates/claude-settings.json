@@ -3,6 +3,7 @@
     "allow": [
       "Bash(uv run pytest*)",
       "Bash(uv run ruff*)",
+      "Bash(uvx ruff*)",
       "Bash(uv sync*)",
       "Bash(uv add*)",
       "Bash(alembic *)",
