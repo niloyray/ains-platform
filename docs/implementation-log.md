@@ -196,3 +196,13 @@ Command: `ains target add ains-sandbox AINSSB sandbox` from the workstation with
 | housekeeping | the two `release` runs triggered by the template pushes to `main` were waiting on the staging environment approval (G4 works) and were cancelled, because template pushes are not stories |
 | I17 | `docs/gates.md` and `docs/targets.md` written |
 
+### T-I14-2 / T-I14-3 — thin CI caller on the sandbox PR, retriggered
+
+| Test | Result |
+|------|--------|
+| run 41497227245 on PR #1 (`AINSSB-1: ci smoke`) | PASS: job `ci` success (install, lint, test and image build each skipped cleanly because the sandbox has no code yet); job `jira callback (Code Review)` success |
+| callback behaviour | issue key parsed from the PR title (`AINSSB-1`); transition `Code Review` reported as `::warning:: not available` because the status does not exist yet (manual Jira step pending); comment "CI passed on PR #1 …" added; remote link `PR #1` attached |
+| PR #1 | left open for the review-agent live test (T-I10-9) once the Claude token is available |
+
+**Where Phase 1 stands.** Every offline build item (I1–I18 except the live parts) is done and green: 88 unit tests, image built, workflows linted and proven live (intake-ack, CI, Jira callback), sandbox onboarded. Blocked on: (1) the ten Jira statuses in `AINSSB` (manual UI), (2) `CLAUDE_CODE_OAUTH_TOKEN` for the first agent run (plan step 4.6, T-I8-7), (3) the Jira Automation rule (manual UI; audit trace only, not required for the acceptance run).
+
