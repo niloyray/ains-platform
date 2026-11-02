@@ -31,11 +31,11 @@ class RunResult:
     stderr: str
 
 
-Runner = Callable[[list[str], Path | None], RunResult]
+Runner = Callable[..., RunResult]
 
 
-def subprocess_runner(argv: list[str], cwd: Path | None) -> RunResult:
-    p = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+def subprocess_runner(argv: list[str], cwd: Path | None, stdin: str | None = None) -> RunResult:
+    p = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", input=stdin)
     return RunResult(p.returncode, p.stdout, p.stderr)
 
 
@@ -77,14 +77,22 @@ class GitHubClient:
         self.dry_run_log: list[str] = []
 
     # ------------------------------------------------------------------ process helpers
-    def _exec(self, argv: list[str], cwd: Path | None = None, *, write: bool = False, what: str = "") -> str:
+    def exec(
+        self, argv: list[str], cwd: Path | None = None, *, write: bool = False, what: str = "", stdin: str | None = None
+    ) -> str:
+        """Public entry for callers outside this module (onboarding)."""
+        return self._exec(argv, cwd, write=write, what=what, stdin=stdin)
+
+    def _exec(
+        self, argv: list[str], cwd: Path | None = None, *, write: bool = False, what: str = "", stdin: str | None = None
+    ) -> str:
         what = what or " ".join(argv[:3])
         if write and self.dry_run:
             self.dry_run_log.append(f"{what}: {' '.join(argv)}")
             log.info("[dry-run] %s", what)
             return ""
         for attempt in (1, 2):
-            r = self._run(argv, cwd)
+            r = self._run(argv, cwd, stdin) if stdin is not None else self._run(argv, cwd)
             if r.returncode == 0:
                 return r.stdout
             err = (r.stderr or "").lower()

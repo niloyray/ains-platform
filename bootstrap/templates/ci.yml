@@ -1,0 +1,14 @@
+# Thin caller written by `ains target add`. The real job lives in the platform's reusable workflow.
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  ci:
+    uses: {{platform_repo}}/.github/workflows/reusable-ci-python.yml@{{platform_ref}}
+    with:
+      python-version: "3.12"
+      jira-base-url: {{jira_base_url}}
+    secrets: inherit

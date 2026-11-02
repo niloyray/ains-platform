@@ -13,8 +13,7 @@ from ains_orchestrator.jira import JiraClient
 from ains_orchestrator.store import Store
 
 log = logging.getLogger("ains.poller")
-LANE_FIELD_NAME = "Execution Lane"
-LANE_VALUE = "AI-native"
+LANE_LABEL = "ai-native"
 
 
 @dataclass
@@ -36,7 +35,7 @@ class Poller:
         keys = ", ".join(sorted(self.config.targets.targets))
         if not keys:
             return ""
-        return f'project in ({keys}) AND "{LANE_FIELD_NAME}" = "{LANE_VALUE}" AND status = Ready ORDER BY created ASC'
+        return f"project in ({keys}) AND labels = {LANE_LABEL} AND status = Ready ORDER BY created ASC"
 
     def cycle(self) -> CycleReport:
         rep = CycleReport()

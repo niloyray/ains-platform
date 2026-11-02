@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run pytest*)",
+      "Bash(uv run ruff*)",
+      "Bash(uv sync*)",
+      "Bash(uv add*)",
+      "Bash(alembic *)",
+      "Bash(uv run alembic *)",
+      "Bash(docker compose config*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh pr review --approve*)",
+      "Read(./.env)",
+      "Read(./**/.env)"
+    ]
+  }
+}

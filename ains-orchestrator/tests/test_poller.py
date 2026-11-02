@@ -49,7 +49,7 @@ def world(tmp_path: Path, config_root: Path):
 
 def test_jql_covers_all_targets(world):
     assert world["poller"].jql() == (
-        'project in (AINSSB) AND "Execution Lane" = "AI-native" AND status = Ready ORDER BY created ASC'
+        "project in (AINSSB) AND labels = ai-native AND status = Ready ORDER BY created ASC"
     )
 
 

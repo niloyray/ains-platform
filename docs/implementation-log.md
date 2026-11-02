@@ -144,3 +144,21 @@ Modules: `agent.py` (spawns `claude -p` with a minimal environment), `watcher.py
 
 Still open from this batch: T-I8-7 (live `claude -p` in the container) and T-I9-5/6/7 wait for I13 and the token; T-I12-5 (`doctor` green in the container) waits for I13.
 
+### I13 — Dockerfile + compose · I14 — Reusable workflows · I15 — intake-ack · I16 — Onboarding (`ains target add/remove`)
+
+Files: `ains-orchestrator/Dockerfile`, `docker-compose.yml`; `.github/workflows/reusable-ci-python.yml`, `reusable-release.yml`, `reusable-jira-callback.yml`, `intake-ack.yml`; `ains-orchestrator/src/ains_orchestrator/onboard.py`; `bootstrap/templates/{ci.yml,release.yml,CLAUDE.md,claude-settings.json,gitignore,README.md}`; CLI `target add` / `target remove` wired. Lane marker changed from a custom field to the label `ai-native` (team-managed Jira projects do not expose custom-field creation via REST; the plan allowed a label). Secrets `JIRA_EMAIL`, `JIRA_API_TOKEN` and variable `JIRA_BASE_URL` set on `ains-platform` for `intake-ack` (values never in files).
+
+| Test | Result |
+|------|--------|
+| T-I13-1 `docker build` | PASS: image `ains-orchestrator:local`, 1.81 GB |
+| T-I13-4 tools in the image | PASS: gh 2.103.3, specify 1.2.6, git 2.47.3, node 22.23.4, ains 0.1.0; claude see next entry |
+| T-I13-3 no `ANTHROPIC_*` in the container env | PASS (0 variables) |
+| T-I14-1 `actionlint` on the four workflows | PASS: clean |
+| T-I16-1 dry-run | see next entry |
+| T-I16-2 templates render; thin callers reference `niloyray/ains-platform/...@main` and carry `secrets: inherit`; `.claude/settings.json` denies push/merge/approve; `CLAUDE.md` forbids editing platform files | PASS |
+| T-I16-3 (offline, fake gh + fake Jira) every onboarding step runs: repo create, templates pushed, three labels, secrets via stdin (token never on argv), two environments with reviewer, branch protection requiring `ci`, Jira project created, statuses verified, Automation checklist printed, `targets.yaml` block appended with comments preserved | PASS |
+| T-I16-4 second run idempotent | PASS |
+| extra: missing Jira statuses become manual steps with the exact UI path | PASS |
+| T-I16-7 second project onboarded, T-I16-6 `remove` archives the repo, deletes the Jira project, drops the block | PASS (offline) |
+| suite | `uv run pytest`: 88 passed, 1 deselected (live) |
+

@@ -20,6 +20,7 @@ from ains_orchestrator.errors import AinsError
 from ains_orchestrator.flow import FlowEngine, Story, _adf_text
 from ains_orchestrator.github import GitHubClient
 from ains_orchestrator.jira import JiraClient
+from ains_orchestrator.onboard import Onboarder, default_templates_dir
 from ains_orchestrator.poller import Poller
 from ains_orchestrator.store import Store
 from ains_orchestrator.watcher import PRWatcher
@@ -275,15 +276,56 @@ def poll(
 
 # ----------------------------------------------------------------------------- onboarding (I16)
 @target_app.command("add")
-def target_add(repo: str, jira_key: str, jira_name: str, dry_run: bool = typer.Option(False, "--dry-run")) -> None:
-    """Onboard a project: Jira project, GitHub repo, protection, environments, secrets, templates."""
-    typer.echo(NOT_YET)
+def target_add(
+    repo_name: str = typer.Argument(..., help="Repository name under the owner, e.g. ains-sandbox"),
+    jira_key: str = typer.Argument(..., help="Jira project key, e.g. AINSSB"),
+    jira_name: str = typer.Argument(..., help="Jira project name"),
+    dry_run: bool = typer.Option(False, "--dry-run"),
+    approval_mode: str = typer.Option("label", "--approval-mode", help="label | review"),
+    gates: str = typer.Option("", "--gates", help="e.g. G1=on,G2=on,G3=on,G4=off,G5=off"),
+    owner: str = typer.Option("", "--owner", help="GitHub owner (default: gh's current login)"),
+) -> None:
+    """Onboard a project: Jira project, GitHub repo, protection, environments, secrets, labels, templates."""
+    ob = _onboarder(dry_run, owner)
+    gate_map = {}
+    for part in filter(None, gates.split(",")):
+        g, _, v = part.partition("=")
+        gate_map[g.strip()] = v.strip() or "on"
+    rep = ob.add(repo_name, jira_key.upper(), jira_name, gates=gate_map, approval_mode=approval_mode)
+    typer.echo(rep.text())
+    if not dry_run and not rep.failed:
+        typer.echo(f"\ntargets.yaml updated under {config_root()}; commit it in the platform repo.")
+    raise typer.Exit(1 if rep.failed else 0)
 
 
 @target_app.command("remove")
-def target_remove(repo: str, dry_run: bool = typer.Option(False, "--dry-run")) -> None:
-    """Reverse `target add` for one project."""
-    typer.echo(NOT_YET)
+def target_remove(
+    repo_name: str,
+    dry_run: bool = typer.Option(False, "--dry-run"),
+    delete_repo: bool = typer.Option(
+        False, "--delete-repo", help="Delete instead of archive (needs the delete_repo scope)"
+    ),
+    owner: str = typer.Option("", "--owner"),
+) -> None:
+    """Reverse `target add` for one project: archive (or delete) the repo, delete the Jira project, drop the block."""
+    rep = _onboarder(dry_run, owner).remove(repo_name, delete_repo=delete_repo)
+    typer.echo(rep.text())
+    raise typer.Exit(1 if rep.failed else 0)
+
+
+def _onboarder(dry_run: bool, owner: str) -> Onboarder:
+    root = config_root()
+    load_dotenv(root)
+    gh = GitHubClient(dry_run=False)
+    owner = owner or gh.exec(["gh", "api", "user", "--jq", ".login"], what="gh user").strip()
+    jira = None
+    if all(os.environ.get(v) for v in ("JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN")):
+        jira = JiraClient(
+            os.environ["JIRA_BASE_URL"], os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"], dry_run=dry_run
+        )
+    return Onboarder(
+        config_root=root, templates_dir=default_templates_dir(root), github=gh, jira=jira, owner=owner, dry_run=dry_run
+    )
 
 
 # ----------------------------------------------------------------------------- doctor

@@ -142,6 +142,48 @@ class JiraClient:
         r = self._request("POST", f"/rest/api/3/issue/{key}/remotelink", json=payload)
         self._check(r, f"remote link {key}")
 
+    # ------------------------------------------------------------------ projects (onboarding)
+    def project_exists(self, key: str) -> bool:
+        r = self._request("GET", f"/rest/api/3/project/{key}")
+        if r.status_code == 404:
+            return False
+        self._check(r, f"project {key}")
+        return True
+
+    def create_project(self, key: str, name: str, template_key: str) -> dict[str, Any]:
+        lead = self.myself()["accountId"]
+        payload = {
+            "key": key,
+            "name": name,
+            "projectTypeKey": "software",
+            "projectTemplateKey": template_key,
+            "leadAccountId": lead,
+            "assigneeType": "UNASSIGNED",
+        }
+        if self.dry_run:
+            self._dry(f"create project {key} {name!r}")
+            return {}
+        r = self._request("POST", "/rest/api/3/project", json=payload)
+        self._check(r, f"create project {key}")
+        return r.json()
+
+    def project_statuses(self, key: str) -> list[str]:
+        r = self._request("GET", f"/rest/api/3/project/{key}/statuses")
+        self._check(r, f"statuses {key}")
+        names: list[str] = []
+        for issue_type in r.json():
+            for st in issue_type.get("statuses", []):
+                if st["name"] not in names:
+                    names.append(st["name"])
+        return names
+
+    def delete_project(self, key: str) -> None:
+        if self.dry_run:
+            self._dry(f"delete project {key}")
+            return
+        r = self._request("DELETE", f"/rest/api/3/project/{key}", params={"enableUndo": "true"})
+        self._check(r, f"delete project {key}")
+
     def _dry(self, msg: str) -> None:
         self.dry_run_log.append(msg)
         log.info("[dry-run] jira: %s", msg)
