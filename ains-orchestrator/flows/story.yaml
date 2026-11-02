@@ -1,18 +1,28 @@
 # The one flow this PoC runs: a Jira story from Ready to released.
+#
+# Human gate decisions are expressed as Jira status moves (G1, G2) or on the PR (G3):
+#   G1: the orchestrator sets "Spec Review"; the human moves the story to "Planning" (approve) or "Rework".
+#   G2: the orchestrator sets "Plan Review"; the human moves it to "Implementing" (approve) or "Rework".
+#   G3: the orchestrator marks the PR ready and the review agent posts a review; the human approves the PR
+#       (or adds the approval label, per target) or requests changes.
+#   G4, G5: GitHub Environment approvals inside the release workflow.
 name: story
 stages: [spec, plan, implement, review, merge]
 gates:
-  G1: {after: spec,      where: jira,                approve: "Spec Approved", rework: "Rework"}
-  G2: {after: plan,      where: jira,                approve: "Plan Approved", rework: "Rework"}
+  G1: {after: spec,      where: jira,                approve: "Planning",     rework: "Rework"}
+  G2: {after: plan,      where: jira,                approve: "Implementing", rework: "Rework"}
   G3: {after: review,    where: github,              approve: pr_approved_and_ci_green, rework: changes_requested}
   G4: {after: merge,     where: actions_environment, name: staging}
   G5: {after: G4,        where: actions_environment, name: production}
 jira_status:
+  ready: Ready
   claim: Specifying
   spec_review: Spec Review
+  planning: Planning
   plan_review: Plan Review
   implementing: Implementing
   code_review: Code Review
   staging: Staging
   done: Done
+  rework: Rework
   blocked: Blocked

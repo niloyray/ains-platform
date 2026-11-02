@@ -88,3 +88,30 @@ Built together because they are independent (plan 9.1). Modules: `config.py`, `j
 
 **Design finding, needs a decision before 6a.** GitHub does not let a PR author approve their own PR. The orchestrator opens PRs with niloyray's PAT, and niloyray is also the human reviewer, so G3 by PR review is impossible on a single account. Two options are implemented in `github.py`: `approval_mode: review` (needs a second account for the orchestrator, e.g. `ains-bot`, so `bot_login` reviews never count) and `approval_mode: label` (the human adds label `g3-approved`; branch protection then requires only the `ci` check). Default for the sandbox is pending the user's choice.
 
+### I6 — Poller · I7 — Flow state machine + gates · I11 — Workspace manager
+
+Modules: `poller.py`, `flow.py`, `workspace.py`; shared in-memory fakes in `tests/fakes.py` (Jira, GitHub PRs, agents that write the expected files). The `flows/story.yaml` status map was aligned so that a human approves G1 by moving the story to **Planning** and G2 by moving it to **Implementing**; Rework is a status; the orchestrator sets Specifying, Spec Review, Plan Review, Code Review, Blocked. The plan's status list gains **Planning** (section 2f) when the plan is next revised.
+
+| Test | Result |
+|------|--------|
+| T-I7-1 happy path with all gates on: claim → spec → wait_g1 → plan → wait_g2 → implement → review → wait_g3 → merge → released; draft PR, remote link, review posted as COMMENT, three gate.passed events, workspace removed | PASS |
+| T-I7-2 gate on: five idle cycles, no re-spawn | PASS |
+| T-I7-3 all gates off: runs to released with "G1/G2/G3 auto-approved" comments | PASS |
+| T-I7-4 Rework at G2: plan agent re-run with the human comment in its context; rework_count=1 | PASS |
+| T-I7-5 changes requested at G3: back to implement with the review attached, then a new review | PASS |
+| T-I7-6 agent fails twice: blocked, Jira → Blocked with a comment | PASS |
+| T-I7-7 story moved from Blocked back to Ready resumes at the blocked stage (plan), spec not re-run | PASS (test corrected: one transition per cycle) |
+| extra: missing output counts as failure; new commits after a review trigger a second review; label approval mode merges on `g3-approved` | PASS |
+| T-I6-1 Ready story claimed; status Specifying then Spec Review in the same cycle | PASS |
+| T-I6-2 same story claimed once even if dragged back to Ready | PASS |
+| T-I6-3 story without a target mapping skipped | PASS |
+| T-I6-4 Jira unreachable: error reported, next cycle works | PASS |
+| T-I6-5 one story at a time per target | PASS |
+| T-I11-1 clone + branch, slug rule, second ensure is a no-op | PASS (expected slug corrected) |
+| T-I11-2/3 commit message `<KEY>: …` with stage trailer | PASS |
+| T-I11-4 cleanup removes the directory, idempotent | PASS |
+| T-I11-5 refuses to clone below the free-space threshold | PASS |
+| suite | `uv run pytest`: 57 passed, 1 deselected (live) |
+
+Not yet implemented: the I10 refinement that distinguishes a human "changes requested" from the agent's (flow.py `_human_requested_changes` returns True for now); the Jira comment for T-I6-3 ("no target configured") is a skip only, the comment arrives with I12.
+
