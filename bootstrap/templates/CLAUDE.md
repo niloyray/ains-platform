@@ -13,7 +13,7 @@ The same rules apply to the AINS stage agents (spec, plan, implement, review) an
 - Keep application code under `app/` (or the directory the plan names) and tests under `tests/`.
 
 ## Quality
-- Run the test command before opening or updating a PR: `uv run pytest` (and `uv run ruff check .`).
+- Run the test command before opening or updating a PR: `uv run pytest` and `uvx ruff check .` (ruff runs as a tool; do not add it as a dependency).
 - A PR is merged only after the `ci` check is green and a human has approved it (gate G3). Agents never approve.
 - Add the label `ai-review` to a PR to get a review from the AINS review agent.
 

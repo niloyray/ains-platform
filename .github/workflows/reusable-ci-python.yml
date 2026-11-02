@@ -54,7 +54,8 @@ jobs:
           if [ -f pyproject.toml ]; then uv sync --all-groups; else echo "no pyproject.toml, nothing to install"; fi
       - name: Lint
         run: |
-          if [ -f pyproject.toml ]; then uv run ruff check . && uv run ruff format --check .; fi
+          # ruff as a tool (uvx), so onboarded projects need not declare it as a dependency
+          if [ -f pyproject.toml ]; then uvx ruff check . && uvx ruff format --check .; fi
       - name: Test
         run: |
           if [ -d tests ] || ls -d */tests >/dev/null 2>&1; then uv run pytest -q; else echo "no tests yet"; fi

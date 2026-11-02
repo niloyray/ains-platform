@@ -155,6 +155,7 @@ class FlowEngine:
         verdict = str(res.extra.get("verdict", "comment")).upper()
         event = "REQUEST_CHANGES" if verdict == "REQUEST_CHANGES" else "COMMENT"
         self.gh.pr_review(self.target.repo, pr.number, res.text or "(no findings)", event)
+        self._jira_status(s.key, "code_review")  # idempotent; restores the status after a resume
         self.store.update_session(s.key, stage="wait_g3", reviewed_sha=pr.head_sha, attempts=0)
         self.store.add_event(s.key, "review.posted", {"sha": pr.head_sha, "event": event})
         if self.target.gates["G3"] == "off":
