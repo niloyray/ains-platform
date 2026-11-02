@@ -293,3 +293,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | three new flow tests (CI rework with log, bounded rounds, label rework); 94 pass. Container rebuilt and restarted |
 | expected next | review of head `253d3df` (if not finished before the restart), then CI-failure rework → implement agent fixes the lint finding → push → CI → review → `wait_g3` with green CI |
 
+### Defect found by the acceptance run: the required check is named `ci / ci`, not `ci`
+
+| Item | Detail |
+|------|--------|
+| symptom | with CI red on PR #2 the orchestrator kept reporting `wait_g3` and never started the CI rework; `ci_green` could also never become true |
+| cause | the sandbox `ci.yml` calls the platform's reusable workflow from a caller job named `ci`, and GitHub names that check run `ci / ci` (caller job / called job). The GitHub client keyed checks by full name and looked up `ci`; branch protection also required a context `ci` that never reports, so merging would have hung on "expected" forever |
+| fix | `GitHubClient._to_pr` keys every check under its full name and under its last segment (exact name wins); onboarding now requires the context `ci / ci` (`REQUIRED_CHECK_CONTEXT`); sandbox protection patched in place via the API. Test T-I4-7 covers the mapping; 95 pass. Commit `f9ee36d`, container rebuilt |
+| result | next poll cycle: `stepped={'AINSSB-2': 'implement'}` — CI failure detected, story sent back to implement with the ruff log excerpt (round 1 of 2) |
+
