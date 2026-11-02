@@ -233,3 +233,14 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | acceptance story | `AINSSB-2` "Repository scaffold: README section and health-check script" created with label `ai-native`, status To Do; moved to Ready when the container is up (next entry) |
 | G3 mode | label mode (`g3-approved`) in effect for the sandbox; the user has not asked for a bot account |
 
+### Acceptance run AINSSB-2 — first attempts (step 8)
+
+| Event | Result |
+|-------|--------|
+| container started, story moved to Ready | no claim for six cycles. Cause: the running image was built before the lane changed from the custom field to the label `ai-native`, so its poller queried `"Execution Lane"`. `docker compose up -d --build` fixed it. Lesson recorded: source is baked into the image; config is mounted. Rebuild after code changes |
+| claim (T-I6-1 live) | PASS: session created 18:52:19 UTC, branch `AINSSB-2-repository-scaffold-readme-section-and-h`, Jira → Specifying with the "picked up" comment |
+| spec agent (T-I9-5 live) | PASS: `claude -p` ran 10 turns in 40 s, wrote `specs/AINSSB-2/spec.md` in the clone |
+| commit after the spec stage | FAIL: `git commit` exit 128 "Author identity unknown" (the container had no git identity). The orchestrator handled it as designed: story → Blocked with the error as a Jira comment (T-I7-6 live) |
+| fix | `GitHubClient.commit_all` now passes `-c user.name/-c user.email` (`AINS_GIT_NAME` / `AINS_GIT_EMAIL`, default `ains-orchestrator`); the image also sets a global git identity and `safe.directory *`. Unit test updated; 89 pass. Image rebuilt |
+| resume (T-I7-7 live) | story moved from Blocked back to Ready by hand; the poller resumes at the spec stage (the spec agent runs once more, then commit, push, draft PR, Spec Review) |
+
