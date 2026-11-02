@@ -1,0 +1,10 @@
+# Normalise line endings: LF in the repository, native on checkout only for Windows-specific files.
+* text=auto eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.svg text eol=lf
+*.png binary
