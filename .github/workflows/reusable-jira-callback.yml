@@ -1,0 +1,81 @@
+# Reusable Jira callback: transition a story by status name, add a comment, attach a remote link.
+# The issue key is taken from `issue-key` or parsed from `pr-title` / the branch name (e.g. "AINSSB-1: ...").
+name: reusable-jira-callback
+
+on:
+  workflow_call:
+    inputs:
+      issue-key:
+        type: string
+        default: ""
+      pr-title:
+        type: string
+        default: ""
+      transition:
+        description: Target status name (e.g. Code Review, Staging, Done). Empty = no transition.
+        type: string
+        default: ""
+      comment:
+        type: string
+        default: ""
+      link-url:
+        type: string
+        default: ""
+      link-title:
+        type: string
+        default: ""
+      jira-base-url:
+        description: Falls back to the JIRA_BASE_URL repository variable of the caller
+        type: string
+        default: ""
+    secrets:
+      JIRA_EMAIL:
+        required: true
+      JIRA_API_TOKEN:
+        required: true
+
+jobs:
+  callback:
+    runs-on: ubuntu-latest
+    env:
+      JIRA_BASE_URL: ${{ inputs.jira-base-url != '' && inputs.jira-base-url || vars.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+    steps:
+      - name: Resolve issue key
+        id: key
+        run: |
+          KEY="${{ inputs.issue-key }}"
+          if [ -z "$KEY" ]; then
+            KEY=$(printf '%s\n%s\n' "${{ inputs.pr-title }}" "${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" | grep -oE '[A-Z][A-Z0-9_]{1,9}-[0-9]+' | head -1 || true)
+          fi
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+          [ -n "$KEY" ] && echo "issue key: $KEY" || echo "no issue key found; skipping"
+      - name: Transition, comment, link
+        if: steps.key.outputs.key != ''
+        env:
+          KEY: ${{ steps.key.outputs.key }}
+          TRANSITION: ${{ inputs.transition }}
+          COMMENT: ${{ inputs.comment }}
+          LINK_URL: ${{ inputs.link-url }}
+          LINK_TITLE: ${{ inputs.link-title }}
+        run: |
+          set -euo pipefail
+          auth=(-u "$JIRA_EMAIL:$JIRA_API_TOKEN" -H "Content-Type: application/json" -H "Accept: application/json")
+          api="$JIRA_BASE_URL/rest/api/3/issue/$KEY"
+          if [ -n "$TRANSITION" ]; then
+            id=$(curl -fsS "${auth[@]}" "$api/transitions" | jq -r --arg n "$TRANSITION" '.transitions[] | select(.name==$n) | .id' | head -1)
+            if [ -n "$id" ]; then
+              curl -fsS "${auth[@]}" -X POST "$api/transitions" -d "{\"transition\":{\"id\":\"$id\"}}" && echo "-> $TRANSITION"
+            else
+              echo "::warning::transition '$TRANSITION' not available for $KEY"
+            fi
+          fi
+          if [ -n "$COMMENT" ]; then
+            body=$(jq -n --arg t "$COMMENT" '{body:{type:"doc",version:1,content:[{type:"paragraph",content:[{type:"text",text:$t}]}]}}')
+            curl -fsS "${auth[@]}" -X POST "$api/comment" -d "$body" >/dev/null && echo "comment added"
+          fi
+          if [ -n "$LINK_URL" ]; then
+            body=$(jq -n --arg u "$LINK_URL" --arg t "${LINK_TITLE:-$LINK_URL}" '{globalId:$u,object:{url:$u,title:$t}}')
+            curl -fsS "${auth[@]}" -X POST "$api/remotelink" -d "$body" >/dev/null && echo "remote link added"
+          fi

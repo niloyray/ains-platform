@@ -1,0 +1,119 @@
+# Reusable release for onboarded projects: image -> GHCR -> staging (G4) -> production (G5), with Jira callbacks.
+# Called from the project's thin release.yml on push to main with `secrets: inherit`.
+# Environments `staging` and `production` must exist in the calling repo with a required reviewer (ains target add does that).
+name: reusable-release
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: Image name without registry, e.g. ains-sandbox
+        type: string
+        required: true
+      jira-base-url:
+        type: string
+        default: ""
+    secrets:
+      JIRA_EMAIL:
+        required: false
+      JIRA_API_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      key: ${{ steps.meta.outputs.key }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: |
+          echo "image=ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}" >> "$GITHUB_OUTPUT"
+          KEY=$(git log -1 --pretty=%s | grep -oE '[A-Z][A-Z0-9_]{1,9}-[0-9]+' | head -1 || true)
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        run: |
+          if [ -f Dockerfile ]; then
+            docker build -t "${{ steps.meta.outputs.image }}:${{ github.sha }}" .
+            docker push "${{ steps.meta.outputs.image }}:${{ github.sha }}"
+          else
+            echo "no Dockerfile: nothing to build yet" ; echo "NO_IMAGE=1" >> "$GITHUB_ENV"
+          fi
+
+  staging:
+    name: staging (G4)
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://github.com/${{ github.repository }}/pkgs/container/${{ inputs.image-name }}
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag staging
+        run: |
+          IMG="${{ needs.build.outputs.image }}"
+          if docker pull "$IMG:${{ github.sha }}" 2>/dev/null; then
+            docker tag "$IMG:${{ github.sha }}" "$IMG:staging" && docker push "$IMG:staging"
+          else
+            echo "no image for this commit; staging gate passed without a deploy"
+          fi
+
+  jira-staging:
+    needs: [build, staging]
+    if: ${{ needs.build.outputs.key != '' }}
+    uses: niloyray/ains-platform/.github/workflows/reusable-jira-callback.yml@main
+    with:
+      issue-key: ${{ needs.build.outputs.key }}
+      transition: Staging
+      comment: "Staging approved (G4). Image ${{ needs.build.outputs.image }}:staging. Run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      link-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      link-title: "release run ${{ github.run_id }}"
+      jira-base-url: ${{ inputs.jira-base-url }}
+    secrets: inherit
+
+  production:
+    name: production (G5)
+    needs: [build, staging]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}/pkgs/container/${{ inputs.image-name }}
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag production
+        run: |
+          IMG="${{ needs.build.outputs.image }}"
+          if docker pull "$IMG:${{ github.sha }}" 2>/dev/null; then
+            docker tag "$IMG:${{ github.sha }}" "$IMG:production" && docker push "$IMG:production"
+          else
+            echo "no image for this commit; production gate passed without a deploy"
+          fi
+
+  jira-done:
+    needs: [build, production]
+    if: ${{ needs.build.outputs.key != '' }}
+    uses: niloyray/ains-platform/.github/workflows/reusable-jira-callback.yml@main
+    with:
+      issue-key: ${{ needs.build.outputs.key }}
+      transition: Done
+      comment: "Production approved (G5). Story released. Run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      jira-base-url: ${{ inputs.jira-base-url }}
+    secrets: inherit

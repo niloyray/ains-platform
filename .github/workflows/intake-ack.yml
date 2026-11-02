@@ -1,0 +1,27 @@
+# The only workflow that runs in ains-platform: the audit trace for Jira Automation.
+# Jira sends `repository_dispatch` (event_type jira-story-ready) when a story moves to Ready in the AI-native lane;
+# this workflow comments on the story. Intake itself is by polling (D3); this is evidence, not a trigger.
+name: intake-ack
+
+on:
+  repository_dispatch:
+    types: [jira-story-ready]
+
+jobs:
+  ack:
+    runs-on: ubuntu-latest
+    env:
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      KEY: ${{ github.event.client_payload.key }}
+    steps:
+      - name: Comment on the story
+        run: |
+          set -euo pipefail
+          if [ -z "$KEY" ]; then echo "::error::client_payload.key missing"; exit 1; fi
+          text="Accepted into the AI-native lane. The orchestrator will claim this story on its next poll. Audit: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body=$(jq -n --arg t "$text" '{body:{type:"doc",version:1,content:[{type:"paragraph",content:[{type:"text",text:$t}]}]}}')
+          curl -fsS -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -H "Content-Type: application/json" \
+            -X POST "$JIRA_BASE_URL/rest/api/3/issue/$KEY/comment" -d "$body" >/dev/null
+          echo "commented on $KEY"

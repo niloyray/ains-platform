@@ -1,0 +1,77 @@
+# Reusable CI for onboarded Python projects. Called from the project's thin ci.yml with `secrets: inherit`.
+# Job id `ci` is the required status check that branch protection and the orchestrator's G3 look for.
+name: reusable-ci-python
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        type: string
+        default: "3.12"
+      working-directory:
+        type: string
+        default: "."
+      jira-issue-key:
+        description: Jira key to move to Code Review (parsed from the PR title when empty)
+        type: string
+        default: ""
+      jira-base-url:
+        type: string
+        default: ""
+    secrets:
+      JIRA_EMAIL:
+        required: false
+      JIRA_API_TOKEN:
+        required: false
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: app_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U app" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://app:app@localhost:5432/app_test
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Install
+        run: |
+          if [ -f pyproject.toml ]; then uv sync --all-groups; else echo "no pyproject.toml, nothing to install"; fi
+      - name: Lint
+        run: |
+          if [ -f pyproject.toml ]; then uv run ruff check . && uv run ruff format --check .; fi
+      - name: Test
+        run: |
+          if [ -d tests ] || ls -d */tests >/dev/null 2>&1; then uv run pytest -q; else echo "no tests yet"; fi
+      - name: Build image
+        run: |
+          if [ -f Dockerfile ]; then docker build -t ci-image:${{ github.sha }} .; else echo "no Dockerfile yet"; fi
+
+  jira:
+    name: jira callback (Code Review)
+    needs: ci
+    if: ${{ always() && github.event_name == 'pull_request' && needs.ci.result == 'success' }}
+    uses: niloyray/ains-platform/.github/workflows/reusable-jira-callback.yml@main
+    with:
+      issue-key: ${{ inputs.jira-issue-key }}
+      pr-title: ${{ github.event.pull_request.title }}
+      transition: Code Review
+      comment: "CI passed on PR #${{ github.event.pull_request.number }} (${{ github.event.pull_request.html_url }}), run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      link-url: ${{ github.event.pull_request.html_url }}
+      link-title: "PR #${{ github.event.pull_request.number }}"
+      jira-base-url: ${{ inputs.jira-base-url }}
+    secrets: inherit

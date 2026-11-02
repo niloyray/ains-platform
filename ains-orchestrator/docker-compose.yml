@@ -1,0 +1,22 @@
+# The platform runtime on the laptop: one container, no published ports, resumable state on a named volume.
+#   cp .env.example .env   # then fill the values (never committed)
+#   docker compose up -d --build
+#   docker compose exec orchestrator ains doctor
+services:
+  orchestrator:
+    build: .
+    image: ains-orchestrator:local
+    container_name: ains-orchestrator
+    env_file: .env
+    environment:
+      AINS_CONFIG_ROOT: /app
+      AINS_WORK_DIR: /work
+      AINS_POLL_SECONDS: ${AINS_POLL_SECONDS:-60}
+    volumes:
+      - ains-workspaces:/work
+    restart: unless-stopped
+    # no ports: intake is by polling (D3); nothing reaches this container from outside
+    stop_grace_period: 2m
+
+volumes:
+  ains-workspaces:
