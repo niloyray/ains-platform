@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from ains_orchestrator.errors import GitHubError, MergeRefused
-from ains_orchestrator.github import AGENT_REVIEW_MARKER, GitHubClient, RunResult
+from ains_orchestrator.github import AGENT_REVIEW_MARKER, GitHubClient, RunResult, failed_step_excerpt
 
 
 class FakeRunner:
@@ -194,3 +194,28 @@ def test_T_I4_7_reusable_workflow_check_name_is_normalised():
     assert pr.checks["ci"] == "FAILURE" and pr.checks["ci / ci"] == "FAILURE"
     assert pr.checks["jira callback (Code Review)"] == "SKIPPED"
     assert not pr.ci_green
+
+
+def test_T_I4_8_ci_failure_excerpt_is_anchored_on_the_error_marker():
+    """The failing step's output, not the service-container teardown that follows it."""
+    rows = [f"ci / ci\tUNKNOWN STEP\t2026-11-02T19:36:23.84Z setup line {n}" for n in range(100)]
+    rows += [
+        "ci / ci\tUNKNOWN STEP\t2026-11-02T19:36:23.84Z PLW1510 `subprocess.run` without explicit `check` argument",
+        "ci / ci\tUNKNOWN STEP\t2026-11-02T19:36:23.84Z Found 1 error.",
+        "ci / ci\tUNKNOWN STEP\t2026-11-02T19:36:23.85Z ##[error]Process completed with exit code 1.",
+    ]
+    rows += [f"ci / ci\tUNKNOWN STEP\t2026-11-02T19:36:24.00Z postgres teardown {n}" for n in range(50)]
+    out = failed_step_excerpt("\n".join(rows))
+    assert "PLW1510" in out and "##[error]Process completed" in out
+    assert "postgres teardown 10" not in out and "setup line 10" not in out
+    assert not out.startswith("ci / ci") and "2026-11-02T" not in out
+    assert len(out.splitlines()) <= 64
+
+
+def test_T_I4_9_ci_failure_log_uses_run_list_then_log_failed():
+    r = FakeRunner()
+    r.responses["gh run list"] = RunResult(0, json.dumps([{"databaseId": 41, "conclusion": "failure", "url": "u"}]), "")
+    r.responses["gh run view 41"] = RunResult(0, "ci / ci\tUNKNOWN STEP\tboom\nci / ci\tUNKNOWN STEP\t##[error]x", "")
+    out = GitHubClient(runner=r).ci_failure_log("niloyray/ains-sandbox", "AINSSB-2-x")
+    assert out.startswith("CI run u concluded failure.") and "boom" in out
+    assert any(a[:3] == ["gh", "run", "view"] and "--log-failed" in a for a in r.calls)

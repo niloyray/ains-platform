@@ -331,6 +331,7 @@ class FlowEngine:
                 "cost_usd": res.cost_usd,
                 "duration_ms": res.duration_ms,
                 "error": res.error[:300],
+                "result": (res.text or "")[:3000],  # the agent's final reply, for diagnosis
             },
         )
         return res

@@ -302,3 +302,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | `GitHubClient._to_pr` keys every check under its full name and under its last segment (exact name wins); onboarding now requires the context `ci / ci` (`REQUIRED_CHECK_CONTEXT`); sandbox protection patched in place via the API. Test T-I4-7 covers the mapping; 95 pass. Commit `f9ee36d`, container rebuilt |
 | result | next poll cycle: `stepped={'AINSSB-2': 'implement'}` — CI failure detected, story sent back to implement with the ruff log excerpt (round 1 of 2) |
 
+### CI rework round 1 produced no change: the log excerpt was unusable
+
+| Item | Detail |
+|------|--------|
+| observed | `gate.rework` (CI) fired, the implement agent ran 8 turns and `stage.done` reported the same head `253d3df`: the agent changed nothing. In the workspace `uvx ruff check .` does reproduce PLW1510, so the finding was fixable |
+| cause | `gh run view --log-failed` prints the whole failed job as `job<TAB>step<TAB>timestamp line`; for a reusable workflow the step is `UNKNOWN STEP`, and the job ends with the Postgres service-container teardown. The excerpt took the last 80 lines, so the agent was shown container shutdown noise and a Node.js deprecation warning, with the ruff output 100 lines earlier. The agent's own reply was not persisted, so this had to be reconstructed from the workspace |
+| fix | `failed_step_excerpt()` strips prefixes and timestamps and windows 60 lines before and 3 after the last `##[error]` marker (fallback: tail). `agent.done` events now carry the agent's final reply (first 3000 chars). Tests T-I4-8, T-I4-9; 97 pass |
+| session surgery | the orchestrator was stopped mid round 2; the AINSSB-2 row was reset to `wait_g3` with `ci_rework_rounds = 0` and a `manual.reset` event explaining why, so the fixed excerpt gets its two rounds. Container rebuilt and restarted |
+| lesson for the platform | every agent run must leave its reply in the event log; an agent that reports success without changing the tree should be visible as such (`stage.done` with unchanged sha) |
+

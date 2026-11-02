@@ -63,6 +63,20 @@ class PullRequest:
         return self.checks.get("ci", "").upper() in {"SUCCESS", "PASS", "PASSED"}
 
 
+def failed_step_excerpt(log_text: str, *, before: int = 60, after: int = 3, max_chars: int = 6000) -> str:
+    """Strip `job<TAB>step<TAB>` prefixes and timestamps, then window around the last `##[error]` line."""
+    lines = [ln.split("\t", 2)[-1] for ln in log_text.splitlines()]
+    lines = [re.sub(r"^\S+Z ?", "", ln).rstrip() for ln in lines]
+    lines = [ln for ln in lines if ln.strip()]
+    errs = [n for n, ln in enumerate(lines) if "##[error]" in ln]
+    if errs:
+        last = errs[-1]
+        window = lines[max(0, last - before) : last + 1 + after]
+    else:
+        window = lines[-(before + after) :]
+    return "\n".join(window)[-max_chars:]
+
+
 class GitHubClient:
     def __init__(
         self,
@@ -238,7 +252,12 @@ class GitHubClient:
         ]
 
     def ci_failure_log(self, repo: str, branch: str, max_chars: int = 6000) -> str:
-        """Tail of the failed steps' log of the latest `ci` run on `branch` (empty when unavailable)."""
+        """Excerpt of the failing step of the latest `ci` run on `branch` (empty when unavailable).
+
+        `gh run view --log-failed` prints the whole failed job (setup, the failing step, service-container
+        teardown) as `job<TAB>step<TAB>timestamp line`, and for a reusable workflow the step is "UNKNOWN STEP",
+        so the excerpt is anchored on the last `##[error]` marker: the lines just before it are the real cause.
+        """
         try:
             runs = (
                 self._gh_json(
@@ -266,10 +285,8 @@ class GitHubClient:
             log_text = self._exec(
                 ["gh", "run", "view", str(run["databaseId"]), "--repo", repo, "--log-failed"], what="ci failed log"
             )
-            lines = [ln.split("\t", 2)[-1] for ln in log_text.splitlines()]
-            lines = [re.sub(r"^\S+Z ", "", ln) for ln in lines if ln.strip()]
-            tail = "\n".join(lines[-80:])
-            return f"CI run {run.get('url', '')} concluded {run.get('conclusion')}.\n\n{tail[-max_chars:]}"
+            excerpt = failed_step_excerpt(log_text, max_chars=max_chars)
+            return f"CI run {run.get('url', '')} concluded {run.get('conclusion')}.\n\n{excerpt}"
         except GitHubError as e:
             return f"CI failed; log unavailable ({str(e)[:120]})"
 
