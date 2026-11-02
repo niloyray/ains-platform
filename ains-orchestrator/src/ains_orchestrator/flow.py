@@ -178,8 +178,8 @@ class FlowEngine:
             self.store.update_session(s.key, stage="review", head_sha=pr.head_sha)
             self.store.add_event(s.key, "pr.new_commits", {"sha": pr.head_sha})
             return "review"
-        if pr.review_decision == "CHANGES_REQUESTED" and self._human_requested_changes(pr.number):
-            comments = self._latest_review_text(pr.number)
+        if pr.human_changes_requested:
+            comments = "\n\n".join(pr.review_bodies) or "changes requested on the PR; see the review comments"
             self._rework(s, "implement", "G3", comments)
             return "implement"
         gate_on = self.target.gates["G3"] == "on"
@@ -363,12 +363,6 @@ class FlowEngine:
         if not comments:
             return ""
         return _adf_text(comments[-1].get("body"))
-
-    def _human_requested_changes(self, pr_number: int) -> bool:
-        return True  # refined in I10 with review authorship; the review agent never uses REQUEST_CHANGES as a gate
-
-    def _latest_review_text(self, pr_number: int) -> str:
-        return "changes requested on the PR; see the review comments"
 
 
 def _adf_text(body: Any) -> str:

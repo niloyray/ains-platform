@@ -149,6 +149,11 @@ class FakeGitHub:
     def request_changes(self, number: int) -> None:
         self.prs[number].review_decision = "CHANGES_REQUESTED"
         self.prs[number].human_approved = False
+        self.prs[number].human_changes_requested = True
+        self.prs[number].review_bodies = ["please rename the endpoint"]
+
+    def checkout(self, cwd, branch):
+        self.calls.append(f"checkout {branch}")
 
     def new_commit(self, sha: str) -> None:
         self.sha = sha

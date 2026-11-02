@@ -13,7 +13,7 @@ import logging
 import subprocess
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +53,8 @@ class PullRequest:
     checks: dict[str, str]  # name -> conclusion/state
     human_approved: bool
     merged: bool
+    human_changes_requested: bool = False
+    review_bodies: list[str] = field(default_factory=list)
 
     @property
     def ci_green(self) -> bool:
@@ -199,6 +201,10 @@ class GitHubClient:
             what=f"merge #{pr.number}",
         )
 
+    def checkout(self, cwd: Path, branch: str) -> None:
+        self._exec(["git", "fetch", "origin", branch], cwd, what=f"fetch {branch}")
+        self._exec(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd, what=f"checkout {branch}")
+
     def pr_comment(self, repo: str, number: int, body: str) -> None:
         self._exec(
             ["gh", "pr", "comment", str(number), "--repo", repo, "--body", body], write=True, what=f"comment #{number}"
@@ -212,6 +218,15 @@ class GitHubClient:
             checks[name] = str(c.get("conclusion") or c.get("state") or "")
         labels = [lb.get("name", "") for lb in d.get("labels") or []]
         human = False
+        changes = False
+        bodies: list[str] = []
+        for rv in d.get("reviews") or []:
+            author = (rv.get("author") or {}).get("login", "")
+            body = rv.get("body") or ""
+            agent_review = body.startswith(AGENT_REVIEW_MARKER)
+            if rv.get("state") == "CHANGES_REQUESTED" and author != self.bot_login and not agent_review:
+                changes = True
+                bodies.append(body)
         if approval_mode == "label":
             human = approval_label in labels
         else:
@@ -239,4 +254,6 @@ class GitHubClient:
             checks=checks,
             human_approved=human,
             merged=bool(d.get("mergedAt")),
+            human_changes_requested=changes,
+            review_bodies=bodies,
         )

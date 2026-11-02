@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git add*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(uv *)",
+      "Bash(pytest*)",
+      "Bash(python -m pytest*)",
+      "Bash(ruff *)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(mkdir*)",
+      "Bash(mv*)",
+      "Bash(cp*)",
+      "Bash(docker compose config*)",
+      "Bash(docker build*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git commit*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh pr review --approve*)",
+      "Bash(rm -rf /*)",
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "WebFetch",
+      "WebSearch"
+    ]
+  },
+  "env": {
+    "DISABLE_AUTOUPDATER": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+  }
+}

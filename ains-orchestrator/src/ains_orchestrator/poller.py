@@ -57,7 +57,9 @@ class Poller:
             return
         active = self.store.active_keys()
         busy_targets = {
-            s.target for s in self.store.list_sessions() if s.stage not in ("released", "abandoned", "blocked")
+            s.target
+            for s in self.store.list_sessions()
+            if s.stage not in ("released", "abandoned", "blocked", "pr_reviewed")
         }
         for issue in issues:
             key = issue["key"]
@@ -96,7 +98,7 @@ class Poller:
     # ------------------------------------------------------------------ step
     def _step_active(self, rep: CycleReport) -> None:
         for s in self.store.list_sessions():
-            if s.stage in ("released", "abandoned", "blocked"):
+            if s.stage in ("released", "abandoned", "blocked", "pr_reviewed"):
                 continue
             try:
                 issue = self.jira.get_issue(s.key, ["summary", "description"])

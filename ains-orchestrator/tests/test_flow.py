@@ -140,6 +140,7 @@ def test_T_I7_5_changes_requested_at_g3_returns_to_implement(world):
     gh.request_changes(7)
     assert e.step(st.get_session(STORY.key), STORY) == "implement"
     gh.prs[7].review_decision = "REVIEW_REQUIRED"
+    gh.prs[7].human_changes_requested = False
     assert e.step(st.get_session(STORY.key), STORY) == "review"
     impl_runs = [ctx for stage, _, ctx in agents.runs if stage == "implement"]
     assert len(impl_runs) == 2 and "rework_comment" in impl_runs[1]

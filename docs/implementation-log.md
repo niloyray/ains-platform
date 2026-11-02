@@ -115,3 +115,32 @@ Modules: `poller.py`, `flow.py`, `workspace.py`; shared in-memory fakes in `test
 
 Not yet implemented: the I10 refinement that distinguishes a human "changes requested" from the agent's (flow.py `_human_requested_changes` returns True for now); the Jira comment for T-I6-3 ("no target configured") is a skip only, the comment arrives with I12.
 
+### I8 — Agent runner · I9 — Stage prompts + Claude settings · I10 — PR watcher · I12 — CLI
+
+Modules: `agent.py` (spawns `claude -p` with a minimal environment), `watcher.py`, `cli.py` (all commands wired except `target add/remove`, which is I16); `agents/stages/{spec,plan,implement,review}.md`; `claude-settings.json` (allowlist for git read-only ops, uv, pytest, ruff; denies push, commit, merge, approve, network tools). `github.py` gained human-vs-agent review detection (`human_changes_requested`, `review_bodies`) and `checkout`; the flow uses them for the G3 rework path.
+
+| Test | Result |
+|------|--------|
+| T-I8-1 argv: `claude -p --output-format json --settings /app/claude-settings.json --permission-mode <stage> --max-turns <n> <prompt>`, never `--bare` | PASS |
+| extra: review stage runs with `--permission-mode plan` and `--disallowedTools Edit,Write,…,WebFetch,WebSearch` | PASS |
+| T-I8-2 subprocess env contains PATH, HOME and `CLAUDE_CODE_OAUTH_TOKEN` only; `ANTHROPIC_*`, `GH_TOKEN`, `JIRA_*` absent even when set in the parent | PASS |
+| extra: `minimal_env` refuses an `ANTHROPIC_*` passthrough (D4) | PASS |
+| T-I8-3 cwd is the story workspace | PASS |
+| T-I8-4 JSON result parsed: text, turns, cost, duration, session id; array output and non-JSON handled | PASS |
+| extra: `is_error` and non-zero exit become failures | PASS |
+| T-I8-5 runner reports failure; the engine retries (one retry, then block) | PASS |
+| T-I8-6 wall-clock limit passed as the subprocess timeout; timeout reported | PASS |
+| extra: missing `CLAUDE_CODE_OAUTH_TOKEN` is reported before spawning | PASS |
+| T-I9-1 all four shipped prompts render with the story context; review prompt demands `VERDICT:` and forbids approving | PASS |
+| T-I10-4 Human-lane PR with `ai-review` reviewed once, never merged; second cycle skipped | PASS (after fix: the watcher's own PR sessions were mistaken for flow sessions) |
+| extra: a new push gets a new review; `request_changes` verdict posted as such | PASS |
+| T-I10-5 draft PR ignored | PASS |
+| extra: a flow session's PR is left to the flow | PASS |
+| T-I12-1 `agent list`, `flow list`, `targets list` | PASS |
+| T-I12-2 `session status --json`; unknown key exits 1 | PASS |
+| T-I12-3 `session dispatch --dry-run` without Jira credentials exits 2 with a clear message | PASS |
+| T-I12-4 `doctor --no-live` with an empty PATH and a planted `ANTHROPIC_API_KEY` reports every failing item and exits 1 | PASS |
+| suite | `uv run pytest`: 81 passed, 1 deselected (live) |
+
+Still open from this batch: T-I8-7 (live `claude -p` in the container) and T-I9-5/6/7 wait for I13 and the token; T-I12-5 (`doctor` green in the container) waits for I13.
+

@@ -119,7 +119,9 @@ class Store:
         return [self._to_session(r) for r in self._db.execute(q + " ORDER BY created", args).fetchall()]
 
     def active_keys(self) -> set[str]:
-        rows = self._db.execute("SELECT key FROM sessions WHERE stage NOT IN ('released','abandoned')").fetchall()
+        rows = self._db.execute(
+            "SELECT key FROM sessions WHERE stage NOT IN ('released','abandoned','pr_reviewed')"
+        ).fetchall()
         return {r["key"] for r in rows}
 
     # ------------------------------------------------------------------ events
