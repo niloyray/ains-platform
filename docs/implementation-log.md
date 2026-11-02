@@ -220,3 +220,16 @@ The user asked whether the API could add the statuses. The legacy workflow APIs 
 
 Remaining manual Jira item: the Automation rule (audit trace only; Jira Automation has no public create API). Not required for the acceptance run.
 
+## 2026-11-03 · token received, first live agent call, credential checks, acceptance run started
+
+The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat01-…` token; it was written only to the gitignored `ains-orchestrator/.env`.
+
+| Test | Result |
+|------|--------|
+| T-I8-7 / T-L6-2 `docker compose run orchestrator claude -p "reply with the single word ok" --output-format json` | PASS: result `ok`, 1 turn, `is_error: false`; the JSON carries a `total_cost_usd` estimate (0.023) that Claude Code always reports, it is not a charge: no API key exists |
+| T-L6-3 same call with `CLAUDE_CODE_OAUTH_TOKEN` emptied | PASS (fails as designed): "Not logged in · Please run /login", so the OAuth token is the only credential in use |
+| T-L6-4 same call with a planted `ANTHROPIC_API_KEY=sk-ant-api03-dummy` | PASS (fails as designed): HTTP 401 "Invalid API key", proving an API key would take precedence if ever present, which is why the agent runner strips `ANTHROPIC_*` and `doctor` fails on it |
+| T-I12-5 `ains doctor` in the container | PASS: 14 ok, no FAIL (config with 1 target, all env vars, no `ANTHROPIC_*`, git, gh, claude, specify, work dir, gh auth, Jira) |
+| acceptance story | `AINSSB-2` "Repository scaffold: README section and health-check script" created with label `ai-native`, status To Do; moved to Ready when the container is up (next entry) |
+| G3 mode | label mode (`g3-approved`) in effect for the sandbox; the user has not asked for a bot account |
+
