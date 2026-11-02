@@ -1,0 +1,18 @@
+# The one flow this PoC runs: a Jira story from Ready to released.
+name: story
+stages: [spec, plan, implement, review, merge]
+gates:
+  G1: {after: spec,      where: jira,                approve: "Spec Approved", rework: "Rework"}
+  G2: {after: plan,      where: jira,                approve: "Plan Approved", rework: "Rework"}
+  G3: {after: review,    where: github,              approve: pr_approved_and_ci_green, rework: changes_requested}
+  G4: {after: merge,     where: actions_environment, name: staging}
+  G5: {after: G4,        where: actions_environment, name: production}
+jira_status:
+  claim: Specifying
+  spec_review: Spec Review
+  plan_review: Plan Review
+  implementing: Implementing
+  code_review: Code Review
+  staging: Staging
+  done: Done
+  blocked: Blocked

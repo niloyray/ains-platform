@@ -1,0 +1,11 @@
+# Onboarded projects. Ships empty; `ains target add` appends one block per project and
+# `ains target remove` deletes it. The platform repo itself is never a target.
+#
+# Example block (written by `ains target add ains-sandbox AINSSB sandbox`):
+#   AINSSB:
+#     repo: niloyray/ains-sandbox
+#     default_branch: main
+#     flow: story
+#     gates: {G1: on, G2: on, G3: on, G4: on, G5: on}
+#     review_label: ai-review
+targets: {}

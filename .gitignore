@@ -1,0 +1,23 @@
+# secrets
+.env
+*.env
+!*.env.example
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+# orchestrator runtime
+/work/
+*.sqlite
+*.sqlite3
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

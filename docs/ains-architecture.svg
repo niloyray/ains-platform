@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 850" width="1300" height="850" role="img" aria-labelledby="t d">
+<title id="t">AINS platform: components and flows, phase by phase</title>
+<desc id="d">Two columns left to right. Phase 1 builds the platform repo ains-platform directly from the workstation, edges P1 to P7. The platform runtime, used only by onboarded projects, holds Jira, the ains-orchestrator container with the Claude Code CLI stage agents, reusable workflows and credentials; agent usage is traced by edges A1 to A7. A placeholder on the right stands for onboarded projects, the sandbox in Phase 1 and ains-poc in Phase 2; diagram 2 covers a project story. Blue arrows are human to machine, teal arrows machine to machine.</desc>
+<defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><style>text{font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}.cl{font-size:11.5px;font-weight:600;letter-spacing:.02em}.bt{font-size:11.5px;font-weight:600}.bs{font-size:9.5px}.el{font-size:9px}.tg{font-size:8.5px;font-weight:700}</style></defs>
+<rect x="0" y="0" width="1300" height="850" fill="#FFFFFF"/>
+<text x="30" y="18" class="cl" fill="#8A6D1D">HUMAN ROLES</text>
+<text x="130" y="18" class="bs" fill="#5B6168">in this solo PoC one person holds every role; they are drawn separately to show the hand-offs. Phase 2 roles are in diagram 2.</text>
+<rect x="40" y="24" width="420" height="82" rx="7" fill="#F2E9D0" stroke="#8A6D1D" stroke-width="1"/>
+<text x="250.0" y="39" class="bt" text-anchor="middle" fill="#1B1F23">Phase 1 roles</text>
+<text x="250.0" y="51" class="bs" text-anchor="middle" fill="#5B6168">Platform engineer:  builds ains-platform directly in VS Code + Claude Code CLI, commits to main</text>
+<text x="250.0" y="63" class="bs" text-anchor="middle" fill="#5B6168">Platform engineer:  runs Jira setup, secret placement, bootstrap, then the acceptance story</text>
+<text x="250.0" y="75" class="bs" text-anchor="middle" fill="#5B6168">Reviewer:  approves G1–G5 on the acceptance story, so every gate is exercised once</text>
+<text x="250.0" y="87" class="bs" text-anchor="middle" fill="#5B6168">Researcher:  records divergences and gaps (docs/divergence.md)</text>
+<rect x="540" y="24" width="420" height="82" rx="7" fill="#F2E9D0" stroke="#8A6D1D" stroke-width="1"/>
+<text x="750.0" y="39" class="bt" text-anchor="middle" fill="#1B1F23">Runtime roles  (used only for onboarded projects)</text>
+<text x="750.0" y="51" class="bs" text-anchor="middle" fill="#5B6168">Product owner:  writes project stories in Jira, sets Execution Lane, orders the backlog</text>
+<text x="750.0" y="63" class="bs" text-anchor="middle" fill="#5B6168">Reviewer:  G1 spec and G2 plan decisions in Jira, Rework comments, Blocked calls</text>
+<text x="750.0" y="75" class="bs" text-anchor="middle" fill="#5B6168">Platform engineer:  keeps the container running, rotates tokens, tunes gates</text>
+<text x="750.0" y="87" class="bs" text-anchor="middle" fill="#5B6168">(non-human) Claude Code CLI stage agents:  act under the engineer's Max subscription</text>
+<rect x="30" y="120" width="450" height="690" rx="12" fill="#F2F8F7" stroke="#146B63" stroke-width="1"/>
+<text x="42" y="138" class="cl" fill="#146B63">PHASE 1 · build the platform</text>
+<text x="42" y="151" class="bs" fill="#5B6168">repo ains-platform · built directly from the workstation · no Jira, CI or orchestrator for the platform · P1–P7</text>
+<rect x="510" y="120" width="470" height="690" rx="12" fill="#F6F5F1" stroke="#5B6168" stroke-width="1"/>
+<text x="522" y="138" class="cl" fill="#5B6168">PLATFORM RUNTIME · built in Phase 1, used only by onboarded projects</text>
+<text x="522" y="151" class="bs" fill="#5B6168">Jira Cloud · ains-orchestrator container · reusable Actions workflows · credentials · agent usage A1–A7</text>
+<rect x="55" y="160" width="400" height="56" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="255.0" y="175" class="bt" text-anchor="middle" fill="#1B1F23">Workstation: VS Code + Claude Code CLI</text>
+<text x="255.0" y="187" class="bs" text-anchor="middle" fill="#5B6168">interactive sessions write and test the orchestrator</text>
+<text x="255.0" y="199" class="bs" text-anchor="middle" fill="#5B6168">same toolchain the Phase 2 developer uses</text>
+<rect x="55" y="240" width="400" height="56" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
+<text x="255.0" y="255" class="bt" text-anchor="middle" fill="#1B1F23">Jira onboarding  (part of ains target add)</text>
+<text x="255.0" y="267" class="bs" text-anchor="middle" fill="#5B6168">per project: Kanban project · field Execution Lane · 9 statuses</text>
+<text x="255.0" y="279" class="bs" text-anchor="middle" fill="#5B6168">Automation rule (audit trace) · site-wide field created once</text>
+<rect x="55" y="320" width="400" height="86" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1.8"/>
+<text x="255.0" y="335" class="bt" text-anchor="middle" fill="#1B1F23">Repo ains-platform  (GitHub, code only, no Actions)</text>
+<text x="255.0" y="347" class="bs" text-anchor="middle" fill="#5B6168">ains-orchestrator/  src · Dockerfile · compose · flows · agents · stages · targets.yaml</text>
+<text x="255.0" y="359" class="bs" text-anchor="middle" fill="#5B6168">.github/workflows/  reusable-ci · reusable-release · reusable-jira-callback · intake-ack</text>
+<text x="255.0" y="371" class="bs" text-anchor="middle" fill="#5B6168">   (workflow_call definitions; they run only when ains-poc calls them)</text>
+<text x="255.0" y="383" class="bs" text-anchor="middle" fill="#5B6168">bootstrap/new-target.sh · docs/ · plan/ · commits straight to main</text>
+<rect x="55" y="430" width="400" height="58" rx="7" fill="#F2E9D0" stroke="#8A6D1D" stroke-width="1"/>
+<text x="255.0" y="445" class="bt" text-anchor="middle" fill="#1B1F23">Secrets placement</text>
+<text x="255.0" y="457" class="bs" text-anchor="middle" fill="#5B6168">claude setup-token → CLAUDE_CODE_OAUTH_TOKEN · GitHub PAT · Jira token</text>
+<text x="255.0" y="469" class="bs" text-anchor="middle" fill="#5B6168">→ .env (gitignored); ains target add copies Jira secrets into each repo · never committed</text>
+<rect x="55" y="512" width="400" height="58" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="255.0" y="527" class="bt" text-anchor="middle" fill="#1B1F23">ains target add / remove  →  project onboarding</text>
+<text x="255.0" y="539" class="bs" text-anchor="middle" fill="#5B6168">any project: Jira project + repo + protection + environments + secrets</text>
+<text x="255.0" y="551" class="bs" text-anchor="middle" fill="#5B6168">+ label ai-review + templates · targets.yaml entry · proven on the sandbox</text>
+<rect x="55" y="594" width="400" height="70" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
+<text x="255.0" y="609" class="bt" text-anchor="middle" fill="#1B1F23">Acceptance run on the sandbox  =  Phase 1 done</text>
+<text x="255.0" y="621" class="bs" text-anchor="middle" fill="#5B6168">AINSSB-1 'repository scaffold' through all phases and five gates, hands-off</text>
+<text x="255.0" y="633" class="bs" text-anchor="middle" fill="#5B6168">ains-poc is never touched in Phase 1; it is onboarded on Phase 2 day one</text>
+<text x="255.0" y="645" class="bs" text-anchor="middle" fill="#5B6168">docs/divergence.md records the gaps vs. the architecture document</text>
+<rect x="55" y="688" width="400" height="46" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="255.0" y="703" class="bt" text-anchor="middle" fill="#1B1F23">Platform changes after Phase 1</text>
+<text x="255.0" y="715" class="bs" text-anchor="middle" fill="#5B6168">engineer edits ains-platform directly; image rebuilt with compose; no story lane</text>
+<rect x="535" y="160" width="420" height="56" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
+<text x="745.0" y="175" class="bt" text-anchor="middle" fill="#1B1F23">Jira Cloud · rayniloy.atlassian.net · one project per onboarded target</text>
+<text x="745.0" y="187" class="bs" text-anchor="middle" fill="#5B6168">Execution Lane: Human | AI-native · Ready → … → Done · Rework · Blocked</text>
+<text x="745.0" y="199" class="bs" text-anchor="middle" fill="#5B6168">Automation rule = audit trace · project stories only, never platform work</text>
+<rect x="525" y="236" width="440" height="450" rx="12" fill="#E8F2F0" stroke="#146B63" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="537" y="254" class="cl" fill="#146B63">Container: ains-orchestrator  (Docker Desktop on the laptop)</text>
+<rect x="545" y="266" width="400" height="40" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="745.0" y="281" class="bt" text-anchor="middle" fill="#1B1F23">Poller + PR watcher</text>
+<text x="745.0" y="293" class="bs" text-anchor="middle" fill="#5B6168">JQL every 60 s over all targets: AI-native ∧ Ready · PRs ready or labelled ai-review</text>
+<rect x="545" y="320" width="400" height="52" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="745.0" y="335" class="bt" text-anchor="middle" fill="#1B1F23">Flow state machine + gates</text>
+<text x="745.0" y="347" class="bs" text-anchor="middle" fill="#5B6168">flows/story.yaml · SQLite on /work (resumable)</text>
+<text x="745.0" y="359" class="bs" text-anchor="middle" fill="#5B6168">spec → G1 → plan → G2 → implement → review → G3 → merge · gates per target</text>
+<rect x="545" y="386" width="400" height="52" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="745.0" y="401" class="bt" text-anchor="middle" fill="#1B1F23">Dispatcher</text>
+<text x="745.0" y="413" class="bs" text-anchor="middle" fill="#5B6168">targets.yaml: one block per onboarded project, empty at start</text>
+<text x="745.0" y="425" class="bs" text-anchor="middle" fill="#5B6168">agents/claude-code.yaml + agents/stages/*.md: one prompt and permission set per stage</text>
+<rect x="545" y="452" width="195" height="56" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1.8"/>
+<text x="642.5" y="467" class="bt" text-anchor="middle" fill="#1B1F23">Claude Code CLI  (stage agents)</text>
+<text x="642.5" y="479" class="bs" text-anchor="middle" fill="#5B6168">spawned per stage: spec · plan ·</text>
+<text x="642.5" y="491" class="bs" text-anchor="middle" fill="#5B6168">implement · review · headless · OAuth only</text>
+<rect x="750" y="452" width="195" height="56" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="847.5" y="467" class="bt" text-anchor="middle" fill="#1B1F23">Spec Kit skills  (specify)</text>
+<text x="847.5" y="479" class="bs" text-anchor="middle" fill="#5B6168">run inside the agent's session</text>
+<text x="847.5" y="491" class="bs" text-anchor="middle" fill="#5B6168">integration key: claude</text>
+<rect x="545" y="522" width="400" height="40" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="745.0" y="537" class="bt" text-anchor="middle" fill="#1B1F23">Workspace volume</text>
+<text x="745.0" y="549" class="bs" text-anchor="middle" fill="#5B6168">/work/&lt;KEY&gt;/ · clone of the target repo · branch &lt;KEY&gt;-&lt;slug&gt;</text>
+<rect x="535" y="578" width="200" height="56" rx="7" fill="#F2E9D0" stroke="#8A6D1D" stroke-width="1"/>
+<text x="635.0" y="593" class="bt" text-anchor="middle" fill="#1B1F23">.env  (gitignored)</text>
+<text x="635.0" y="605" class="bs" text-anchor="middle" fill="#5B6168">CLAUDE_CODE_OAUTH_TOKEN · GITHUB_TOKEN</text>
+<text x="635.0" y="617" class="bs" text-anchor="middle" fill="#5B6168">JIRA_EMAIL · JIRA_API_TOKEN</text>
+<rect x="755" y="578" width="200" height="56" rx="7" fill="#F7E3DD" stroke="#A43E2A" stroke-width="1"/>
+<text x="855.0" y="593" class="bt" text-anchor="middle" fill="#1B1F23">Claude Max subscription</text>
+<text x="855.0" y="605" class="bs" text-anchor="middle" fill="#5B6168">plan usage, no API metering</text>
+<text x="855.0" y="617" class="bs" text-anchor="middle" fill="#5B6168">serves every claude -p run</text>
+<rect x="535" y="710" width="420" height="56" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
+<text x="745.0" y="725" class="bt" text-anchor="middle" fill="#1B1F23">Reusable Actions workflows  (defined in ains-platform)</text>
+<text x="745.0" y="737" class="bs" text-anchor="middle" fill="#5B6168">ci · release · jira-callback · intake-ack  (workflow_call)</text>
+<text x="745.0" y="749" class="bs" text-anchor="middle" fill="#5B6168">executed only by the thin workflows of onboarded repos</text>
+<rect x="1010" y="236" width="260" height="450" rx="7" fill="#F3F8F2" stroke="#3F6E3C" stroke-width="1" stroke-dasharray="6 4"/>
+<text x="1140.0" y="465.0" class="bt" text-anchor="middle" fill="#1B1F23">ONBOARDED PROJECTS</text>
+<text x="1140" y="286" class="bs" text-anchor="middle" fill="#5B6168">one block per project, created by ains target add:</text>
+<text x="1140" y="300" class="bs" text-anchor="middle" fill="#5B6168">Jira project · GitHub repo · thin CI and release</text>
+<text x="1140" y="313" class="bs" text-anchor="middle" fill="#5B6168">workflows · GHCR · environments · labels · templates</text>
+<text x="1140" y="326" class="bs" text-anchor="middle" fill="#5B6168">Phase 1: sandbox AINSSB · Phase 2: ains-poc AINSPOC</text>
+<text x="1140" y="360" class="bt" text-anchor="middle" fill="#3F6E3C">see diagram 2</text>
+<text x="1140" y="374" class="bs" text-anchor="middle" fill="#3F6E3C">ains-poc-flow: one story phase by phase,</text>
+<text x="1140" y="387" class="bs" text-anchor="middle" fill="#3F6E3C">the four stage agents, gates G1–G5</text>
+<text x="1140" y="640" class="bs" text-anchor="middle" fill="#5B6168">onboarded by P6 (ains target add) · receives A5–A7</text>
+<path d="M250,106 L250,160" fill="none" stroke="#2F5E9E" stroke-width="2" marker-end="url(#h)"/>
+<rect x="256" y="108" width="20.4" height="12" rx="6" fill="#2F5E9E"/>
+<text x="266.2" y="117" class="tg" text-anchor="middle" fill="#FFFFFF">P1</text>
+<text x="276" y="117" class="el" fill="#2F5E9E">build · run · debug · commit</text>
+<path d="M560,106 L560,160" fill="none" stroke="#2F5E9E" stroke-width="2" marker-end="url(#h)"/>
+<text x="566" y="117" class="el" fill="#2F5E9E">Jira UI: project stories · lane · G1/G2 decisions</text>
+<path d="M55,188 L42,188 L42,541 L55,541" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<path d="M42,268 L55,268" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<rect x="14" y="255" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="24.2" y="264" class="tg" text-anchor="middle" fill="#FFFFFF">P2</text>
+<path d="M42,363 L55,363" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<rect x="14" y="350" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="24.2" y="359" class="tg" text-anchor="middle" fill="#FFFFFF">P3</text>
+<path d="M42,459 L55,459" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<rect x="14" y="446" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="24.2" y="455" class="tg" text-anchor="middle" fill="#FFFFFF">P5</text>
+<rect x="14" y="528" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="24.2" y="537" class="tg" text-anchor="middle" fill="#FFFFFF">P6</text>
+<path d="M455,268 L500,268 L500,192 L535,192" fill="none" stroke="#146B63" stroke-width="1.3" stroke-dasharray="2 3" marker-end="url(#h)"/>
+<rect x="470" y="253" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="480.2" y="262" class="tg" text-anchor="middle" fill="#FFFFFF">P2</text>
+<text x="458" y="282" class="el" fill="#146B63">configures</text>
+<path d="M455,380 L525,380" fill="none" stroke="#146B63" stroke-width="1.3" stroke-dasharray="2 3" marker-end="url(#h)"/>
+<rect x="474" y="365" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="484.2" y="374" class="tg" text-anchor="middle" fill="#FFFFFF">P4</text>
+<text x="462" y="394" class="el" fill="#146B63">compose up</text>
+<path d="M455,459 L495,459 L495,606 L535,606" fill="none" stroke="#146B63" stroke-width="1.3" stroke-dasharray="2 3" marker-end="url(#h)"/>
+<rect x="499" y="591" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="509.2" y="600" class="tg" text-anchor="middle" fill="#FFFFFF">P5</text>
+<text x="503" y="618" class="el" fill="#146B63">fills</text>
+<rect x="62" y="598" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="72.2" y="607" class="tg" text-anchor="middle" fill="#FFFFFF">P7</text>
+<path d="M455,541 L490,541 L490,800 L1140,800 L1140,686" fill="none" stroke="#146B63" stroke-width="1.3" stroke-dasharray="2 3" marker-end="url(#h)"/>
+<rect x="760" y="787" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="770.2" y="796" class="tg" text-anchor="middle" fill="#FFFFFF">P6</text>
+<text x="784" y="796" class="el" fill="#146B63">ains target add: Jira project, repo, protection, environments, secrets, label, templates, targets entry</text>
+<path d="M955,266 L966,266 L966,296 L955,296" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)" marker-start="url(#h)"/>
+<rect x="970" y="275" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="980.2" y="284" class="tg" text-anchor="middle" fill="#FFFFFF">A1</text>
+<path d="M955,266 L966,266 L966,205 L955,205" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)" marker-start="url(#h)"/>
+<text x="978" y="300" class="el" fill="#146B63" transform="rotate(-90 978 300)">poll · claim</text>
+<path d="M745,306 L745,320" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<path d="M745,372 L745,386" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<rect x="750" y="375" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="760.2" y="384" class="tg" text-anchor="middle" fill="#FFFFFF">A2</text>
+<text x="774" y="384" class="el" fill="#146B63">stage → spawn agent</text>
+<path d="M640,438 L640,452" fill="none" stroke="#146B63" stroke-width="2" marker-end="url(#h)"/>
+<path d="M845,438 L845,452" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<path d="M740,480 L750,480" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<path d="M640,508 L640,522" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<rect x="646" y="510" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="656.2" y="519" class="tg" text-anchor="middle" fill="#FFFFFF">A3</text>
+<text x="670" y="519" class="el" fill="#146B63">writes spec · plan · code · review into the clone</text>
+<path d="M560,508 L560,568 L760,568 L760,578" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<rect x="600" y="556" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="610.2" y="565" class="tg" text-anchor="middle" fill="#FFFFFF">A4</text>
+<text x="624" y="565" class="el" fill="#146B63">model calls</text>
+<path d="M945,542 L1010,542" fill="none" stroke="#146B63" stroke-width="2" marker-end="url(#h)"/>
+<rect x="950" y="527" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="960.2" y="536" class="tg" text-anchor="middle" fill="#FFFFFF">A5</text>
+<text x="978" y="556" class="el" fill="#146B63" text-anchor="middle">push · PR · merge</text>
+<path d="M1010,470 L980,470 L980,430 L955,430" fill="none" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)" marker-start="url(#h)"/>
+<rect x="984" y="446" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="994.2" y="455" class="tg" text-anchor="middle" fill="#FFFFFF">A6</text>
+<text x="992" y="470" class="el" fill="#146B63" transform="rotate(-90 992 470)">PR ready → review</text>
+<path d="M1010,738 L955,738" fill="none" stroke="#146B63" stroke-width="1.3" stroke-dasharray="2 3" marker-end="url(#h)"/>
+<rect x="968" y="743" width="20.4" height="12" rx="6" fill="#146B63"/>
+<text x="978.2" y="752" class="tg" text-anchor="middle" fill="#FFFFFF">A7</text>
+<path d="M900,710 L900,698 L976,698 L976,212 L955,212" fill="none" stroke="#146B63" stroke-width="1.3" stroke-dasharray="2 3" marker-end="url(#h)"/>
+<text x="992" y="752" class="el" fill="#146B63">workflow_call · Jira callbacks</text>
+<line x1="55" y1="752" x2="85" y2="752" stroke="#2F5E9E" stroke-width="2" marker-end="url(#h)"/>
+<text x="93" y="756" class="bs" fill="#1B1F23">human ↔ machine</text>
+<line x1="205" y1="752" x2="235" y2="752" stroke="#146B63" stroke-width="1.3" marker-end="url(#h)"/>
+<text x="243" y="756" class="bs" fill="#1B1F23">machine ↔ machine</text>
+<rect x="55" y="763" width="39.0" height="12" rx="6" fill="#146B63"/>
+<text x="74.5" y="772" class="tg" text-anchor="middle" fill="#FFFFFF">P1–P7</text>
+<text x="99" y="772" class="bs" fill="#1B1F23">Phase 1 platform build steps</text>
+<rect x="255" y="763" width="39.0" height="12" rx="6" fill="#146B63"/>
+<text x="274.5" y="772" class="tg" text-anchor="middle" fill="#FFFFFF">A1–A7</text>
+<text x="299" y="772" class="bs" fill="#1B1F23">agent usage in the AI-native loop</text>
+<text x="55" y="788" class="bs" fill="#5B6168">solid = runtime · dotted = build-time, definition or callback · ◂▸ both ways · project story phases D1–D7 and gates G1–G5: diagram 2</text>
+</svg>
