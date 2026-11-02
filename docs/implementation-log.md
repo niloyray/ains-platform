@@ -273,3 +273,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fixes | prompts now go to Claude Code through stdin for every stage (no argv limits, nothing after the tool list); the runner marks each workspace trusted in `~/.claude.json` (`projects[<dir>].hasTrustDialogAccepted`) before spawning; review stage runs in `default` permission mode with Edit/Write/Web tools disallowed so it can run the tests. 91 unit tests pass. Manual probe in the container with the exact review argv and a stdin prompt returned a result |
 | second attempt | the old container retried before the rebuild finished → blocked (as designed). Story moved back to Ready by hand; resume restarts at the review stage (implement output already on the PR) |
 
+### Acceptance run AINSSB-2 — review posted, CI fix (plan 8.6)
+
+| Event | Result |
+|-------|--------|
+| review agent (T-I9-6 live, after the fixes) | PASS: 4 turns, 16 s; posted a PR review marked `[ains review agent]` with verdict `comment`: summary, three minor findings (ruff not declared so `uv run ruff` fails, new `uv.lock`, test import relies on `pythonpath`), tests run (2 passed). It never approved |
+| CI on PR #2 | FAIL on the lint step: `Failed to spawn: ruff`, exactly the agent's first finding. Platform fix: the reusable CI runs `uvx ruff check` / `uvx ruff format --check` so onboarded projects need not declare ruff; `CLAUDE.md` template updated to say so |
+| Jira status after resume | the resumed review stage had left the story in Ready; `_do_review` now restores **Code Review** after posting (set by hand this time) |
+| retrigger | empty commit `253d3df` pushed from the orchestrator's own workspace (keeps its local branch in sync); CI re-runs with the fixed reusable workflow; the orchestrator will see the new head and post a second review (new-commit rule, T-I10-3 live) |
+| waiting on | green `ci` on the new head, second review, then the human G3 label |
+
