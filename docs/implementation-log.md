@@ -320,3 +320,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | agent reply (now persisted) | added `check=False` to the `subprocess.run` call in `tests/test_healthcheck.py`; `uv run pytest` 2 passed; **could not run `uvx ruff check .`: "This command requires approval"** |
 | fix | `Bash(uvx ruff*)` added to the platform `claude-settings.json` (mounted, no rebuild) and to the onboarding template; the sandbox's `.claude/settings.json` updated to match. The prompt tells agents to lint with `uvx ruff`, so the allowlist must permit it |
 
+### AINSSB-2 at G3 (plan step 8.6 reached)
+
+| Item | Detail |
+|------|--------|
+| PR #2 head | `dcfb214`; checks `ci / ci` SUCCESS and `ci / jira callback (Code Review) / callback` SUCCESS |
+| review agent | third review posted (COMMENT) on `dcfb214`, 6 turns, 22 s, USD 0.06; its reply also noted it could not run ruff (approval), fixed by the `uvx ruff` allowlist entry for the next spawn |
+| session | `wait_g3`, `reviewed_sha` = head; Jira AINSSB-2 in Code Review via the callback |
+| waiting on | human G3: read the review and the diff on PR #2, confirm CI green, add label `g3-approved` (or `g3-rework` + a comment to send it back). Then the orchestrator squash-merges, `release.yml` builds the image and waits for the `staging` (G4) and `production` (G5) environment approvals, and the story goes to Done |
+| run so far | agent cost for AINSSB-2 across spec, plan, implement x2, review x3: about USD 0.70 (billed to the Max subscription, shown by the CLI for information) |
+
