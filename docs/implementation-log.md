@@ -263,3 +263,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | Jira | → **Plan Review** with the G2 instructions comment; session `wait_g2` at 19:12 UTC |
 | waiting on | human G2 decision in Jira (Implementing = approve, Rework = send back) |
 
+### Acceptance run AINSSB-2 — G2 passed, implement done, review stage findings (plan 8.5, 8.6)
+
+| Event | Result |
+|-------|--------|
+| G2 | human moved the story to Implementing; `gate.passed G2 mode=human` |
+| implement agent (T-I9 live) | PASS: 19 turns, 41 s; code and tests pushed (sha a443016), PR #2 marked ready, Jira → Code Review |
+| review agent, first attempt | FAIL in 0.3 s with 0 turns: "Input must be provided either through stdin or as a prompt argument". Cause: `--disallowedTools <list>` is variadic and swallowed the prompt that followed it. Also seen: "Ignoring 7 permissions.allow entries from .claude/settings.json: this workspace has not been trusted", i.e. headless Claude Code ignores the onboarded repo's settings until the workspace is trusted |
+| fixes | prompts now go to Claude Code through stdin for every stage (no argv limits, nothing after the tool list); the runner marks each workspace trusted in `~/.claude.json` (`projects[<dir>].hasTrustDialogAccepted`) before spawning; review stage runs in `default` permission mode with Edit/Write/Web tools disallowed so it can run the tests. 91 unit tests pass. Manual probe in the container with the exact review argv and a stdin prompt returned a result |
+| second attempt | the old container retried before the rebuild finished → blocked (as designed). Story moved back to Ready by hand; resume restarts at the review stage (implement output already on the PR) |
+
