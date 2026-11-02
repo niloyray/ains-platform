@@ -25,6 +25,9 @@ from ains_orchestrator.errors import AinsError, GitHubError, JiraError
 from ains_orchestrator.github import GitHubClient
 from ains_orchestrator.jira import JiraClient
 
+# Check-run name GitHub gives the reusable CI job when the caller job in templates/ci.yml is named `ci`.
+REQUIRED_CHECK_CONTEXT = "ci / ci"
+
 log = logging.getLogger("ains.onboard")
 
 REQUIRED_STATUSES = [
@@ -314,7 +317,7 @@ class Onboarder:
     def _github_protection(self, rep: Report, repo: str) -> None:
         body = json.dumps(
             {
-                "required_status_checks": {"strict": False, "contexts": ["ci"]},
+                "required_status_checks": {"strict": False, "contexts": [REQUIRED_CHECK_CONTEXT]},
                 "enforce_admins": False,
                 "required_pull_request_reviews": None,
                 "restrictions": None,
@@ -323,7 +326,7 @@ class Onboarder:
             }
         )
         if self.dry_run:
-            rep.add("branch protection", "planned", "main: require status check 'ci'")
+            rep.add("branch protection", "planned", f"main: require status check '{REQUIRED_CHECK_CONTEXT}'")
             return
         try:
             self._gh(
@@ -332,7 +335,7 @@ class Onboarder:
                 what="branch protection",
                 stdin=body,
             )
-            rep.add("branch protection", "done", "main requires 'ci'")
+            rep.add("branch protection", "done", f"main requires '{REQUIRED_CHECK_CONTEXT}'")
         except GitHubError as e:
             rep.add("branch protection", "failed", str(e)[:200])
 

@@ -175,3 +175,22 @@ def test_dry_run_records_writes_only():
     c = GitHubClient(runner=r, dry_run=True)
     c.pr_ready("niloyray/ains-sandbox", 7)
     assert r.calls == [] and c.dry_run_log and "pr ready" in c.dry_run_log[0]
+
+
+def test_T_I4_7_reusable_workflow_check_name_is_normalised():
+    """GitHub names the reusable CI job "ci / ci"; the orchestrator must still see it as the `ci` check."""
+    r = FakeRunner()
+    r.responses["gh pr view 2"] = RunResult(
+        0,
+        pr_json(
+            statusCheckRollup=[
+                {"name": "ci / ci", "conclusion": "FAILURE"},
+                {"name": "ci / jira callback (Code Review)", "conclusion": "SKIPPED"},
+            ]
+        ),
+        "",
+    )
+    pr = GitHubClient(runner=r).pr_view("niloyray/ains-sandbox", 2)
+    assert pr.checks["ci"] == "FAILURE" and pr.checks["ci / ci"] == "FAILURE"
+    assert pr.checks["jira callback (Code Review)"] == "SKIPPED"
+    assert not pr.ci_green

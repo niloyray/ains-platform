@@ -280,8 +280,15 @@ class GitHubClient:
 
     # ------------------------------------------------------------------ parsing
     def _to_pr(self, d: dict[str, Any], approval_mode: str, approval_label: str) -> PullRequest:
+        # A reusable workflow called from a caller job `ci` reports as "ci / ci" (caller job / called job).
+        # Key each check under its full name and under its last segment, so `checks["ci"]` works in both cases;
+        # an exact name always wins over a shortened one.
         checks: dict[str, str] = {}
-        for c in d.get("statusCheckRollup") or []:
+        rollup = d.get("statusCheckRollup") or []
+        for c in rollup:
+            name = c.get("name") or c.get("context") or ""
+            checks.setdefault(name.split(" / ")[-1].strip(), str(c.get("conclusion") or c.get("state") or ""))
+        for c in rollup:
             name = c.get("name") or c.get("context") or ""
             checks[name] = str(c.get("conclusion") or c.get("state") or "")
         labels = [lb.get("name", "") for lb in d.get("labels") or []]
