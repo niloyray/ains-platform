@@ -6,13 +6,13 @@ Five human gates, each switchable per target in `ains-orchestrator/targets.yaml`
 |------|-------------|----------------------|----------------|---------------------|
 | G1 spec | `spec` wrote `specs/<KEY>/spec.md` into a draft PR; Jira status **Spec Review** | Jira | move the story to **Planning** | move it to **Rework** with a comment; the spec agent runs again with the comment |
 | G2 plan | `plan` wrote `plan.md` and `tasks.md`; status **Plan Review** | Jira | move the story to **Implementing** | move it to **Rework** with a comment; the plan agent runs again |
-| G3 code | `implement` pushed code and marked the PR ready; CI ran; the review agent posted its review; status **Code Review** | GitHub PR | `approval_mode: review` → approve the PR; `approval_mode: label` → add the label `g3-approved` | request changes on the PR; the implement agent runs again with the review text |
+| G3 code | `implement` pushed code and marked the PR ready; CI ran; the review agent posted its review; status **Code Review** | GitHub PR | `approval_mode: review` → approve the PR; `approval_mode: label` → add the label `g3-approved` | `review` mode: request changes on the PR; `label` mode: write the reason as a PR comment and add the label `g3-rework`. Either way the implement agent runs again with that text. A **failed `ci` check** at G3 needs no human: the orchestrator sends the story back to implement with the failed-step log (at most 2 rounds, then Blocked) |
 | G4 staging | PR squash-merged, image pushed to GHCR | GitHub Environments | approve the `staging` deployment | reject it; the release stops |
 | G5 production | staging done | GitHub Environments | approve the `production` deployment | reject it |
 
 ## Why two approval modes for G3
 
-GitHub does not allow the author of a pull request to approve it. The orchestrator opens PRs with the platform engineer's token, so on a single account the engineer cannot approve them. `approval_mode: label` lets a human express G3 by adding `g3-approved`; branch protection then requires only the `ci` status check. With a second GitHub account for the orchestrator (`bot_login`), `approval_mode: review` uses real PR approvals and the bot's own reviews never count.
+GitHub does not allow the author of a pull request to approve it. The orchestrator opens PRs with the platform engineer's token, so on a single account the engineer cannot approve them. `approval_mode: label` lets a human express G3 by adding `g3-approved`; branch protection then requires only the CI status check. GitHub forbids "request changes" on one's own PR as well, so label mode has the counterpart label `g3-rework`. The required check context is `ci / ci`: the reusable workflow is called from a caller job named `ci`, and GitHub names the run `<caller job> / <called job>`. With a second GitHub account for the orchestrator (`bot_login`), `approval_mode: review` uses real PR approvals and the bot's own reviews never count.
 
 ## What the orchestrator does at each gate
 
