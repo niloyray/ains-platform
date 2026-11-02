@@ -244,3 +244,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | `GitHubClient.commit_all` now passes `-c user.name/-c user.email` (`AINS_GIT_NAME` / `AINS_GIT_EMAIL`, default `ains-orchestrator`); the image also sets a global git identity and `safe.directory *`. Unit test updated; 89 pass. Image rebuilt |
 | resume (T-I7-7 live) | story moved from Blocked back to Ready by hand; the poller resumes at the spec stage (the spec agent runs once more, then commit, push, draft PR, Spec Review) |
 
+### Acceptance run AINSSB-2 — reached gate G1 (plan 8.2)
+
+| Event | Result |
+|-------|--------|
+| second block | push failed: git in the container had no credential helper (`gh` could clone with `GH_TOKEN`, plain `git push` could not). Fixed in the image: `credential.helper = !gh auth git-credential`; verified with `git ls-remote` from inside the container |
+| resume improvement | on resume after a failure that happened *after* a successful agent run, the orchestrator now skips the agent when the stage's outputs are present (`agent.skipped` event); unit test added, 90 pass |
+| resume 2 | agent skipped, branch pushed, draft PR #2 opened (`AINSSB-2: Repository scaffold: README section and health-check script`), remote link added, Jira → **Spec Review** with the G1 instructions comment, session `wait_g1` at 19:03 UTC |
+| spec quality (T-I9-5) | `specs/AINSSB-2/spec.md` from Spec Kit: goal, user-visible behaviour, scenarios with independent tests, written from the story text |
+| waiting on | human G1 decision in Jira (Planning = approve, Rework = send back) |
+
