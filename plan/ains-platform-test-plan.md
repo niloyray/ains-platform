@@ -157,7 +157,7 @@ Columns: ID · level · test · expected result · evidence.
 | T-I9-4 | L0 | `claude-settings.json` | allowlist contains `Bash(git *)`, `Bash(gh *)`, `Bash(uv *)`, `Bash(pytest *)`; review stage profile denies `WebFetch`, `WebSearch`, `Edit`, `Write` | pytest reads the file |
 | T-I9-5 | L4 | `AINS_LIVE=1`: real `spec` run on `ains-sandbox` with a two-line story | a sensible `spec.md` under 20 turns; cost field present | evidence log, the file |
 | T-I9-6 | L4 | real `review` run on a sandbox PR with one planted bug | the bug is named in the review; verdict `request_changes` | evidence log, the PR |
-| T-I9-7 | L3 | in the container: `claude -p "/speckit.specify --help"` style probe and `/code-review` availability | both skills resolve (Spec Kit commands from the target repo, review skill from the image) | evidence log |
+| T-I9-7 | L3 | in the container: `claude -p "/speckit-specify --help"` style probe and `/code-review` availability | both skills resolve (Spec Kit commands from the target repo, review skill from the image) | evidence log |
 | Exit | | all green; T-I9-5 and T-I9-6 run once | | |
 
 ### I10 PR watcher + review stage
