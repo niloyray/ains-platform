@@ -254,3 +254,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | spec quality (T-I9-5) | `specs/AINSSB-2/spec.md` from Spec Kit: goal, user-visible behaviour, scenarios with independent tests, written from the story text |
 | waiting on | human G1 decision in Jira (Planning = approve, Rework = send back) |
 
+### Acceptance run AINSSB-2 — G1 passed, reached gate G2 (plan 8.3, 8.4)
+
+| Event | Result |
+|-------|--------|
+| G1 (T-I19-2, approve path) | human moved the story to Planning at 19:10 UTC; `gate.passed G1 mode=human`; the orchestrator continued on its next poll with no other touch |
+| plan agent | PASS: 12 turns, 49 s; `plan.md` and `tasks.md` (eight ordered, checkable tasks with files named, tests first) committed to the same branch, draft PR #2 updated |
+| Jira | → **Plan Review** with the G2 instructions comment; session `wait_g2` at 19:12 UTC |
+| waiting on | human G2 decision in Jira (Implementing = approve, Rework = send back) |
+
