@@ -44,6 +44,7 @@ REQUIRED_STATUSES = [
 LABELS = {
     "ai-review": ("2F5E9E", "ask the AINS review agent to review this PR"),
     "g3-approved": ("146B63", "human G3 approval (label approval mode)"),
+    "g3-rework": ("A43E2A", "send the PR back to the implement agent (label approval mode); explain in a PR comment"),
     "ai-native": ("5A4A8A", "story runs through the AINS AI-native lane"),
 }
 TEMPLATE_FILES = {  # template name -> path in the target repo

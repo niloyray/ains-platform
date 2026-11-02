@@ -38,6 +38,7 @@ class Target(Strict):
     review_label: str = "ai-review"
     approval_mode: ApprovalMode = "review"
     approval_label: str = "g3-approved"
+    rework_label: str = "g3-rework"
     execution_lane_field_id: str | None = None
 
     @field_validator("gates", mode="before")

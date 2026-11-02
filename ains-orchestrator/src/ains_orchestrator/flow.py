@@ -32,6 +32,8 @@ STAGE_OUTPUTS = {
     "review": [],
 }
 TERMINAL = {"released", "abandoned"}
+MAX_CI_REWORK_ROUNDS = 2
+AGENT_REVIEW_MARKER_TEXT = "[ains review agent]"
 
 
 @dataclass
@@ -182,6 +184,40 @@ class FlowEngine:
         if pr.human_changes_requested:
             comments = "\n\n".join(pr.review_bodies) or "changes requested on the PR; see the review comments"
             self._rework(s, "implement", "G3", comments)
+            return "implement"
+        ci_state = pr.checks.get("ci", "").upper()
+        if ci_state in {"FAILURE", "ERROR", "CANCELLED", "TIMED_OUT"}:
+            rounds = int(s.gate_state.get("ci_rework_rounds", 0))
+            if rounds >= MAX_CI_REWORK_ROUNDS:
+                return self._fail(
+                    s, f"CI failed {rounds + 1} times on PR #{pr.number}; a human must look at the branch"
+                )
+            excerpt = self.gh.ci_failure_log(self.target.repo, s.branch or pr.head_ref)
+            self._rework(
+                s,
+                "implement",
+                "CI",
+                f"CI failed on your last push. Fix the cause below, run the tests "
+                f"and `uvx ruff check .` yourself, then stop.\n\n{excerpt}",
+            )
+            gs = dict(self.store.get_session(s.key).gate_state)  # type: ignore[union-attr]
+            gs["ci_rework_rounds"] = rounds + 1
+            self.store.update_session(s.key, gate_state=gs)
+            self.jira.add_comment(
+                s.key,
+                f"CI failed on PR #{pr.number}; sending the story back to the implement agent "
+                f"(round {rounds + 1} of {MAX_CI_REWORK_ROUNDS}).",
+            )
+            return "implement"
+        if self.target.approval_mode == "label" and self.target.rework_label in pr.labels:
+            comments = [
+                c
+                for c in self.gh.pr_comments(self.target.repo, pr.number)
+                if not c["body"].startswith(AGENT_REVIEW_MARKER_TEXT)
+            ]
+            text = comments[-1]["body"] if comments else "rework requested via label; see the PR comments"
+            self.gh.pr_remove_label(self.target.repo, pr.number, self.target.rework_label)
+            self._rework(s, "implement", "G3", text)
             return "implement"
         gate_on = self.target.gates["G3"] == "on"
         if (pr.human_approved or not gate_on) and pr.ci_green:

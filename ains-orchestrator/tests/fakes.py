@@ -74,6 +74,7 @@ class FakeGitHub:
         self.calls: list[str] = []
         self.next_number = 7
         self.sha = "sha-1"
+        self.comments: dict[int, list[dict]] = {}
 
     def clone(self, repo, dest: Path, branch=None):
         self.calls.append(f"clone {repo}")
@@ -126,6 +127,17 @@ class FakeGitHub:
     def pr_review(self, repo, number, body, event):
         self.reviews.append((number, event, body))
         self.calls.append(f"pr review #{number} {event}")
+
+    def pr_remove_label(self, repo, number, label):
+        if label in self.prs[number].labels:
+            self.prs[number].labels.remove(label)
+        self.calls.append(f"unlabel #{number} {label}")
+
+    def pr_comments(self, repo, number):
+        return list(self.comments.get(number, []))
+
+    def ci_failure_log(self, repo, branch):
+        return "CI run https://example/run/1 concluded failure.\n\nFound 1 error.\nPLW1510 subprocess.run without check"
 
     def pr_merge(self, repo, pr):
         from ains_orchestrator.errors import MergeRefused

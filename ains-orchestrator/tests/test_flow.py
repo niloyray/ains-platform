@@ -192,3 +192,53 @@ def test_label_approval_mode_merges_on_label(world):
     gh.prs[7].labels.append("g3-approved")
     assert e.step(st.get_session(STORY.key), STORY) == "merge"
     assert e.step(st.get_session(STORY.key), STORY) == "released"
+
+
+def _to_g3(world, approval_mode="review"):
+    e, st, jira = world["make"](approval_mode=approval_mode), world["store"], world["jira"]
+    e.claim(STORY)
+    run_until(e, st, STORY.key, "wait_g1")
+    jira.set_status(STORY.key, "Planning")
+    run_until(e, st, STORY.key, "wait_g2")
+    jira.set_status(STORY.key, "Implementing")
+    run_until(e, st, STORY.key, "wait_g3")
+    return e
+
+
+def test_ci_failure_at_g3_sends_story_back_to_implement_with_the_log(world):
+    st, jira, gh, agents = world["store"], world["jira"], world["gh"], world["agents"]
+    e = _to_g3(world)
+    gh.ci(7, "FAILURE")
+    assert e.step(st.get_session(STORY.key), STORY) == "implement"
+    s = st.get_session(STORY.key)
+    assert s.gate_state["ci_rework_rounds"] == 1 and "PLW1510" in s.gate_state["rework_implement"]
+    assert "CI failed" in jira.comments[STORY.key][-1]
+    gh.prs[7].checks = {}
+    assert e.step(st.get_session(STORY.key), STORY) == "review"  # implement agent ran again
+    assert [r[0] for r in agents.runs].count("implement") == 2
+    assert "PLW1510" in agents.runs[-1][2]["rework_comment"]
+
+
+def test_ci_failure_rounds_are_bounded(world):
+    st, gh = world["store"], world["gh"]
+    e = _to_g3(world)
+    for _round in range(2):
+        gh.ci(7, "FAILURE")
+        assert e.step(st.get_session(STORY.key), STORY) == "implement"
+        gh.prs[7].checks = {}
+        run_until(e, st, STORY.key, "wait_g3")
+    gh.ci(7, "FAILURE")
+    assert e.step(st.get_session(STORY.key), STORY) == "blocked"
+    assert "a human must look" in st.get_session(STORY.key).last_error
+
+
+def test_label_mode_rework_label_returns_to_implement_with_the_comment(world):
+    st, gh, agents = world["store"], world["gh"], world["agents"]
+    e = _to_g3(world, approval_mode="label")
+    gh.ci(7, "SUCCESS")
+    gh.comments[7] = [{"author": "niloyray", "body": "please rename the script to health_check.py", "createdAt": "t"}]
+    gh.prs[7].labels.append("g3-rework")
+    assert e.step(st.get_session(STORY.key), STORY) == "implement"
+    assert "g3-rework" not in gh.prs[7].labels
+    assert e.step(st.get_session(STORY.key), STORY) == "review"
+    assert agents.runs[-1][2]["rework_comment"] == "please rename the script to health_check.py"

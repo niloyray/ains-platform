@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import subprocess
 import time
 from collections.abc import Callable
@@ -216,6 +217,61 @@ class GitHubClient:
     def checkout(self, cwd: Path, branch: str) -> None:
         self._exec(["git", "fetch", "origin", branch], cwd, what=f"fetch {branch}")
         self._exec(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd, what=f"checkout {branch}")
+
+    def pr_remove_label(self, repo: str, number: int, label: str) -> None:
+        self._exec(
+            ["gh", "pr", "edit", str(number), "--repo", repo, "--remove-label", label],
+            write=True,
+            what=f"unlabel #{number} {label}",
+        )
+
+    def pr_comments(self, repo: str, number: int) -> list[dict[str, Any]]:
+        """Issue comments on the PR: [{author, body, createdAt}]."""
+        d = self._gh_json(["gh", "pr", "view", str(number), "--repo", repo, "--json", "comments"]) or {}
+        return [
+            {
+                "author": (c.get("author") or {}).get("login", ""),
+                "body": c.get("body") or "",
+                "createdAt": c.get("createdAt", ""),
+            }
+            for c in d.get("comments") or []
+        ]
+
+    def ci_failure_log(self, repo: str, branch: str, max_chars: int = 6000) -> str:
+        """Tail of the failed steps' log of the latest `ci` run on `branch` (empty when unavailable)."""
+        try:
+            runs = (
+                self._gh_json(
+                    [
+                        "gh",
+                        "run",
+                        "list",
+                        "--repo",
+                        repo,
+                        "--workflow",
+                        "ci",
+                        "--branch",
+                        branch,
+                        "--limit",
+                        "1",
+                        "--json",
+                        "databaseId,conclusion,url",
+                    ]
+                )
+                or []
+            )
+            if not runs:
+                return ""
+            run = runs[0]
+            log_text = self._exec(
+                ["gh", "run", "view", str(run["databaseId"]), "--repo", repo, "--log-failed"], what="ci failed log"
+            )
+            lines = [ln.split("\t", 2)[-1] for ln in log_text.splitlines()]
+            lines = [re.sub(r"^\S+Z ", "", ln) for ln in lines if ln.strip()]
+            tail = "\n".join(lines[-80:])
+            return f"CI run {run.get('url', '')} concluded {run.get('conclusion')}.\n\n{tail[-max_chars:]}"
+        except GitHubError as e:
+            return f"CI failed; log unavailable ({str(e)[:120]})"
 
     def pr_comment(self, repo: str, number: int, body: str) -> None:
         self._exec(
