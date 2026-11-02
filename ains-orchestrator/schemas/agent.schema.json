@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "Retry": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "default": 2,
+          "maximum": 5,
+          "minimum": 1,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "backoff_seconds": {
+          "default": 300,
+          "minimum": 0,
+          "title": "Backoff Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "Retry",
+      "type": "object"
+    },
+    "StageConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "prompt": {
+          "title": "Prompt",
+          "type": "string"
+        },
+        "permission_mode": {
+          "default": "acceptEdits",
+          "enum": [
+            "default",
+            "acceptEdits",
+            "plan",
+            "dontAsk"
+          ],
+          "title": "Permission Mode",
+          "type": "string"
+        },
+        "max_turns": {
+          "maximum": 500,
+          "minimum": 1,
+          "title": "Max Turns",
+          "type": "integer"
+        },
+        "read_only": {
+          "default": false,
+          "title": "Read Only",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt",
+        "max_turns"
+      ],
+      "title": "StageConfig",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "command": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Command",
+      "type": "array"
+    },
+    "env_passthrough": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Env Passthrough",
+      "type": "array"
+    },
+    "stages": {
+      "additionalProperties": {
+        "$ref": "#/$defs/StageConfig"
+      },
+      "title": "Stages",
+      "type": "object"
+    },
+    "retry": {
+      "$ref": "#/$defs/Retry"
+    },
+    "wall_clock_limit_minutes": {
+      "default": 30,
+      "maximum": 240,
+      "minimum": 1,
+      "title": "Wall Clock Limit Minutes",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "name",
+    "command",
+    "env_passthrough",
+    "stages"
+  ],
+  "title": "AgentTemplate",
+  "type": "object"
+}

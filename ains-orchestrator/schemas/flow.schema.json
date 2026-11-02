@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "GateDef": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "title": "After",
+          "type": "string"
+        },
+        "where": {
+          "enum": [
+            "jira",
+            "github",
+            "actions_environment"
+          ],
+          "title": "Where",
+          "type": "string"
+        },
+        "approve": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approve"
+        },
+        "rework": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rework"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        }
+      },
+      "required": [
+        "after",
+        "where"
+      ],
+      "title": "GateDef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "stages": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Stages",
+      "type": "array"
+    },
+    "gates": {
+      "additionalProperties": {
+        "$ref": "#/$defs/GateDef"
+      },
+      "title": "Gates",
+      "type": "object"
+    },
+    "jira_status": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Jira Status",
+      "type": "object"
+    }
+  },
+  "required": [
+    "name",
+    "stages"
+  ],
+  "title": "Flow",
+  "type": "object"
+}

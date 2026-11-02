@@ -52,3 +52,39 @@ Legend: PASS · FAIL · SKIP (with reason) · N/A
 
 Step 2 complete. Next: I2 config schemas, then I3 to I5 (Jira client, GitHub client, session store), all offline.
 
+### I2 — Config schemas · I3 — Jira client · I4 — GitHub client · I5 — Session store
+
+Built together because they are independent (plan 9.1). Modules: `config.py`, `jira.py`, `github.py`, `store.py`, `errors.py`; tests in `tests/`. `ruff check` and `ruff format` clean (line length raised to 120).
+
+| Test | Result |
+|------|--------|
+| T-I2-1 shipped files validate; `targets.yaml` ships empty; sandbox sample parses | PASS (after fix: YAML reads `on`/`off` as booleans; a before-validator now accepts both) |
+| T-I2-2 unknown gate `G9` rejected with file, line and allowed names | PASS (`targets.yaml:4`) |
+| T-I2-3 gate `after:` unknown stage rejected | PASS |
+| T-I2-4 missing or empty `env_passthrough` rejected | PASS |
+| T-I2-5 any `ANTHROPIC_*` variable in `env_passthrough` rejected (D4) | PASS, four variants |
+| extra: `--bare` and non-`-p` commands rejected; missing stage prompt file detected; YAML syntax error reports line | PASS |
+| T-I2-6 schema export stable; `schemas/{targets,flow,agent}.schema.json` written | PASS |
+| T-I3-1 JQL search follows `nextPageToken` pagination (`/rest/api/3/search/jql`) | PASS |
+| T-I3-2 transition by name posts the right id | PASS |
+| T-I3-3 unavailable transition lists the available names | PASS |
+| T-I3-4 429 with `Retry-After: 7` retried once after 7 s (sleep injected) | PASS |
+| T-I3-5 dry-run makes no write calls, logs three intents | PASS |
+| T-I3-7 token absent from error text and logs | PASS |
+| T-I3-6 live smoke | SKIP (deselected: `live` marker; runs in 6a with `AINS_LIVE=1`) |
+| T-I4-1 clone, branch, commit, push argv sequence; commit message starts with the key | PASS |
+| T-I4-2 draft PR create, ready, merge refused without human approval | PASS |
+| extra: merge proceeds with human approval + green `ci`; agent-marked or bot-authored approvals never count; label approval mode; merge refused on red `ci` | PASS |
+| T-I4-3 review events `COMMENT`/`REQUEST_CHANGES` carry the agent marker; `APPROVE` refused | PASS |
+| T-I4-4 PR list by label | PASS |
+| T-I4-5 error wrapping with stderr; one retry on network error only | PASS (after fixing the fake runner's key) |
+| T-I5-1 state survives reload | PASS |
+| T-I5-2 upsert once; `active_keys` excludes released | PASS |
+| T-I5-3 1,000 events ordered, read in < 0.5 s | PASS |
+| T-I5-4 unwritable path fails at start-up | PASS |
+| suite | `uv run pytest`: 35 passed, 1 deselected (live) |
+
+**Deviation from the test plan.** The GitHub client takes an injected runner instead of a fake `gh` script on `PATH`; the shell-script fake would be awkward on Windows and the injected runner tests the same argv. A real fake `gh` arrives with the L2 dry-run harness (I18).
+
+**Design finding, needs a decision before 6a.** GitHub does not let a PR author approve their own PR. The orchestrator opens PRs with niloyray's PAT, and niloyray is also the human reviewer, so G3 by PR review is impossible on a single account. Two options are implemented in `github.py`: `approval_mode: review` (needs a second account for the orchestrator, e.g. `ains-bot`, so `bot_login` reviews never count) and `approval_mode: label` (the human adds label `g3-approved`; branch protection then requires only the `ci` check). Default for the sandbox is pending the user's choice.
+

@@ -73,9 +73,7 @@ def session_status(key: str, as_json: bool = typer.Option(False, "--json")) -> N
 
 
 @target_app.command("add")
-def target_add(
-    repo: str, jira_key: str, jira_name: str, dry_run: bool = typer.Option(False, "--dry-run")
-) -> None:
+def target_add(repo: str, jira_key: str, jira_name: str, dry_run: bool = typer.Option(False, "--dry-run")) -> None:
     """Onboard a project: Jira project, GitHub repo, protection, environments, secrets, templates."""
     typer.echo(NOT_YET)
 
@@ -87,9 +85,7 @@ def target_remove(repo: str, dry_run: bool = typer.Option(False, "--dry-run")) -
 
 
 @app.command()
-def poll(
-    once: bool = typer.Option(False, "--once"), dry_run: bool = typer.Option(False, "--dry-run")
-) -> None:
+def poll(once: bool = typer.Option(False, "--once"), dry_run: bool = typer.Option(False, "--dry-run")) -> None:
     """Poll Jira and the target repos; claim stories and advance sessions."""
     typer.echo(NOT_YET)
 

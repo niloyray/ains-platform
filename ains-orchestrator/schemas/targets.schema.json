@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "Target": {
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+          "title": "Repo",
+          "type": "string"
+        },
+        "default_branch": {
+          "default": "main",
+          "title": "Default Branch",
+          "type": "string"
+        },
+        "flow": {
+          "default": "story",
+          "title": "Flow",
+          "type": "string"
+        },
+        "gates": {
+          "additionalProperties": {
+            "enum": [
+              "on",
+              "off"
+            ],
+            "type": "string"
+          },
+          "title": "Gates",
+          "type": "object"
+        },
+        "review_label": {
+          "default": "ai-review",
+          "title": "Review Label",
+          "type": "string"
+        },
+        "approval_mode": {
+          "default": "review",
+          "enum": [
+            "review",
+            "label"
+          ],
+          "title": "Approval Mode",
+          "type": "string"
+        },
+        "approval_label": {
+          "default": "g3-approved",
+          "title": "Approval Label",
+          "type": "string"
+        },
+        "execution_lane_field_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Execution Lane Field Id"
+        }
+      },
+      "required": [
+        "repo"
+      ],
+      "title": "Target",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "targets": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Target"
+      },
+      "title": "Targets",
+      "type": "object"
+    }
+  },
+  "title": "TargetsFile",
+  "type": "object"
+}
