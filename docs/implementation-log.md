@@ -283,3 +283,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | retrigger | empty commit `253d3df` pushed from the orchestrator's own workspace (keeps its local branch in sync); CI re-runs with the fixed reusable workflow; the orchestrator will see the new head and post a second review (new-commit rule, T-I10-3 live) |
 | waiting on | green `ci` on the new head, second review, then the human G3 label |
 
+### Flow change from the acceptance run: CI failure at G3 is a rework, not a dead end
+
+| Event | Result |
+|-------|--------|
+| CI on the retriggered head `253d3df` | FAIL on lint: ruff flagged `subprocess.run` without `check=` in the agent's test. A real finding, and with CI red G3 could never pass, so the story would have waited forever |
+| flow change | at `wait_g3`, a failed `ci` check sends the story back to the implement stage with the failed-step log excerpt as rework input (`gh run view --log-failed`), at most two rounds, then Blocked with a message for a human. Jira gets a comment per round |
+| label-mode rework | GitHub also forbids "request changes" on one's own PR, so label mode gained `g3-rework`: the human adds the label and writes the reason as a PR comment; the orchestrator removes the label and re-runs implement with that comment. Label created on the sandbox and by onboarding |
+| tests | three new flow tests (CI rework with log, bounded rounds, label rework); 94 pass. Container rebuilt and restarted |
+| expected next | review of head `253d3df` (if not finished before the restart), then CI-failure rework → implement agent fixes the lint finding → push → CI → review → `wait_g3` with green CI |
+
