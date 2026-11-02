@@ -202,6 +202,130 @@ class JiraClient:
                     names.append(st["name"])
         return names
 
+    def ensure_statuses(self, key: str, wanted: list[tuple[str, str]]) -> list[str]:
+        """Add missing statuses to a team-managed project's workflow (new statuses + workflows APIs).
+
+        `wanted` is a list of (status name, category) with category in TODO, IN_PROGRESS, DONE.
+        Every added status gets a GLOBAL transition, which is how team-managed workflows allow any move.
+        Returns the names that were added. Idempotent.
+        """
+        import uuid
+
+        project = self.get_project(key)
+        pid = project["id"]
+        issue_type = next(t["id"] for t in project["issueTypes"] if t["name"] != "Subtask")
+        r = self._request("GET", "/rest/api/3/statuses/search", params={"projectId": pid, "maxResults": 200})
+        self._check(r, f"statuses search {key}")
+        by_name = {st["name"]: st for st in r.json().get("values", [])}
+        missing = [(n, cat) for n, cat in wanted if n not in by_name]
+        if missing:
+            if self.dry_run:
+                self._dry(f"create statuses in {key}: {[n for n, _ in missing]}")
+            else:
+                body = {
+                    "scope": {"type": "PROJECT", "project": {"id": pid}},
+                    "statuses": [{"name": n, "statusCategory": cat} for n, cat in missing],
+                }
+                r = self._request("POST", "/rest/api/3/statuses", json=body)
+                self._check(r, f"create statuses {key}")
+                for st in r.json():
+                    by_name[st["name"]] = st
+        r = self._request(
+            "POST",
+            "/rest/api/3/workflows",
+            json={"projectAndIssueTypes": [{"projectId": pid, "issueTypeId": issue_type}]},
+        )
+        self._check(r, f"workflows {key}")
+        data = r.json()
+        if not data.get("workflows"):
+            raise JiraError(f"{key}: no project workflow returned (company-managed project?)")
+        wf = data["workflows"][0]
+        details = {st["id"]: st for st in data.get("statuses", [])}
+        have = {st["statusReference"] for st in wf["statuses"]}
+        new: list[tuple[str, str]] = []
+        for n, _cat in wanted:
+            st = by_name.get(n)
+            if st and st["id"] not in have:
+                new.append((n, st["id"]))
+                details[st["id"]] = {"id": st["id"], "name": n, "statusCategory": st["statusCategory"]}
+        if not new:
+            return []
+        if self.dry_run:
+            self._dry(f"add statuses to workflow of {key}: {[n for n, _ in new]}")
+            return [n for n, _ in new]
+        ref: dict[str, str] = {}
+
+        def uref(sid: str) -> str:
+            return ref.setdefault(sid, str(uuid.uuid4()))
+
+        statuses = [
+            {
+                "statusReference": uref(st["statusReference"]),
+                "layout": st.get("layout"),
+                "properties": st.get("properties", {}),
+            }
+            for st in wf["statuses"]
+        ]
+        transitions = []
+        for t in wf["transitions"]:
+            t2 = dict(t)
+            if t2.get("toStatusReference"):
+                t2["toStatusReference"] = uref(t2["toStatusReference"])
+            if t2.get("from"):
+                t2["from"] = [dict(f, statusReference=uref(f["statusReference"])) for f in t2["from"]]
+            transitions.append(t2)
+        next_id = max(int(t["id"]) for t in wf["transitions"]) + 10
+        for n, sid in new:
+            statuses.append({"statusReference": uref(sid), "layout": None, "properties": {}})
+            transitions.append(
+                {
+                    "id": str(next_id),
+                    "name": n,
+                    "type": "GLOBAL",
+                    "toStatusReference": uref(sid),
+                    "actions": [],
+                    "validators": [],
+                    "triggers": [],
+                    "conditions": {"operation": "ALL", "conditions": []},
+                    "properties": {},
+                    "links": [],
+                }
+            )
+            next_id += 10
+        payload = {
+            "statuses": [
+                {"id": sid, "statusReference": uref(sid), "name": d["name"], "statusCategory": d["statusCategory"]}
+                for sid, d in details.items()
+            ],
+            "workflows": [
+                {
+                    "id": wf["id"],
+                    "version": wf["version"],
+                    "statuses": statuses,
+                    "transitions": transitions,
+                    "defaultStatusMappings": [],
+                    "statusMappings": [],
+                }
+            ],
+        }
+        v = self._request(
+            "POST",
+            "/rest/api/3/workflows/update/validation",
+            json={"payload": payload, "validationOptions": {"levels": ["ERROR"]}},
+        )
+        self._check(v, f"workflow validation {key}")
+        errors = v.json().get("errors") or []
+        if errors:
+            raise JiraError(f"{key}: workflow update rejected: {errors[0].get('message')}")
+        u = self._request("POST", "/rest/api/3/workflows/update", json=payload)
+        self._check(u, f"workflow update {key}")
+        return [n for n, _ in new]
+
+    def get_project(self, key: str) -> dict[str, Any]:
+        r = self._request("GET", f"/rest/api/3/project/{key}")
+        self._check(r, f"project {key}")
+        return r.json()
+
     def delete_project(self, key: str) -> None:
         if self.dry_run:
             self._dry(f"delete project {key}")

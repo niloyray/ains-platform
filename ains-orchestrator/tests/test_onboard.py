@@ -64,6 +64,7 @@ class FakeJira:
         self.statuses = statuses if statuses is not None else REQUIRED_STATUSES
         self.created = []
         self.deleted = []
+        self.fail_ensure = False
 
     def project_exists(self, key):
         return key in self.projects
@@ -74,6 +75,15 @@ class FakeJira:
 
     def project_statuses(self, key):
         return list(self.statuses)
+
+    def ensure_statuses(self, key, wanted):
+        if self.fail_ensure:
+            from ains_orchestrator.errors import JiraError
+
+            raise JiraError("workflow update rejected: test")
+        added = [n for n, _ in wanted if n not in self.statuses]
+        self.statuses = list(self.statuses) + added
+        return added
 
     def delete_project(self, key):
         self.projects.pop(key, None)
@@ -147,7 +157,7 @@ def test_T_I16_3_real_add_runs_every_step(world):
     assert statuses["github repo"] == "done" and statuses["templates"] == "done"
     assert statuses["label ai-review"] == "done" and statuses["secrets"] == "done"
     assert statuses["environments"] == "done" and statuses["branch protection"] == "done"
-    assert statuses["jira project"] == "done" and statuses["jira statuses"] == "exists"
+    assert statuses["jira project"] == "done" and statuses["jira statuses"] == "exists"  # fake ships all 12
     assert statuses["targets.yaml"] == "done" and not rep.failed
     assert jira.created[0][:2] == ("AINSSB", "sandbox")
     assert any("Automation" in m for m in rep.manual)
@@ -176,12 +186,20 @@ def test_T_I16_4_second_run_is_idempotent(world):
     assert (world["root"] / "targets.yaml").read_text().count("AINSSB:") == 1
 
 
-def test_missing_statuses_become_manual_steps(world):
+def test_missing_statuses_are_added_via_api(world):
     jira = FakeJira(statuses=["To Do", "Done"])
     rep = world["make"](jira=jira).add("ains-sandbox", "AINSSB", "sandbox")
     st = next(s for s in rep.steps if s.name == "jira statuses")
-    assert st.status == "manual" and "Specifying" in st.detail
-    assert any("Columns and statuses" in m for m in rep.manual)
+    assert st.status == "done" and "Specifying" in st.detail and "Blocked" in st.detail
+    assert set(REQUIRED_STATUSES) <= set(jira.statuses)
+
+
+def test_status_api_failure_falls_back_to_manual_step(world):
+    jira = FakeJira(statuses=["To Do", "Done"])
+    jira.fail_ensure = True
+    rep = world["make"](jira=jira).add("ains-sandbox", "AINSSB", "sandbox")
+    st = next(s for s in rep.steps if s.name == "jira statuses")
+    assert st.status == "manual" and any("by hand" in m for m in rep.manual)
 
 
 def test_T_I16_7_second_project_and_T_I16_6_remove(world):

@@ -353,17 +353,23 @@ class Onboarder:
             else:
                 self.jira.create_project(key, name, JIRA_TEMPLATE)
                 rep.add("jira project", "done", f"{key} '{name}'")
-            present = self.jira.project_statuses(key)
-            missing = [s for s in REQUIRED_STATUSES if s not in present]
-            if missing:
-                rep.add("jira statuses", "manual", f"missing: {', '.join(missing)}")
-                rep.manual.append(
-                    f"Jira > project {key} > Project settings > Board > Columns and statuses: add the statuses "
-                    f"{', '.join(missing)} (team-managed projects do not expose this via REST). Then re-run "
-                    f"`ains target add` to verify."
+            categories = {"Ready": "TODO", "Done": "DONE"}
+            wanted = [(n, categories.get(n, "IN_PROGRESS")) for n in REQUIRED_STATUSES if n not in ("To Do", "Done")]
+            try:
+                added = self.jira.ensure_statuses(key, wanted)
+                rep.add(
+                    "jira statuses",
+                    "done" if added else "exists",
+                    f"added {', '.join(added)}" if added else "all present",
                 )
-            else:
-                rep.add("jira statuses", "exists", "all 12 present")
+            except JiraError as e:
+                rep.add("jira statuses", "manual", str(e)[:200])
+                present = self.jira.project_statuses(key)
+                missing = [s for s in REQUIRED_STATUSES if s not in present]
+                rep.manual.append(
+                    f"Jira > project {key} > Board > add the statuses {', '.join(missing)} by hand; the "
+                    f"automatic workflow update failed ({str(e)[:120]})."
+                )
             rep.add("jira lane", "exists", "stories carry the label 'ai-native' (no custom field needed)")
             rep.manual.append(
                 f"Jira > project {key} > Project settings > Automation > Create rule 'AI-native intake ack': "

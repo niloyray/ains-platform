@@ -206,3 +206,17 @@ Command: `ains target add ains-sandbox AINSSB sandbox` from the workstation with
 
 **Where Phase 1 stands.** Every offline build item (I1–I18 except the live parts) is done and green: 88 unit tests, image built, workflows linted and proven live (intake-ack, CI, Jira callback), sandbox onboarded. Blocked on: (1) the ten Jira statuses in `AINSSB` (manual UI), (2) `CLAUDE_CODE_OAUTH_TOKEN` for the first agent run (plan step 4.6, T-I8-7), (3) the Jira Automation rule (manual UI; audit trace only, not required for the acceptance run).
 
+### Jira statuses automated (removes the manual step from onboarding)
+
+The user asked whether the API could add the statuses. The legacy workflow APIs cannot touch team-managed projects, but the newer ones can: `POST /rest/api/3/statuses` with `scope.type = PROJECT` creates project-scoped statuses, `POST /rest/api/3/workflows` (bulk get) returns the project's own workflow, and `POST /rest/api/3/workflows/update` (after `/update/validation`) adds statuses and transitions. The first attempt failed validation: the update payload needs caller-chosen UUIDs as `statusReference` with the numeric ids in a separate `id` field. With that, validation returned no errors and the update succeeded.
+
+| Check | Result |
+|-------|--------|
+| ten statuses created in project scope for `AINSSB` | PASS (Ready as TODO, Done kept, the rest IN_PROGRESS) |
+| workflow "Software workflow for project AINSSB" updated with a GLOBAL transition per new status | PASS: validation `errors: []`, update 200 |
+| `GET /project/AINSSB/statuses` | 14 names: the twelve AINS statuses plus the default In Progress and In Review |
+| live transitions by name on `AINSSB-1`: To Do → Ready → Spec Review → To Do | PASS (the orchestrator's `transition()` works unchanged) |
+| ported into the platform: `JiraClient.ensure_statuses()` called by `ains target add`; manual checklist only as a fallback when the API rejects the update | PASS: 89 unit tests; re-run of `ains target add` reports `jira statuses: exists (all present)` |
+
+Remaining manual Jira item: the Automation rule (audit trace only; Jira Automation has no public create API). Not required for the acceptance run.
+
