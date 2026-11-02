@@ -58,7 +58,8 @@ def test_T_I4_1_clone_branch_commit_push_sequence(tmp_path: Path):
     flat = [" ".join(a) for a in r.calls]
     assert flat[0].startswith("gh repo clone niloyray/ains-sandbox")
     assert "git checkout -B AINSSB-1-scaffold" in flat
-    assert any(a.startswith("git commit -q -m AINSSB-1: add scaffold") for a in flat)
+    commit = next(a for a in flat if " commit -q -m AINSSB-1: add scaffold" in a)
+    assert commit.startswith("git -c user.name=") and "user.email=" in commit
     assert flat[-1] == "git push -u origin AINSSB-1-scaffold"
 
 

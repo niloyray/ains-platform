@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import time
 from collections.abc import Callable
@@ -74,6 +75,8 @@ class GitHubClient:
         self._run = runner
         self._sleep = sleep
         self.bot_login = bot_login  # login used by the orchestrator; its own reviews never count as approval
+        self.git_name = os.environ.get("AINS_GIT_NAME", "ains-orchestrator")
+        self.git_email = os.environ.get("AINS_GIT_EMAIL", "ains-orchestrator@users.noreply.github.com")
         self.dry_run_log: list[str] = []
 
     # ------------------------------------------------------------------ process helpers
@@ -128,7 +131,8 @@ class GitHubClient:
         status = self._exec(["git", "status", "--porcelain"], cwd, what="git status")
         if not status.strip():
             return False
-        self._exec(["git", "commit", "-q", "-m", message], cwd, what="git commit")
+        ident = ["-c", f"user.name={self.git_name}", "-c", f"user.email={self.git_email}"]
+        self._exec(["git", *ident, "commit", "-q", "-m", message], cwd, what="git commit")
         return True
 
     def push(self, cwd: Path, branch: str) -> None:
