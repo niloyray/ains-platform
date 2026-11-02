@@ -7,6 +7,6 @@ stages:
   spec:      {prompt: agents/stages/spec.md,      permission_mode: acceptEdits, max_turns: 30}
   plan:      {prompt: agents/stages/plan.md,      permission_mode: acceptEdits, max_turns: 30}
   implement: {prompt: agents/stages/implement.md, permission_mode: acceptEdits, max_turns: 80}
-  review:    {prompt: agents/stages/review.md,    permission_mode: plan,        max_turns: 20, read_only: true}
+  review:    {prompt: agents/stages/review.md,    permission_mode: default,     max_turns: 25, read_only: true}
 retry: {attempts: 2, backoff_seconds: 300}
 wall_clock_limit_minutes: 30

@@ -34,8 +34,8 @@ class FakeProc:
         self.calls: list[dict] = []
         self.stdout, self.rc, self.timed_out, self.fail_first = stdout, rc, timed_out, fail_first
 
-    def __call__(self, argv, cwd, env, timeout_s):
-        self.calls.append({"argv": argv, "cwd": cwd, "env": env, "timeout": timeout_s})
+    def __call__(self, argv, cwd, env, timeout_s, stdin=""):
+        self.calls.append({"argv": argv, "cwd": cwd, "env": env, "timeout": timeout_s, "stdin": stdin})
         if self.fail_first and len(self.calls) == 1:
             return ProcResult(1, "", "transient")
         return ProcResult(self.rc, self.stdout, "", self.timed_out)
@@ -77,14 +77,17 @@ def test_T_I8_1_argv_shape(runner_factory, tmp_path: Path):
     assert argv[argv.index("--permission-mode") + 1] == "acceptEdits"
     assert argv[argv.index("--max-turns") + 1] == "80"
     assert "--bare" not in argv
-    assert "AINSSB-1" in argv[-1] and "implement stage agent" in argv[-1]
+    prompt = proc.calls[0]["stdin"]
+    assert "AINSSB-1" in prompt and "implement stage agent" in prompt
+    assert not any("stage agent" in a for a in argv)  # the prompt is never on the command line
 
 
 def test_review_stage_is_read_only(runner_factory, tmp_path: Path):
     proc = FakeProc(result_json("## Summary\nfine\n\nVERDICT: request_changes"))
     res = runner_factory(proc).run("review", "AINSSB-1", tmp_path, {"pr": 7, "head_sha": "abc"})
     argv = proc.calls[0]["argv"]
-    assert argv[argv.index("--permission-mode") + 1] == "plan" and "--disallowedTools" in argv
+    assert argv[argv.index("--permission-mode") + 1] == "default" and "--disallowedTools" in argv
+    assert argv[-1].startswith("Edit,Write")  # nothing after the tool list that could be swallowed
     assert res.extra["verdict"] == "request_changes"
 
 
@@ -184,3 +187,19 @@ def test_T_I9_1_shipped_prompts_render_with_context(shipped_root: Path):
         assert "AINSSB-1" in out and "{key}" not in out and "{summary}" not in out
     review = (shipped_root / "agents" / "stages" / "review.md").read_text(encoding="utf-8")
     assert "VERDICT:" in review and "Do not approve" in review
+
+
+def test_workspace_is_marked_trusted(runner_factory, tmp_path: Path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    env = dict(PARENT_ENV, HOME=str(home))
+    proc = FakeProc(result_json())
+    template = load_agent(Path(runner_factory(proc).root) / "agents" / "claude-code.yaml")
+    r = ClaudeCodeRunner(template, runner_factory(proc).root, parent_env=env, runner=proc)
+    work = tmp_path / "AINSSB-1"
+    work.mkdir()
+    r.run("spec", "AINSSB-1", work, {})
+    data = json.loads((home / ".claude.json").read_text())
+    assert data["projects"][str(work)]["hasTrustDialogAccepted"] is True
+    r.run("spec", "AINSSB-1", work, {})  # idempotent, file still valid JSON
+    assert json.loads((home / ".claude.json").read_text())["projects"][str(work)]["hasTrustDialogAccepted"] is True

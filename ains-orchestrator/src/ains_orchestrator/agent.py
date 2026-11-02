@@ -52,10 +52,12 @@ class ProcResult:
     timed_out: bool = False
 
 
-ProcRunner = Callable[[list[str], Path, dict[str, str], float], ProcResult]
+ProcRunner = Callable[[list[str], Path, dict[str, str], float, str], ProcResult]
 
 
-def subprocess_proc_runner(argv: list[str], cwd: Path, env: dict[str, str], timeout_s: float) -> ProcResult:
+def subprocess_proc_runner(
+    argv: list[str], cwd: Path, env: dict[str, str], timeout_s: float, stdin: str = ""
+) -> ProcResult:
     try:
         p = subprocess.run(
             argv,
@@ -67,6 +69,7 @@ def subprocess_proc_runner(argv: list[str], cwd: Path, env: dict[str, str], time
             errors="replace",
             timeout=timeout_s,
             shell=False,
+            input=stdin,
         )
     except subprocess.TimeoutExpired as e:
         return ProcResult(
@@ -78,6 +81,29 @@ def subprocess_proc_runner(argv: list[str], cwd: Path, env: dict[str, str], time
     except FileNotFoundError as e:
         return ProcResult(127, "", f"{argv[0]}: not found ({e})")
     return ProcResult(p.returncode, p.stdout, p.stderr)
+
+
+def trust_workspace(workdir: Path, home: str | None) -> None:
+    """Mark `workdir` as trusted in ~/.claude.json so Claude Code applies the repo's .claude/settings.json.
+
+    Headless runs cannot answer the trust dialog; without this the onboarded repo's allow/deny lists are ignored.
+    """
+    cfg_dir = Path(home) if home else Path.home()
+    path = cfg_dir / ".claude.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        data = {}
+    projects = data.setdefault("projects", {})
+    entry = projects.setdefault(str(workdir), {})
+    if entry.get("hasTrustDialogAccepted") is True:
+        return
+    entry["hasTrustDialogAccepted"] = True
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except OSError as e:  # not fatal: the agent still runs, with the repo settings ignored
+        log.warning("could not mark %s trusted in %s: %s", workdir, path, e)
 
 
 def minimal_env(parent: Mapping[str, str], passthrough: list[str]) -> dict[str, str]:
@@ -166,8 +192,7 @@ class ClaudeCodeRunner:
         argv += ["--permission-mode", sc.permission_mode, "--max-turns", str(sc.max_turns)]
         if sc.read_only:
             argv += ["--disallowedTools", "Edit,Write,MultiEdit,NotebookEdit,WebFetch,WebSearch"]
-        argv.append(prompt)
-        return argv
+        return argv  # the prompt goes through stdin (see run): no argv limits, no option swallowing it
 
     def run(self, stage: str, key: str, workdir: Any, context: dict[str, Any]) -> AgentResult:
         if stage not in self.t.stages:
@@ -181,7 +206,8 @@ class ClaudeCodeRunner:
             return AgentResult(False, error="CLAUDE_CODE_OAUTH_TOKEN is not set; the agent cannot authenticate")
         t0 = self._clock()
         log.info("agent %s for %s: %s (max_turns=%s, limit=%ss)", stage, key, argv[0], sc.max_turns, self.wall_clock_s)
-        pr = self._run(argv, Path(workdir), env, self.wall_clock_s)
+        trust_workspace(Path(workdir), env.get("HOME"))
+        pr = self._run(argv, Path(workdir), env, self.wall_clock_s, prompt)
         duration_ms = int((self._clock() - t0) * 1000)
         if pr.timed_out:
             return AgentResult(
