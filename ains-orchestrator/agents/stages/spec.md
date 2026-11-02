@@ -7,7 +7,7 @@ Story `{key}`: **{summary}**
 ## Your task
 
 1. Read `CLAUDE.md` in this repository for its conventions.
-2. Run the Spec Kit skill `/speckit.specify` with the story above as the feature description.
+2. Run the Spec Kit skill `/speckit-specify` with the story above as the feature description.
 3. Spec Kit writes a feature folder under `specs/`. Make sure the final specification is at exactly `specs/{key}/spec.md`
    (move or copy the generated file there if Spec Kit used a numbered folder; leave no duplicate folder behind).
 4. The spec must contain: goal, user-visible behaviour, acceptance criteria as a checklist, out of scope, and open questions.

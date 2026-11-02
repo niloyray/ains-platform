@@ -142,6 +142,31 @@ class JiraClient:
         r = self._request("POST", f"/rest/api/3/issue/{key}/remotelink", json=payload)
         self._check(r, f"remote link {key}")
 
+    def create_issue(
+        self,
+        project_key: str,
+        summary: str,
+        description: str,
+        labels: list[str] | None = None,
+        issue_type: str = "Story",
+    ) -> str:
+        """Create a story and return its key (used by the acceptance run and the live tests)."""
+        payload = {
+            "fields": {
+                "project": {"key": project_key},
+                "summary": summary,
+                "description": _adf(description),
+                "issuetype": {"name": issue_type},
+                "labels": labels or [],
+            }
+        }
+        if self.dry_run:
+            self._dry(f"create issue in {project_key}: {summary!r}")
+            return f"{project_key}-0"
+        r = self._request("POST", "/rest/api/3/issue", json=payload)
+        self._check(r, f"create issue in {project_key}")
+        return str(r.json()["key"])
+
     # ------------------------------------------------------------------ projects (onboarding)
     def project_exists(self, key: str) -> bool:
         r = self._request("GET", f"/rest/api/3/project/{key}")

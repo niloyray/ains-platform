@@ -21,6 +21,14 @@ class FakeRunner:
         self.calls: list[list[str]] = []
         self.stdins: list[str | None] = []
         self.existing_repos: set[str] = set()
+        self.remote_files: dict[str, str] = {}  # what "origin/main" holds, emulated
+
+    def _snapshot(self, dest: Path) -> dict[str, str]:
+        return {
+            str(f.relative_to(dest)).replace("\\", "/"): f.read_text(encoding="utf-8")
+            for f in dest.rglob("*")
+            if f.is_file() and ".git" not in f.parts
+        }
 
     def __call__(self, argv, cwd, stdin=None):
         self.calls.append(argv)
@@ -35,6 +43,15 @@ class FakeRunner:
             dest = Path(argv[4])
             dest.mkdir(parents=True, exist_ok=True)
             (dest / ".git").mkdir(exist_ok=True)
+            for rel, content in self.remote_files.items():
+                (dest / rel).parent.mkdir(parents=True, exist_ok=True)
+                (dest / rel).write_text(content, encoding="utf-8")
+            return RunResult(0, "", "")
+        if j.startswith("git status --porcelain") and cwd is not None:
+            dirty = self._snapshot(Path(cwd)) != self.remote_files
+            return RunResult(0, " M files\n" if dirty else "", "")
+        if j.startswith("git push") and cwd is not None:
+            self.remote_files = self._snapshot(Path(cwd))
             return RunResult(0, "", "")
         if j.startswith("gh api users/"):
             return RunResult(0, "12345\n", "")

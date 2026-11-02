@@ -162,3 +162,25 @@ Files: `ains-orchestrator/Dockerfile`, `docker-compose.yml`; `.github/workflows/
 | T-I16-7 second project onboarded, T-I16-6 `remove` archives the repo, deletes the Jira project, drops the block | PASS (offline) |
 | suite | `uv run pytest`: 88 passed, 1 deselected (live) |
 
+### Step 6a.1 — Sandbox project onboarded (first real run of `ains target add`) · T-I15-1
+
+Command: `ains target add ains-sandbox AINSSB sandbox` from the workstation with `.env` (gitignored) holding the GitHub PAT and Jira token. Three runs: the first created everything but crashed while printing the report (Windows cp1252 console; fixed by reconfiguring stdout with `errors="replace"`); the second failed on a `git commit` with nothing to commit (fixed: commit only when `git status --porcelain` is non-empty) and revealed that Spec Kit 1.2.6 has no `--no-git` flag; the third was clean. Spec Kit installed on the workstation (`uv tool install specify-cli`, 1.2.6); it writes `.specify/` and `.claude/skills/speckit-*` (hyphenated skill names), so the four stage prompts now call `/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, `/speckit-implement`.
+
+| Check | Result |
+|-------|--------|
+| GitHub repo `niloyray/ains-sandbox` | created, public, default branch `main` |
+| templates pushed | `.github/workflows/ci.yml`, `release.yml`, `CLAUDE.md`, `README.md`, `.gitignore`, `.claude/settings.json`; second commit adds `.specify/` and `.claude/skills/` (ten speckit skills) |
+| labels | `ai-review`, `g3-approved`, `ai-native` |
+| secrets and variable | `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_BASE_URL` set on the sandbox repo |
+| environments | `staging`, `production`, required reviewer niloyray |
+| branch protection | `main` requires status check `ci` |
+| Jira project `AINSSB` | created via REST, team-managed ("next-gen") software project, name "sandbox" |
+| Jira statuses | **manual**: team-managed projects ship To Do, In Progress, In Review, Done; the ten AINS statuses (Ready, Specifying, Spec Review, Planning, Plan Review, Implementing, Code Review, Staging, Rework, Blocked) must be added in the Jira UI; the command prints the exact path and re-verifies on the next run |
+| Jira Automation rule | **manual**: checklist printed by the command |
+| `targets.yaml` | `AINSSB -> niloyray/ains-sandbox`, all five gates on, `approval_mode: label` (single-account G3; see the I2–I5 finding) |
+| T-I16-1 dry-run | PASS: ten `[planned]` lines, no change |
+| T-I16-3 real run | PASS for every automated step; two steps manual by design |
+| T-I16-4 idempotent re-run | PASS: `exists` for repo, project, targets block; labels, secrets, environments, protection re-applied without error |
+| T-I15-1 `repository_dispatch` → intake-ack | PASS: run 41495999419 succeeded, comment "Accepted into the AI-native lane…" on `AINSSB-1` |
+| smoke story | `AINSSB-1` "Sandbox smoke story" created via the new `JiraClient.create_issue` (label `sandbox`, not AI-native); the acceptance story will therefore be `AINSSB-2` |
+

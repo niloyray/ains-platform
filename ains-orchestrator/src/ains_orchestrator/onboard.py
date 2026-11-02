@@ -201,7 +201,8 @@ class Onboarder:
                     p.write_text(content, encoding="utf-8")
                     changed += 1
             speckit = self._speckit_init(dest)
-            if changed or speckit:
+            dirty = self.gh.exec(["git", "status", "--porcelain"], cwd=dest, what="git status").strip()
+            if dirty:
                 self.gh.exec(["git", "add", "-A"], cwd=dest, what="git add")
                 self.gh.exec(
                     [
@@ -233,7 +234,16 @@ class Onboarder:
             return "specify not installed; run `specify init --here --integration claude` in the repo later"
         try:
             self.gh.exec(
-                [specify, "init", "--here", "--integration", "claude", "--no-git", "--force", "--skip-tls"],
+                [
+                    specify,
+                    "init",
+                    "--here",
+                    "--force",
+                    "--non-interactive",
+                    "--integration",
+                    "claude",
+                    "--ignore-agent-tools",
+                ],
                 cwd=dest,
                 what="specify init",
             )

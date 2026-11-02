@@ -8,4 +8,11 @@
 #     flow: story
 #     gates: {G1: on, G2: on, G3: on, G4: on, G5: on}
 #     review_label: ai-review
-targets: {}
+targets:
+  AINSSB:
+    repo: niloyray/ains-sandbox
+    default_branch: main
+    flow: story
+    gates: {G1: on, G2: on, G3: on, G4: on, G5: on}
+    review_label: ai-review
+    approval_mode: label

@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +26,14 @@ from ains_orchestrator.poller import Poller
 from ains_orchestrator.store import Store
 from ains_orchestrator.watcher import PRWatcher
 from ains_orchestrator.workspace import Workspace
+
+# Windows consoles default to cp1252; never let a report line crash the command.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(errors="replace")
+        except (ValueError, OSError):
+            pass
 
 HELP = "AINS orchestrator: Jira stories to merged PRs through stage agents and gates."
 app = typer.Typer(no_args_is_help=True, help=HELP)
