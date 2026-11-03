@@ -740,6 +740,17 @@ git push</code></pre>
 </ul>
 <p>Onboarding, removal and verify run as background jobs; the job page refreshes until the report is complete. The portal is only reachable from the laptop itself.</p>
 
+<h3>Asking Claude Code instead: the management skill</h3>
+<p>If you work in a Claude Code terminal opened in the platform repository (or in the PoC folder above it), a skill called <code>ains-management</code> is loaded. It is not a command with fixed subcommands: you write a request in plain words and Claude turns it into the right platform command, reads the result and answers in your words. Type the slash form to make it explicit, or just ask; both use the same instructions.</p>
+<pre><code>/ains-management status
+/ains-management what is waiting for me
+/ains-management why is AINSSB-3 blocked
+/ains-management what did the implement agent say on AINSSB-3
+/ains-management verify the sandbox
+/ains-management onboard ains-poc as AINSPOC at L3, dry run
+/ains-management start the platform and show the log</code></pre>
+<p>The skill keeps no record of its own. Every answer is read from the platform's store in the container, the same database the portal shows, so the terminal and the portal never disagree. It will not pass a gate, merge, approve as the agent, or put a token anywhere but the <code>.env</code> file and repository secrets. It approves a gate only when you name the exact action, for example "add g3-approved to PR 5", and then does only that.</p>
+
 <h3>The one-line answer: what is waiting for me?</h3>
 <pre><code>docker compose exec orchestrator ains status</code></pre>
 <p>Lists every story the platform knows with its stage and, under it, the one thing a person can do now, for example:</p>
