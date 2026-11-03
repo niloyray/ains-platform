@@ -242,3 +242,28 @@ def test_label_mode_rework_label_returns_to_implement_with_the_comment(world):
     assert "g3-rework" not in gh.prs[7].labels
     assert e.step(st.get_session(STORY.key), STORY) == "review"
     assert agents.runs[-1][2]["rework_comment"] == "please rename the script to health_check.py"
+
+
+def test_T_I7_13_transient_github_error_at_a_gate_does_not_block(world):
+    from ains_orchestrator.errors import GitHubError
+    from ains_orchestrator.flow import MAX_WAIT_ERRORS
+
+    st, gh = world["store"], world["gh"]
+    e = _to_g3(world)
+    real = gh.pr_view
+
+    def flaky(*a, **k):
+        raise GitHubError("gh pr view failed (exit 1): HTTP 503: No server is currently available")
+
+    gh.pr_view = flaky
+    for n in range(1, MAX_WAIT_ERRORS):
+        assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
+        assert st.get_session(STORY.key).attempts == n
+    assert [ev.kind for ev in st.events(STORY.key)].count("wait.error") == MAX_WAIT_ERRORS - 1
+    gh.pr_view = real  # GitHub is back: the wait continues as if nothing happened
+    gh.ci(7, "SUCCESS")
+    assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
+    gh.pr_view = flaky
+    for _ in range(MAX_WAIT_ERRORS):
+        out = e.step(st.get_session(STORY.key), STORY)
+    assert out == "blocked" and "consecutive errors" in st.get_session(STORY.key).last_error

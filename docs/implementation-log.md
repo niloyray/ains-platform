@@ -462,3 +462,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | note | `test_T_I2_1_shipped_files_validate` fails while `AINSSB2` is in `targets.yaml`; that is the D16 guard working, and it passes again after `target remove ains-sandbox-2` at the end of the L4 run |
 | Jira | a freshly created story took about 5 minutes to appear in JQL results (search index lag), so "claimed within a minute" holds for stories moved to Ready, not for ones created seconds earlier |
 
+### Defect: a transient GitHub 503 at G3 blocked a story; gate waits now tolerate transient errors
+
+| Item | Detail |
+|------|--------|
+| observed | AINSSB2-1 waited at `wait_g3` for three hours (user not yet at G3); at 13:08 UTC `gh pr view` returned `HTTP 503: No server is currently available` once and the engine blocked the story, set Jira Blocked and asked for a human |
+| cause | `FlowEngine.step` turned every `AinsError` into a block, including at idempotent wait stages |
+| fix | at `wait_*` stages an error is recorded as a `wait.error` event, `attempts` counts consecutive failures, the stage is kept, and only `MAX_WAIT_ERRORS` (10) in a row block the story; a successful wait keeps the count where it is until the stage changes. Test T-I7-13; 117 pass. Container rebuilt |
+| resume | AINSSB2-1 reset to `wait_g3` with a `manual.reset` event; Jira moved back to Code Review with a comment. The block was the platform's fault, not the story's, which is the one case where state surgery is allowed |
+

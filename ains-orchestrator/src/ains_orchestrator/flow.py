@@ -33,6 +33,7 @@ STAGE_OUTPUTS = {
 }
 TERMINAL = {"released", "abandoned"}
 MAX_CI_REWORK_ROUNDS = 2
+MAX_WAIT_ERRORS = 10  # consecutive Jira/GitHub errors while waiting at a gate before the story is blocked
 AGENT_REVIEW_MARKER_TEXT = "[ains review agent]"
 
 
@@ -114,6 +115,15 @@ class FlowEngine:
             self.store.add_event(session.key, "merge.waiting", {"reason": str(e)})
             return session.stage
         except AinsError as e:
+            if stage.startswith("wait_"):
+                # Waiting is idempotent: a transient Jira or GitHub error (503, timeout) must not block the story.
+                n = session.attempts + 1
+                self.store.add_event(session.key, "wait.error", {"stage": stage, "attempt": n, "error": str(e)[:300]})
+                if n < MAX_WAIT_ERRORS:
+                    self.store.update_session(session.key, attempts=n, last_error=str(e))
+                    log.warning("%s: %s (attempt %s/%s, staying at %s)", session.key, e, n, MAX_WAIT_ERRORS, stage)
+                    return stage
+                return self._fail(session, f"{MAX_WAIT_ERRORS} consecutive errors while waiting at {stage}: {e}")
             return self._fail(session, str(e))
 
     # ------------------------------------------------------------------ stage handlers
