@@ -200,8 +200,14 @@ def targets_list() -> None:
 
 
 # ----------------------------------------------------------------------------- status (what is a human waiting to do?)
-def next_action(s: Session, target: Target | None) -> str:
+def next_action(s: Session, target: Target | None, jira_status: str | None = None) -> str:
     """The one thing a person can do for this story right now, in their words."""
+    if s.stage == "released" and jira_status == "Done":
+        return "Done: released through G4 and G5; nothing to do"
+    if s.stage == "released" and jira_status == "Staging":
+        return (
+            "G5: in GitHub Actions open the release run, Review deployments, approve production; Jira then shows Done"
+        )
     pr = f"PR #{s.pr_number}" if s.pr_number else "the PR"
     label_mode = target is None or target.approval_mode == "label"
     approve = f"add label {target.approval_label if target else 'g3-approved'}" if label_mode else "approve the PR"
@@ -226,11 +232,26 @@ def status(as_json: bool = typer.Option(False, "--json")) -> None:
     """Every story the platform knows, its stage, and what a person must do next."""
     rt = build_runtime(need_jira=False)
     sessions = sorted(rt.store.list_sessions(), key=lambda x: x.updated, reverse=True)
+    jira: JiraClient | None = None  # optional: lets "released" stories report Staging/Done from Jira
+    if all(os.environ.get(v) for v in ("JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN")):
+        try:
+            jira = JiraClient(os.environ["JIRA_BASE_URL"], os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"])
+        except AinsError:
+            jira = None
+
+    def jira_status(sess: Session) -> str | None:
+        if jira is None or sess.stage != "released" or sess.flow == "pr-review":
+            return None
+        try:
+            return jira.status_of(sess.key)
+        except AinsError:
+            return None
+
     if as_json:
         rows = [
             {
                 **{k: getattr(s, k) for k in ("key", "target", "stage", "pr_number", "updated")},
-                "next": next_action(s, rt.config.targets.targets.get(s.target)),
+                "next": next_action(s, rt.config.targets.targets.get(s.target), jira_status(s)),
             }
             for s in sessions
         ]
@@ -242,7 +263,7 @@ def status(as_json: bool = typer.Option(False, "--json")) -> None:
     for s in sessions:
         t = rt.config.targets.targets.get(s.target)
         typer.echo(f"{s.key:<12} {s.stage:<10} pr=#{s.pr_number or '-'}  updated {s.updated}")
-        typer.echo(f"    next: {next_action(s, t)}")
+        typer.echo(f"    next: {next_action(s, t, jira_status(s))}")
 
 
 # ----------------------------------------------------------------------------- sessions

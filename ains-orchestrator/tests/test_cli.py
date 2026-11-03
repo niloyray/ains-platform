@@ -98,5 +98,7 @@ def test_next_action_covers_every_stage():
     assert "Planning" in next_action(sess("wait_g1"), None)
     assert "Implementing" in next_action(sess("wait_g2"), None)
     assert "Review deployments" in next_action(sess("released"), None)
+    assert next_action(sess("released"), None, "Done").startswith("Done")
+    assert next_action(sess("released"), None, "Staging").startswith("G5")
     assert "nothing to do" in next_action(sess("implement"), None)
     assert "merging it is yours" in next_action(sess("pr_reviewed", flow="pr-review"), None)
