@@ -225,3 +225,68 @@ def test_T_I16_7_second_project_and_T_I16_6_remove(world):
 def test_invalid_key_rejected(world):
     with pytest.raises(Exception, match="not a valid Jira project key"):
         world["make"]().add("x", "bad-key", "x")
+
+
+class _VerifyGh:
+    """Canned gh answers keyed by the first words of argv; anything else raises GitHubError."""
+
+    def __init__(self, answers):
+        self.answers = answers
+
+    def exec(self, argv, cwd=None, *, write=False, what="", stdin=None):
+        from ains_orchestrator.errors import GitHubError
+
+        joined = " ".join(argv)
+        for prefix, out in self.answers.items():
+            if joined.startswith(prefix):
+                if out is None:
+                    raise GitHubError(f"404 {what}")
+                return out
+        raise GitHubError(f"unexpected {joined}")
+
+
+class _VerifyJira:
+    def __init__(self, exists=True, statuses=None):
+        self._exists, self._statuses = exists, statuses or []
+
+    def project_exists(self, key):
+        return self._exists
+
+    def project_statuses(self, key):
+        return self._statuses
+
+
+def test_T_I16_7_verify_target_reports_each_missing_piece():
+    from types import SimpleNamespace
+
+    from ains_orchestrator.onboard import REQUIRED_STATUSES, verify_target
+
+    answers = {
+        "gh repo view": '{"name": "ains-sandbox", "defaultBranchRef": {"name": "main"}}',
+        "gh api repos/o/ains-sandbox/contents/.github/workflows/ci.yml": ".github/workflows/ci.yml",
+        "gh api repos/o/ains-sandbox/contents/": None,  # every other file missing
+        "gh label list": "ai-review\ng3-approved\nai-native",
+        "gh secret list": "JIRA_EMAIL",
+        "gh api repos/o/ains-sandbox/environments": (
+            '[{"name": "staging", "protection_rules": [{"type": "required_reviewers"}]},'
+            ' {"name": "production", "protection_rules": []}]'
+        ),
+        "gh api repos/o/ains-sandbox/branches/main/protection": '["ci"]',
+    }
+    targets = {"AINSSB": SimpleNamespace(repo="o/ains-sandbox")}
+    checks = verify_target(
+        _VerifyGh(answers),
+        _VerifyJira(statuses=REQUIRED_STATUSES[:-1]),
+        repo="o/ains-sandbox",
+        jira_key="AINSSB",
+        targets=targets,
+    )
+    by = {c.name: c for c in checks}
+    assert by["github repo"].ok and by["file .github/workflows/ci.yml"].ok and not by["file CLAUDE.md"].ok
+    assert not by["labels"].ok and "g3-rework" in by["labels"].detail
+    assert by["secret JIRA_EMAIL"].ok and not by["secret JIRA_API_TOKEN"].ok
+    assert by["environment staging"].ok and not by["environment production"].ok
+    assert not by["branch protection"].ok and "['ci']" in by["branch protection"].detail
+    assert by["jira project"].ok and not by["jira statuses"].ok and "Blocked" in by["jira statuses"].detail
+    assert by["targets.yaml"].ok
+    assert not verify_target(_VerifyGh(answers), None, repo="o/ains-sandbox", jira_key="AINSSB", targets={})[-1].ok

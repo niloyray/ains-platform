@@ -89,6 +89,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
     <li><span class="num">10</span><a href="#clients">Jira, GitHub and workspace clients</a></li>
     <li><span class="num">11</span><a href="#actions">The GitHub Actions side</a></li>
     <li><span class="num">12</span><a href="#onboarding">Onboarding internals</a></li>
+    <li><span class="num">12b</span><a href="#scaffold">Acceptance scaffolding and status</a></li>
     <li><span class="num">13</span><a href="#devloop">Development loop</a></li>
     <li><span class="num">14</span><a href="#extend">Extending the platform</a></li>
     <li><span class="num">15</span><a href="#invariants">Invariants and security model</a></li>
@@ -241,7 +242,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
 <div class="tablewrap">
 <table>
   <tr><th>Module</th><th>Owns</th><th>Key entry points</th></tr>
-  <tr><td><code>cli.py</code></td><td>the <code>ains</code> command; wires config, store, clients, engine factory</td><td><code>poll</code>, <code>doctor</code>, <code>targets list</code>, <code>target add/remove</code>, <code>session status/dispatch/advance</code>, <code>agent list</code>, <code>flow list</code></td></tr>
+  <tr><td><code>cli.py</code></td><td>the <code>ains</code> command; wires config, store, clients, engine factory; <code>next_action()</code> turns a session stage into the human's next step</td><td><code>poll</code>, <code>status</code>, <code>doctor</code>, <code>targets list</code>, <code>target add/remove/verify</code>, <code>session status/dispatch/advance</code>, <code>agent list</code>, <code>flow list</code></td></tr>
   <tr><td><code>config.py</code></td><td>pydantic models <code>Config</code>, <code>Target</code>, <code>Flow</code>, <code>AgentTemplate</code>; YAML loading; validators (gates on/off, forbidden env passthrough, no <code>--bare</code>)</td><td><code>load_config(root)</code>, <code>export_schemas()</code></td></tr>
   <tr><td><code>poller.py</code></td><td>one cycle: claim Ready stories, step active sessions, resume Blocked ones</td><td><code>Poller.cycle()</code>, <code>jql</code></td></tr>
   <tr><td><code>flow.py</code></td><td><code>FlowEngine</code>: claim, step, stage handlers, gates, rework, blocking, PR review posting</td><td><code>claim(story)</code>, <code>step(session, story)</code></td></tr>
@@ -458,6 +459,24 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
   <li><b>targets.yaml:</b> append the block. Running inside the container this file is read-only, so onboarding is run on the host with <code>uv run ains target add</code>.</li>
 </ol>
 <p><code>remove</code> reverses the platform-owned pieces and leaves the repository unless <code>--delete-repo</code>.</p>
+
+<h2 id="scaffold"><span class="num">12b</span>Acceptance scaffolding and where the PoC stands</h2>
+<p>Three layers prove the platform, from cheapest to most real. Run the first two on every change; run the relevant rows of the third on the sandbox before closing a milestone.</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Layer</th><th>What</th><th>How</th><th>Ids</th></tr>
+  <tr><td>Unit and flow</td><td>every module against the fakes; the full flow with <code>DryRunAgents</code>; the state table row by row</td><td><code>uv run pytest -q</code>, about 100 tests, offline</td><td>T-I1 to T-I19 in <code>plan/ains-platform-test-plan.md</code>; test functions carry the id in their name</td></tr>
+  <tr><td>Read-only live checks</td><td>credentials and tools (<code>ains doctor</code>); a project's onboarding artifacts (<code>ains target verify</code>); what every story waits for (<code>ains status</code>)</td><td>the three commands; exit 1 on any failure, so they can be scripted</td><td>T-L6-*, T-I16-7, T-I12-5/6</td></tr>
+  <tr><td>Live acceptance</td><td>a story through the sandbox with every gate, every rework path, CI failure, block and resume, human-lane review, gates off, second onboarding and removal</td><td>the 13-row checklist in the user guide, section 11</td><td>plan steps 8.1 to 8.13 and 6a.2</td></tr>
+</table>
+</div>
+<p><code>verify_target()</code> in <code>onboard.py</code> is the read-only mirror of <code>Onboarder.add()</code>; when <code>add</code> gains a step, give <code>verify</code> the matching check and the test <code>T-I16-7</code> a matching line. <code>next_action()</code> in <code>cli.py</code> is the single place that translates stages into human instructions; the user guide's gate table and the Jira gate comments should keep saying the same thing.</p>
+<h3>Status on 3 November 2026</h3>
+<ul>
+  <li><b>Done:</b> build items I1 to I19; 101 offline tests; sandbox onboarded and verified; acceptance story AINSSB-2 through G1, G2, G3 (label), merge, G4 (Staging) with one automatic CI-failure rework on the way; G5 waiting on the user; three platform defects found by the run and fixed (check name <code>ci / ci</code>, CI log excerpt, persisted agent replies); <code>uvx ruff</code> allowed for agents; timestamped poll log; user guide and this manual.</li>
+  <li><b>In progress:</b> human-lane review of sandbox PR #1 (plan 8.12), waiting for the <code>ai-review</code> label.</li>
+  <li><b>Next:</b> G5 on the AINSSB-2 release run; rework paths G1, G2, G3-label and block/resume on a second sandbox story (8.13); second onboarding and removal proof (6a.2); gates-off run; <code>docs/divergence.md</code> and milestone close (step 9); credential evidence screenshots T-L6-1/5; rotate the three tokens after the PoC. Phase 2 starts by onboarding <code>ains-poc</code> / <code>AINSPOC</code>.</li>
+</ul>
 
 <h2 id="devloop"><span class="num">13</span>Development loop</h2>
 <pre><code>cd ains-orchestrator

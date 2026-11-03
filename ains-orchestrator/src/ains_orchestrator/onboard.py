@@ -498,3 +498,86 @@ def default_templates_dir(config_root: Path) -> Path:
 
 def summarize(rep: Report) -> dict[str, Any]:
     return {"failed": rep.failed, "manual": len(rep.manual), "steps": len(rep.steps)}
+
+
+# ----------------------------------------------------------------------------- verify (read-only)
+@dataclass
+class Check:
+    name: str
+    ok: bool
+    detail: str = ""
+
+
+def verify_target(
+    gh: GitHubClient, jira: JiraClient | None, *, repo: str, jira_key: str, targets: dict[str, Any]
+) -> list[Check]:
+    """Read-only check that everything `target add` creates is in place. Nothing is changed."""
+    checks: list[Check] = []
+
+    def add(name: str, ok: bool, detail: str = "") -> None:
+        checks.append(Check(name, ok, detail))
+
+    try:
+        d = json.loads(gh.exec(["gh", "repo", "view", repo, "--json", "name,defaultBranchRef"], what="repo view"))
+        add("github repo", True, f"default branch {(d.get('defaultBranchRef') or {}).get('name', '?')}")
+    except (GitHubError, json.JSONDecodeError) as e:
+        add("github repo", False, str(e)[:120])
+        return checks
+    for path in list(TEMPLATE_FILES.values()) + [".specify", ".claude/skills"]:
+        try:
+            gh.exec(["gh", "api", f"repos/{repo}/contents/{path}", "--jq", ".path // .[0].path"], what="contents")
+            add(f"file {path}", True)
+        except GitHubError:
+            add(f"file {path}", False, "missing")
+    try:
+        names = gh.exec(["gh", "label", "list", "--repo", repo, "--json", "name", "--jq", ".[].name"], what="labels")
+        missing = [lb for lb in LABELS if lb not in names.split()]
+        add("labels", not missing, "all present" if not missing else "missing " + ", ".join(missing))
+    except GitHubError as e:
+        add("labels", False, str(e)[:120])
+    try:
+        names = gh.exec(["gh", "secret", "list", "--repo", repo, "--json", "name", "--jq", ".[].name"], what="secrets")
+        for s in ("JIRA_EMAIL", "JIRA_API_TOKEN"):
+            add(f"secret {s}", s in names.split(), "set" if s in names.split() else "missing")
+    except GitHubError as e:
+        add("secrets", False, str(e)[:120])
+    try:
+        envs = json.loads(gh.exec(["gh", "api", f"repos/{repo}/environments", "--jq", ".environments"], what="envs"))
+        by_name = {e.get("name"): e for e in envs or []}
+        for n in ("staging", "production"):
+            e = by_name.get(n)
+            has_reviewer = bool(e) and any(r.get("type") == "required_reviewers" for r in e.get("protection_rules", []))
+            add(
+                f"environment {n}",
+                has_reviewer,
+                "with required reviewer" if has_reviewer else ("exists, no required reviewer" if e else "missing"),
+            )
+    except (GitHubError, json.JSONDecodeError) as e:
+        add("environments", False, str(e)[:120])
+    try:
+        ctx = json.loads(
+            gh.exec(
+                ["gh", "api", f"repos/{repo}/branches/main/protection/required_status_checks", "--jq", ".contexts"],
+                what="protection",
+            )
+        )
+        add("branch protection", REQUIRED_CHECK_CONTEXT in (ctx or []), f"main requires {ctx}")
+    except (GitHubError, json.JSONDecodeError):
+        add("branch protection", False, "main is not protected")
+    if jira is None:
+        add("jira", False, "no Jira credentials in the environment")
+    else:
+        try:
+            if not jira.project_exists(jira_key):
+                add("jira project", False, f"{jira_key} missing")
+            else:
+                add("jira project", True, jira_key)
+                present = jira.project_statuses(jira_key)
+                missing = [s for s in REQUIRED_STATUSES if s not in present]
+                add("jira statuses", not missing, "all present" if not missing else "missing " + ", ".join(missing))
+        except JiraError as e:
+            add("jira", False, str(e)[:120])
+    t = targets.get(jira_key)
+    t_repo = getattr(t, "repo", None) if t is not None else None
+    add("targets.yaml", t_repo == repo, f"{jira_key} -> {t_repo}" if t is not None else f"no block for {jira_key}")
+    return checks

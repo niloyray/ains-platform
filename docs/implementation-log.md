@@ -348,3 +348,14 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | change | `ains poll` prefixes the cycle line with a UTC timestamp and configures module logging with `asctime` (previously no timestamp and module INFO lines were dropped). `docker compose logs -t` documented as the other way to get times |
 | docs | user guide section 10 "Looking under the hood": who logs what, Docker Desktop, container log and how to read the cycle line, `ains session status`, a Jira JQL filter for platform stories, GitHub views and `gh` commands, the working copy in the container, health commands |
 
+### Self-test scaffolding: `ains status`, `ains target verify`, checklist in the manuals
+
+| Item | Detail |
+|------|--------|
+| `ains status` | every session with stage, PR and the one human action it waits for (`next_action()`); `--json`; empty store prints how to start. Tests T-I12-5, T-I12-6 |
+| `ains target verify <repo> <KEY>` | read-only mirror of onboarding: repo and starter files, labels, secrets, environments with reviewer, protection context `ci / ci`, Jira project and 12 statuses, targets.yaml block; exit 1 on any failure. Test T-I16-7 |
+| poll log | httpx per-request INFO lines silenced (they appeared once module logging was enabled) |
+| docs | user guide: "what is waiting for me", verify, section 11 "Checking the platform yourself" (13-row live checklist) and "Where things stand"; developer manual: section 12b acceptance scaffolding (three layers, ids) and status on 2026-11-03 |
+| tests | 101 pass. Container rebuilt |
+| live state | AINSSB-2: G4 passed, Jira Staging, `production (G5)` waiting; sandbox PR #1 still without `ai-review` label; watch re-armed |
+

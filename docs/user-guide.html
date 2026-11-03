@@ -102,8 +102,9 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
     <li><span class="num">8</span><a href="#agents">The four agents</a></li>
     <li><span class="num">9</span><a href="#artifacts">Where everything lives</a></li>
     <li><span class="num">10</span><a href="#underhood">Looking under the hood</a></li>
-    <li><span class="num">11</span><a href="#trouble">When something goes wrong</a></li>
-    <li><span class="num">12</span><a href="#commands">Command sheet</a></li>
+    <li><span class="num">11</span><a href="#selftest">Checking the platform yourself</a></li>
+    <li><span class="num">12</span><a href="#trouble">When something goes wrong</a></li>
+    <li><span class="num">13</span><a href="#commands">Command sheet</a></li>
   </ol>
 </header>
 
@@ -550,6 +551,19 @@ git push</code></pre>
 </table>
 </div>
 
+<h3>The one-line answer: what is waiting for me?</h3>
+<pre><code>docker compose exec orchestrator ains status</code></pre>
+<p>Lists every story the platform knows with its stage and, under it, the one thing a person can do now, for example:</p>
+<pre><code>AINSSB-2     released   pr=#2  updated 2026-11-03T02:07:40+00:00
+    next: G4/G5: in GitHub Actions open the release run for PR #2, Review deployments, approve staging then production...
+AINSSB-3     wait_g1    pr=#3  updated 2026-11-03T02:40:12+00:00
+    next: G1: in Jira move AINSSB-3 to Planning (approve) or to Rework with a comment (send back)</code></pre>
+<p>Run it whenever you come back to the platform. Add <code>--json</code> for a machine-readable version.</p>
+
+<h3>Is a project onboarded correctly?</h3>
+<pre><code>uv run ains target verify ains-sandbox AINSSB</code></pre>
+<p>Reads, and never changes, everything onboarding should have created: the repository and its starter files, the four labels, the two secrets, the two environments with a required reviewer, the branch protection on main, the Jira project and its twelve statuses, and the entry in <code>targets.yaml</code>. Each line is <code>[ok]</code> or <code>[FAIL]</code> with the reason. Run <code>ains target add</code> again to repair anything that fails; it only creates what is missing.</p>
+
 <h3>Docker Desktop (no terminal)</h3>
 <p>Open Docker Desktop, click <b>Containers</b>, then <code>ains-orchestrator</code>. The <b>Logs</b> tab shows the same text as the commands below, with a search box. A green dot and "Running" next to the name means the platform is alive.</p>
 
@@ -598,7 +612,32 @@ gh run view &lt;run id&gt; --repo niloyray/ains-sandbox --log-failed</code></pre
 docker compose exec orchestrator ains doctor        # tokens, Jira, GitHub, Claude
 docker compose exec orchestrator ains targets list  # which projects are onboarded, with their gates</code></pre>
 
-<h2 id="trouble"><span class="num">11</span>When something goes wrong</h2>
+<h2 id="selftest"><span class="num">11</span>Checking the platform yourself</h2>
+<p>A checklist you can run end to end on the sandbox project without touching the platform code. Each row says what to do and what proves it worked. Do them in order the first time; afterwards any single row is a regression check after a platform change. Write a short story for the rows that need one; a README sentence or a tiny script is enough, and each story takes about ten minutes of wall-clock time plus your gate decisions.</p>
+<div class="tablewrap">
+<table>
+  <tr><th>#</th><th>What you test</th><th>How</th><th>Proof</th></tr>
+  <tr><td>1</td><td>Platform health</td><td><code>docker compose ps</code>, then <code>docker compose exec orchestrator ains doctor</code></td><td>container healthy; every doctor line <code>[ok]</code></td></tr>
+  <tr><td>2</td><td>Project onboarding</td><td><code>uv run ains target verify ains-sandbox AINSSB</code></td><td>every line <code>[ok]</code></td></tr>
+  <tr><td>3</td><td>Status view</td><td><code>docker compose exec orchestrator ains status</code></td><td>each known story listed with a sensible "next"</td></tr>
+  <tr><td>4</td><td>Happy path, all gates</td><td>story with label <code>ai-native</code> → Ready; approve G1, G2, G3, G4, G5 as in section 6</td><td>Jira ends in Done; PR merged; release run green; Jira comments show every step</td></tr>
+  <tr><td>5</td><td>G1 rework</td><td>at Spec Review, comment "add an error case" and move to Rework</td><td>spec agent runs again (comment "G1 rework"), spec.md changes, status back to Spec Review</td></tr>
+  <tr><td>6</td><td>G2 rework</td><td>at Plan Review, comment and move to Rework</td><td>plan agent runs again; tasks.md changes</td></tr>
+  <tr><td>7</td><td>G3 rework by label</td><td>at Code Review, PR comment "rename the script" plus label <code>g3-rework</code></td><td>label removed by the platform; new commit on the PR; new agent review; back to waiting</td></tr>
+  <tr><td>8</td><td>CI failure rework</td><td>write a story that asks for a test which fails on purpose, or wait for a real lint error</td><td>Jira comment "CI failed ... round 1 of 2"; new commit; CI green or, after two rounds, Blocked</td></tr>
+  <tr><td>9</td><td>Blocked and resume</td><td>take any Blocked story, fix the cause, move it to Ready</td><td>comment "resumed"; it continues at the stage that failed, not from spec</td></tr>
+  <tr><td>10</td><td>Human-lane review</td><td>open a PR by hand (or use sandbox PR #1) and add the label <code>ai-review</code></td><td>a review starting <code>[ains review agent]</code> within two minutes; the PR is not merged</td></tr>
+  <tr><td>11</td><td>Gates off</td><td>set <code>gates: {G1: off, G2: off, ...}</code> for the sandbox in <code>targets.yaml</code>, run a story</td><td>Jira comments "G1 auto-approved (gate off for this target)" and no waiting at those gates; restore the file afterwards</td></tr>
+  <tr><td>12</td><td>Never merges alone</td><td>at Code Review with CI green, do nothing for ten minutes</td><td>the PR stays open; <code>ains status</code> keeps naming G3</td></tr>
+  <tr><td>13</td><td>Onboarding a second project</td><td><code>uv run ains target add ains-sandbox2 AINSSB2 "Sandbox 2" --dry-run</code>, then without <code>--dry-run</code>, then <code>target verify</code>, then <code>target remove ains-sandbox2</code></td><td>dry run lists every step as planned; add reports done; verify all ok; remove reports done and the block is gone from <code>targets.yaml</code></td></tr>
+</table>
+</div>
+<p>The platform's own automated tests (about a hundred, run with <code>uv run pytest</code> in the orchestrator folder) cover the same paths offline with fake Jira and GitHub; the rows above are the live confirmation.</p>
+
+<h3>Where things stand</h3>
+<p>As of 3 November 2026, rows 1 to 4 and 8 have been run on the sandbox: story AINSSB-2 went Ready → Done through all five gates, including one automatic CI-failure rework. Row 10 is in progress on sandbox PR #1. Rows 5, 6, 7, 9, 11, 12 and 13 are still to be run. The live diary of what was run, what broke and what was fixed is <code>docs/implementation-log.md</code> in the platform repository; the plan's step table in <code>plan/ainativesdlc_plan.md</code> shows the remaining steps.</p>
+
+<h2 id="trouble"><span class="num">12</span>When something goes wrong</h2>
 <div class="tablewrap">
 <table>
   <tr><th>You see</th><th>What it means</th><th>What to do</th></tr>
@@ -614,9 +653,13 @@ docker compose exec orchestrator ains targets list  # which projects are onboard
 </div>
 <div class="note bad">Two things the platform refuses by design: merging a PR without a human approval and a green check, and running an agent with an API key. If you ever need either, it is a change to the platform, not a setting.</div>
 
-<h2 id="commands"><span class="num">12</span>Command sheet</h2>
+<h2 id="commands"><span class="num">13</span>Command sheet</h2>
 <p>All run on the laptop, in <code>ains-platform/ains-orchestrator</code>.</p>
-<pre><code># container
+<pre><code># what is waiting for me?
+docker compose exec orchestrator ains status
+uv run ains target verify &lt;repo&gt; &lt;KEY&gt;      # onboarding complete?
+
+# container
 docker compose up -d --build          # build (after code changes) and start
 docker compose ps                     # is it healthy?
 docker compose logs -t -f orchestrator   # live log with timestamps; Ctrl+C to stop watching

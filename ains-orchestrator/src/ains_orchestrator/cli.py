@@ -18,14 +18,14 @@ import typer
 
 from ains_orchestrator import __version__
 from ains_orchestrator.agent import ClaudeCodeRunner, DryRunAgents
-from ains_orchestrator.config import Config, load_config
+from ains_orchestrator.config import Config, Target, load_config
 from ains_orchestrator.errors import AinsError
 from ains_orchestrator.flow import FlowEngine, Story, _adf_text
 from ains_orchestrator.github import GitHubClient
 from ains_orchestrator.jira import JiraClient
-from ains_orchestrator.onboard import Onboarder, default_templates_dir
+from ains_orchestrator.onboard import Onboarder, default_templates_dir, verify_target
 from ains_orchestrator.poller import Poller
-from ains_orchestrator.store import Store
+from ains_orchestrator.store import Session, Store
 from ains_orchestrator.watcher import PRWatcher
 from ains_orchestrator.workspace import Workspace
 
@@ -199,6 +199,52 @@ def targets_list() -> None:
         )
 
 
+# ----------------------------------------------------------------------------- status (what is a human waiting to do?)
+def next_action(s: Session, target: Target | None) -> str:
+    """The one thing a person can do for this story right now, in their words."""
+    pr = f"PR #{s.pr_number}" if s.pr_number else "the PR"
+    label_mode = target is None or target.approval_mode == "label"
+    approve = f"add label {target.approval_label if target else 'g3-approved'}" if label_mode else "approve the PR"
+    rework = (
+        f"comment and add label {target.rework_label if target else 'g3-rework'}" if label_mode else "request changes"
+    )
+    if s.flow == "pr-review":
+        return f"human-lane {pr} was reviewed by the agent; merging it is yours"
+    return {
+        "wait_g1": f"G1: in Jira move {s.key} to Planning (approve) or to Rework with a comment (send back)",
+        "wait_g2": f"G2: in Jira move {s.key} to Implementing (approve) or to Rework with a comment (send back)",
+        "wait_g3": f"G3: on {pr} check that ci / ci is green, read the review, then {approve} (or {rework})",
+        "released": f"G4/G5: in GitHub Actions open the release run for {pr}, Review deployments, approve staging "
+        "then production; Jira then shows Staging and Done. Nothing else is left on the platform side",
+        "blocked": f"Blocked: {s.last_error or 'see the Jira comment'}. Fix the cause, then move {s.key} to Ready",
+        "abandoned": "abandoned; nothing to do",
+    }.get(s.stage, f"platform is working on stage {s.stage}; nothing to do until it waits")
+
+
+@app.command()
+def status(as_json: bool = typer.Option(False, "--json")) -> None:
+    """Every story the platform knows, its stage, and what a person must do next."""
+    rt = build_runtime(need_jira=False)
+    sessions = sorted(rt.store.list_sessions(), key=lambda x: x.updated, reverse=True)
+    if as_json:
+        rows = [
+            {
+                **{k: getattr(s, k) for k in ("key", "target", "stage", "pr_number", "updated")},
+                "next": next_action(s, rt.config.targets.targets.get(s.target)),
+            }
+            for s in sessions
+        ]
+        typer.echo(json.dumps(rows, indent=2, default=str))
+        return
+    if not sessions:
+        typer.echo("no stories yet. In Jira: give a story the label ai-native and move it to Ready.")
+        return
+    for s in sessions:
+        t = rt.config.targets.targets.get(s.target)
+        typer.echo(f"{s.key:<12} {s.stage:<10} pr=#{s.pr_number or '-'}  updated {s.updated}")
+        typer.echo(f"    next: {next_action(s, t)}")
+
+
 # ----------------------------------------------------------------------------- sessions
 @session_app.command("status")
 def session_status(key: str, as_json: bool = typer.Option(False, "--json")) -> None:
@@ -276,6 +322,7 @@ def poll(
     # module logs (agent start, claims, warnings) go to stderr with a UTC timestamp, same as the cycle line
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.Formatter.converter = time.gmtime
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per Jira call is noise
     while True:
         rep = poller.cycle()
         wrep = watcher.cycle()
@@ -326,6 +373,32 @@ def target_remove(
     rep = _onboarder(dry_run, owner).remove(repo_name, delete_repo=delete_repo)
     typer.echo(rep.text())
     raise typer.Exit(1 if rep.failed else 0)
+
+
+@target_app.command("verify")
+def target_verify(
+    repo_name: str = typer.Argument(..., help="Repository name under the owner, e.g. ains-sandbox"),
+    jira_key: str = typer.Argument(..., help="Jira project key, e.g. AINSSB"),
+    owner: str = typer.Option("", "--owner"),
+) -> None:
+    """Read-only check that a project's onboarding is complete (repo files, labels, secrets, environments,
+    branch protection, Jira project and statuses, targets.yaml). Changes nothing. Exit 1 on any failure."""
+    root = config_root()
+    load_dotenv(root)
+    gh = GitHubClient(dry_run=False)
+    owner = owner or gh.exec(["gh", "api", "user", "--jq", ".login"], what="gh user").strip()
+    jira = None
+    if all(os.environ.get(v) for v in ("JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN")):
+        jira = JiraClient(os.environ["JIRA_BASE_URL"], os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"])
+    cfg = load_config(root)
+    checks = verify_target(
+        gh, jira, repo=f"{owner}/{repo_name}", jira_key=jira_key.upper(), targets=cfg.targets.targets
+    )
+    failed = False
+    for c in checks:
+        typer.secho(f"[{'ok' if c.ok else 'FAIL'}] {c.name}: {c.detail}", fg=None if c.ok else "red")
+        failed |= not c.ok
+    raise typer.Exit(1 if failed else 0)
 
 
 def _onboarder(dry_run: bool, owner: str) -> Onboarder:
