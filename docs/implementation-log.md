@@ -330,3 +330,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | waiting on | human G3: read the review and the diff on PR #2, confirm CI green, add label `g3-approved` (or `g3-rework` + a comment to send it back). Then the orchestrator squash-merges, `release.yml` builds the image and waits for the `staging` (G4) and `production` (G5) environment approvals, and the story goes to Done |
 | run so far | agent cost for AINSSB-2 across spec, plan, implement x2, review x3: about USD 0.70 (billed to the Max subscription, shown by the CLI for information) |
 
+### G3 passed, PR #2 merged, release waiting at G4; user guide and developer manual written
+
+| Item | Detail |
+|------|--------|
+| G3 | user added `g3-approved`; `gate.passed` G3 (human) 02:06 UTC; squash-merge of PR #2 at 02:07 UTC (`merged` event, head `dcfb214`); workspace cleaned; session `released` |
+| release | run 41564153890 on main: `build` success (no Dockerfile in the sandbox, so no image), `staging (G4)` waiting for the environment approval. A stray release run from the direct settings commit on main (no issue key) was cancelled |
+| docs | `docs/user-guide.html` (for people new to Jira, Git and Actions: words, roles, setup, onboarding, one story through all gates, artifacts, troubleshooting, commands) and `docs/developer-manual.html` (principles, repo map, runtime topology, module map, poll cycle, state machine, persistent state, configuration, agent runner, clients, Actions side, onboarding internals, dev loop, extension recipes, invariants, debugging, backlog), both with inline SVG diagrams |
+| next | user approves `staging` then `production` on the release run → Jira Staging → Done (plan steps 8.8 to 8.11); then 8.12 human-lane PR, 6a.2, 9 |
+

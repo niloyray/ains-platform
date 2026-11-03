@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>AINS Platform Developer Manual</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+/* Layout: same family as the user guide (one column, numbered parts); diagrams keep blue = human, teal = platform, and add grey for third-party services. */
+:root {
+  --bg: #f7f8fa; --fg: #1d2430; --muted: #5b6676; --line: #d6dbe3; --panel: #ffffff;
+  --human: #1f5fbf; --human-soft: #e4edfb; --machine: #0f766e; --machine-soft: #dcf2ee;
+  --ext: #6b7280; --ext-soft: #eceef2;
+  --warn: #9a5a00; --warn-soft: #fff1d6; --bad: #a43e2a; --bad-soft: #fbe5e0;
+  --display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151a21; --fg: #e6eaf0; --muted: #9aa5b5; --line: #2e3745; --panel: #1d242e;
+  --human: #7fb0ff; --human-soft: #1c2d47; --machine: #5fd3c4; --machine-soft: #15332f;
+  --ext: #a3adbd; --ext-soft: #262e3a;
+  --warn: #f0b64b; --warn-soft: #3a2c10; --bad: #ff8d78; --bad-soft: #3d1f19; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151a21; --fg: #e6eaf0; --muted: #9aa5b5; --line: #2e3745; --panel: #1d242e;
+  --human: #7fb0ff; --human-soft: #1c2d47; --machine: #5fd3c4; --machine-soft: #15332f;
+  --ext: #a3adbd; --ext-soft: #262e3a;
+  --warn: #f0b64b; --warn-soft: #3a2c10; --bad: #ff8d78; --bad-soft: #3d1f19; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+main { max-width: 900px; margin: 0 auto; }
+header.top { padding-block: 40px 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 42px); line-height: 1.15; margin: 8px 0 12px; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 48px 0 8px; text-wrap: balance; padding-top: 16px; border-top: 1px solid var(--line); }
+h3 { font-size: 18px; font-weight: 600; margin: 28px 0 6px; text-wrap: balance; }
+h2 .num { font-family: var(--mono); color: var(--muted); font-weight: 500; font-size: .8em; margin-right: 8px; }
+p, li { max-width: 72ch; }
+p.lead { font-size: 18px; color: var(--muted); max-width: 62ch; }
+a { color: var(--human); }
+code { font-family: var(--mono); font-size: .9em; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+pre { font-family: var(--mono); font-size: 13.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; line-height: 1.5; }
+pre code { background: none; border: 0; padding: 0; white-space: pre; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0 8px; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td:first-child { white-space: nowrap; font-weight: 500; }
+td code, th code { white-space: nowrap; }
+.toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 24px; padding: 0; margin: 16px 0 0; list-style: none; }
+.toc li { font-size: 15px; }
+.toc .num { font-family: var(--mono); color: var(--muted); margin-right: 6px; }
+.note { background: var(--warn-soft); border-left: 4px solid var(--warn); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 14px 0; font-size: 15px; }
+.note.bad { background: var(--bad-soft); border-left-color: var(--bad); }
+.note.good { background: var(--machine-soft); border-left-color: var(--machine); }
+figure { margin: 20px 0; }
+figure svg { max-width: 100%; height: auto; display: block; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; max-width: 72ch; }
+.figwrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+ol.proc li { margin: 4px 0; }
+.rule { display: grid; grid-template-columns: 28px 1fr; gap: 10px; margin: 10px 0; padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.rule b { font-family: var(--mono); color: var(--machine); font-weight: 500; }
+a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+</head>
+<body>
+<main>
+<header class="top">
+  <div class="eyebrow">AINS · platform internals</div>
+  <h1>Developer manual for the AINS orchestrator and its delivery workflows</h1>
+  <p class="lead">For engineers who change the platform: how the code is laid out, how a poll cycle turns Jira stories into agent runs and pull requests, what the invariants are, how to test and ship a change, and how to extend the stages, gates and flows.</p>
+  <ol class="toc">
+    <li><span class="num">1</span><a href="#principles">Design principles that constrain the code</a></li>
+    <li><span class="num">2</span><a href="#repo">Repository map</a></li>
+    <li><span class="num">3</span><a href="#runtime">Runtime topology</a></li>
+    <li><span class="num">4</span><a href="#modules">Module map</a></li>
+    <li><span class="num">5</span><a href="#cycle">The poll cycle</a></li>
+    <li><span class="num">6</span><a href="#statemachine">The story state machine</a></li>
+    <li><span class="num">7</span><a href="#data">Persistent state</a></li>
+    <li><span class="num">8</span><a href="#config">Configuration</a></li>
+    <li><span class="num">9</span><a href="#agent">The agent runner</a></li>
+    <li><span class="num">10</span><a href="#clients">Jira, GitHub and workspace clients</a></li>
+    <li><span class="num">11</span><a href="#actions">The GitHub Actions side</a></li>
+    <li><span class="num">12</span><a href="#onboarding">Onboarding internals</a></li>
+    <li><span class="num">13</span><a href="#devloop">Development loop</a></li>
+    <li><span class="num">14</span><a href="#extend">Extending the platform</a></li>
+    <li><span class="num">15</span><a href="#invariants">Invariants and security model</a></li>
+    <li><span class="num">16</span><a href="#debug">Debugging</a></li>
+    <li><span class="num">17</span><a href="#backlog">Known limits and backlog</a></li>
+  </ol>
+</header>
+
+<h2 id="principles"><span class="num">1</span>Design principles that constrain the code</h2>
+<p>These come from the plan's decision log (D1 to D16). The code enforces most of them; a change that breaks one is a design change, not a bug fix.</p>
+<div class="rule"><b>D3</b><span><b>Polling intake, no inbound network.</b> The container publishes no ports. Everything starts with a Jira query once per <code>AINS_POLL_SECONDS</code>. Jira Automation and GitHub <code>repository_dispatch</code> are audit conveniences, never triggers.</span></div>
+<div class="rule"><b>D4</b><span><b>Subscription only.</b> Agents authenticate with <code>CLAUDE_CODE_OAUTH_TOKEN</code> from <code>claude setup-token</code>. <code>minimal_env()</code> strips every <code>ANTHROPIC_*</code> variable and the config schema refuses to pass one through. There is no Anthropic SDK dependency anywhere.</span></div>
+<div class="rule"><b>D14</b><span><b>One harness, one process per stage.</b> The orchestrator never calls a model. It spawns <code>claude -p</code> with a rendered prompt on stdin and reads one JSON result. Stages are spec, plan, implement, review. The orchestrator commits and pushes; agents may not.</span></div>
+<div class="rule"><b>D9</b><span><b>Five switchable gates.</b> A gate that is <code>off</code> is passed by the orchestrator with a Jira comment. A gate that is <code>on</code> waits for a human signal in Jira (status), on the PR (label or review) or in Actions (environment approval).</span></div>
+<div class="rule"><b>D13</b><span><b>The platform is never a target.</b> The platform repo has no CI and no Jira project; it is built from the workstation. Targets are onboarded projects only.</span></div>
+<div class="rule"><b>D16</b><span><b>The sandbox is permanent.</b> <code>niloyray/ains-sandbox</code> with Jira <code>AINSSB</code> is the regression target for every platform change.</span></div>
+
+<h2 id="repo"><span class="num">2</span>Repository map</h2>
+<pre><code>ains-platform/
+├── .github/workflows/
+│   ├── reusable-ci-python.yml      # called by every target's ci.yml; lint + tests, then Jira callback
+│   ├── reusable-release.yml        # called by every target's release.yml; build → GHCR → staging (G4) → production (G5)
+│   ├── reusable-jira-callback.yml  # transition + comment + remote link on an issue
+│   └── intake-ack.yml              # repository_dispatch audit trace (optional)
+├── bootstrap/templates/            # files ains target add pushes into a new repo
+│   ├── ci.yml, release.yml         # thin callers ({{platform_repo}}, {{platform_ref}}, {{jira_base_url}}, {{image_name}})
+│   ├── CLAUDE.md, claude-settings.json, README.md, gitignore
+├── ains-orchestrator/
+│   ├── pyproject.toml              # typer, pydantic, pyyaml, httpx; dev: pytest, respx, ruff
+│   ├── Dockerfile, docker-compose.yml, .env.example, .env (gitignored)
+│   ├── targets.yaml                # onboarded projects (mounted into the container)
+│   ├── flows/story.yaml            # stages, gates, Jira status names
+│   ├── agents/claude-code.yaml     # harness command, per-stage mode and limits
+│   ├── agents/stages/*.md          # prompt templates: spec, plan, implement, review
+│   ├── claude-settings.json        # tool allow/deny list given to every agent
+│   ├── schemas/*.json              # exported JSON schemas of the config models
+│   ├── src/ains_orchestrator/      # the package (section 4)
+│   └── tests/                      # pytest; fakes.py holds the in-memory doubles
+├── docs/                           # implementation-log.md, gates.md, targets.md, this manual, the user guide, diagrams
+└── plan/                           # ainativesdlc_plan.md, ains-platform-test-plan.md (copies of the working plan)</code></pre>
+
+<h2 id="runtime"><span class="num">3</span>Runtime topology</h2>
+<figure>
+<div class="figwrap">
+<svg viewBox="0 0 920 360" role="img" aria-label="On the laptop a single Docker container runs ains poll. It mounts the config files read-only and a named volume for workspaces and the SQLite store. It makes outbound calls only: Jira REST, GitHub via the gh CLI, and claude.ai through the Claude Code CLI it spawns. GitHub Actions in each target repo call the platform's reusable workflows.">
+  <defs><marker id="dm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Sans, Segoe UI, sans-serif" font-size="12" fill="currentColor">
+    <!-- laptop -->
+    <rect x="16" y="16" width="470" height="328" rx="10" fill="none" stroke="var(--line)" stroke-dasharray="6 4"/>
+    <text x="30" y="36" font-size="11" fill="var(--muted)" font-weight="600">LAPTOP · Docker Desktop</text>
+    <!-- container -->
+    <rect x="40" y="52" width="300" height="276" rx="8" fill="var(--machine-soft)" stroke="var(--machine)"/>
+    <text x="190" y="74" text-anchor="middle" font-weight="600">container ains-orchestrator</text>
+    <text x="190" y="90" text-anchor="middle" font-size="11">python 3.12 · gh · node 22 · claude · specify</text>
+    <rect x="60" y="104" width="260" height="36" rx="6" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="190" y="127" text-anchor="middle" font-family="IBM Plex Mono, monospace">ains poll  (every 60 s)</text>
+    <rect x="60" y="150" width="120" height="48" rx="6" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="120" y="170" text-anchor="middle">claude -p</text>
+    <text x="120" y="186" text-anchor="middle" font-size="11">one per stage</text>
+    <rect x="200" y="150" width="120" height="48" rx="6" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="260" y="170" text-anchor="middle">gh / git</text>
+    <text x="260" y="186" text-anchor="middle" font-size="11">subprocess</text>
+    <line x1="190" y1="140" x2="120" y2="150" stroke="currentColor" marker-end="url(#dm)"/>
+    <line x1="190" y1="140" x2="260" y2="150" stroke="currentColor" marker-end="url(#dm)"/>
+    <!-- mounts -->
+    <rect x="60" y="216" width="260" height="46" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="190" y="234" text-anchor="middle" font-size="11">read-only mounts: targets.yaml · flows/ · agents/ · claude-settings.json</text>
+    <text x="190" y="250" text-anchor="middle" font-size="11" fill="var(--muted)">edit on the host, live on the next poll</text>
+    <rect x="60" y="272" width="260" height="46" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="190" y="290" text-anchor="middle" font-size="11">volume ains-workspaces → /work</text>
+    <text x="190" y="306" text-anchor="middle" font-size="11" fill="var(--muted)">/work/&lt;KEY&gt;/ clones · sessions.sqlite</text>
+    <!-- env -->
+    <rect x="360" y="104" width="110" height="60" rx="6" fill="var(--panel)" stroke="var(--line)"/>
+    <text x="415" y="124" text-anchor="middle" font-size="11" font-weight="600">.env (gitignored)</text>
+    <text x="415" y="140" text-anchor="middle" font-size="11">3 tokens</text>
+    <text x="415" y="154" text-anchor="middle" font-size="11">no ANTHROPIC_*</text>
+    <line x1="360" y1="134" x2="340" y2="134" stroke="currentColor" marker-end="url(#dm)"/>
+    <text x="415" y="200" text-anchor="middle" font-size="11" fill="var(--muted)">no published ports</text>
+    <text x="415" y="214" text-anchor="middle" font-size="11" fill="var(--muted)">outbound only</text>
+    <!-- external -->
+    <rect x="560" y="40" width="150" height="54" rx="8" fill="var(--ext-soft)" stroke="var(--ext)"/>
+    <text x="635" y="62" text-anchor="middle" font-weight="600">Jira Cloud</text>
+    <text x="635" y="80" text-anchor="middle" font-size="11">REST v3, API token</text>
+    <rect x="560" y="120" width="150" height="54" rx="8" fill="var(--ext-soft)" stroke="var(--ext)"/>
+    <text x="635" y="142" text-anchor="middle" font-weight="600">GitHub</text>
+    <text x="635" y="160" text-anchor="middle" font-size="11">repos, PRs, labels, PAT</text>
+    <rect x="560" y="200" width="150" height="54" rx="8" fill="var(--ext-soft)" stroke="var(--ext)"/>
+    <text x="635" y="222" text-anchor="middle" font-weight="600">claude.ai</text>
+    <text x="635" y="240" text-anchor="middle" font-size="11">Max subscription, OAuth token</text>
+    <rect x="740" y="120" width="160" height="134" rx="8" fill="var(--ext-soft)" stroke="var(--ext)"/>
+    <text x="820" y="142" text-anchor="middle" font-weight="600">GitHub Actions</text>
+    <text x="820" y="162" text-anchor="middle" font-size="11">target repo: ci.yml, release.yml</text>
+    <text x="820" y="178" text-anchor="middle" font-size="11">↓ workflow_call</text>
+    <text x="820" y="196" text-anchor="middle" font-size="11">platform: reusable-ci-python</text>
+    <text x="820" y="212" text-anchor="middle" font-size="11">reusable-release</text>
+    <text x="820" y="228" text-anchor="middle" font-size="11">reusable-jira-callback</text>
+    <text x="820" y="246" text-anchor="middle" font-size="11" fill="var(--muted)">secrets: inherit</text>
+    <!-- arrows out -->
+    <line x1="320" y1="122" x2="560" y2="67" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm)"/>
+    <text x="440" y="86" font-size="11" fill="var(--muted)">JQL search, transitions, comments</text>
+    <line x1="320" y1="174" x2="560" y2="147" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm)"/>
+    <line x1="180" y1="174" x2="560" y2="227" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm)"/>
+    <line x1="710" y1="147" x2="740" y2="147" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm)"/>
+    <line x1="740" y1="200" x2="710" y2="80" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm)"/>
+    <text x="700" y="300" text-anchor="middle" font-size="11" fill="var(--muted)">PR events start CI; push to main starts release; both call back into Jira</text>
+  </g>
+</svg>
+</div>
+<figcaption>One container, three outbound credentials, nothing listening. Source is baked into the image, so a code change needs <code>docker compose up -d --build</code>; configuration is mounted and does not.</figcaption>
+</figure>
+
+<h2 id="modules"><span class="num">4</span>Module map</h2>
+<figure>
+<div class="figwrap">
+<svg viewBox="0 0 900 330" role="img" aria-label="cli.py builds everything and calls the Poller. The Poller claims stories and asks a FlowEngine per target to step each session. The FlowEngine uses the JiraClient, GitHubClient, Workspace, Store and the agent runner. PRWatcher reviews human-lane PRs. Onboarder uses the Jira and GitHub clients to create projects. config.py is read by all of them.">
+  <defs><marker id="mm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, Consolas, monospace" font-size="12" fill="currentColor">
+    <rect x="380" y="16" width="140" height="40" rx="6" fill="var(--machine-soft)" stroke="var(--machine)"/><text x="450" y="41" text-anchor="middle">cli.py</text>
+    <rect x="200" y="90" width="140" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="270" y="115" text-anchor="middle">poller.py</text>
+    <rect x="380" y="90" width="140" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="450" y="115" text-anchor="middle">watcher.py</text>
+    <rect x="560" y="90" width="140" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="630" y="115" text-anchor="middle">onboard.py</text>
+    <rect x="290" y="166" width="140" height="40" rx="6" fill="var(--machine-soft)" stroke="var(--machine)"/><text x="360" y="191" text-anchor="middle">flow.py</text>
+    <rect x="20" y="250" width="130" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="85" y="275" text-anchor="middle">jira.py</text>
+    <rect x="170" y="250" width="130" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="235" y="275" text-anchor="middle">github.py</text>
+    <rect x="320" y="250" width="130" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="385" y="275" text-anchor="middle">workspace.py</text>
+    <rect x="470" y="250" width="130" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="535" y="275" text-anchor="middle">agent.py</text>
+    <rect x="620" y="250" width="130" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="685" y="275" text-anchor="middle">store.py</text>
+    <rect x="760" y="166" width="130" height="40" rx="6" fill="var(--panel)" stroke="var(--line)"/><text x="825" y="191" text-anchor="middle">config.py</text>
+    <rect x="760" y="250" width="130" height="40" rx="6" fill="var(--panel)" stroke="var(--line)"/><text x="825" y="275" text-anchor="middle">errors.py</text>
+    <g stroke="currentColor" stroke-width="1.3" fill="none" marker-end="url(#mm)">
+      <line x1="420" y1="56" x2="290" y2="90"/><line x1="450" y1="56" x2="450" y2="90"/><line x1="480" y1="56" x2="610" y2="90"/>
+      <line x1="280" y1="130" x2="340" y2="166"/><line x1="440" y1="130" x2="400" y2="166"/>
+      <line x1="330" y1="206" x2="110" y2="250"/><line x1="345" y1="206" x2="245" y2="250"/><line x1="365" y1="206" x2="385" y2="250"/><line x1="385" y1="206" x2="520" y2="250"/><line x1="405" y1="206" x2="660" y2="250"/>
+      <line x1="600" y1="130" x2="130" y2="250" stroke-dasharray="4 3"/><line x1="640" y1="130" x2="260" y2="250" stroke-dasharray="4 3"/>
+      <line x1="385" y1="250" x2="300" y2="276"/>
+    </g>
+    <g font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--muted)">
+      <text x="250" y="150">claims + steps</text>
+      <text x="465" y="150">human-lane PRs</text>
+      <text x="700" y="60">typer app: targets, session, poll, doctor, target add/remove</text>
+      <text x="330" y="310">workspace wraps github for clone/commit/push</text>
+      <text x="700" y="150">pydantic models, YAML loading, schema export</text>
+    </g>
+  </g>
+</svg>
+</div>
+<figcaption>Dependencies point downward. <code>flow.py</code> is the only module that knows the story state machine; clients know nothing about stages, and the poller knows nothing about Jira status names.</figcaption>
+</figure>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Module</th><th>Owns</th><th>Key entry points</th></tr>
+  <tr><td><code>cli.py</code></td><td>the <code>ains</code> command; wires config, store, clients, engine factory</td><td><code>poll</code>, <code>doctor</code>, <code>targets list</code>, <code>target add/remove</code>, <code>session status/dispatch/advance</code>, <code>agent list</code>, <code>flow list</code></td></tr>
+  <tr><td><code>config.py</code></td><td>pydantic models <code>Config</code>, <code>Target</code>, <code>Flow</code>, <code>AgentTemplate</code>; YAML loading; validators (gates on/off, forbidden env passthrough, no <code>--bare</code>)</td><td><code>load_config(root)</code>, <code>export_schemas()</code></td></tr>
+  <tr><td><code>poller.py</code></td><td>one cycle: claim Ready stories, step active sessions, resume Blocked ones</td><td><code>Poller.cycle()</code>, <code>jql</code></td></tr>
+  <tr><td><code>flow.py</code></td><td><code>FlowEngine</code>: claim, step, stage handlers, gates, rework, blocking, PR review posting</td><td><code>claim(story)</code>, <code>step(session, story)</code></td></tr>
+  <tr><td><code>watcher.py</code></td><td><code>PRWatcher</code>: review agent for PRs labelled <code>ai-review</code>, once per head SHA</td><td><code>cycle()</code></td></tr>
+  <tr><td><code>agent.py</code></td><td><code>ClaudeCodeRunner</code> and <code>DryRunAgents</code>; prompt rendering, env, trust, result parsing, verdict</td><td><code>run(stage, key, workdir, context)</code></td></tr>
+  <tr><td><code>jira.py</code></td><td><code>JiraClient</code> over httpx with retries; dry-run</td><td>search, transitions, comments, links, projects, statuses, workflows</td></tr>
+  <tr><td><code>github.py</code></td><td><code>GitHubClient</code> over <code>gh</code> and <code>git</code> subprocesses via an injectable runner</td><td>clone, branch, commit, push, PR create/ready/view/list/review/merge, labels, comments, CI log</td></tr>
+  <tr><td><code>workspace.py</code></td><td>per-story clone under <code>/work/&lt;KEY&gt;</code>; commit and push helpers; cleanup</td><td><code>ensure</code>, <code>commit</code>, <code>push</code>, <code>head_sha</code>, <code>cleanup</code></td></tr>
+  <tr><td><code>store.py</code></td><td>SQLite <code>sessions</code> and <code>events</code>; dataclasses <code>Session</code>, <code>Event</code></td><td><code>get_session</code>, <code>update_session</code>, <code>add_event</code>, <code>events</code>, <code>active_sessions</code></td></tr>
+  <tr><td><code>onboard.py</code></td><td><code>Onboarder.add/remove</code>: repo, templates, labels, secrets, environments, protection, Jira project and statuses, targets.yaml</td><td>returns a step report; <code>--dry-run</code></td></tr>
+  <tr><td><code>errors.py</code></td><td><code>JiraError</code>, <code>GitHubError</code>, <code>TransitionUnavailable</code>, <code>MergeRefused</code>, <code>AgentError</code></td><td></td></tr>
+</table>
+</div>
+
+<h2 id="cycle"><span class="num">5</span>The poll cycle</h2>
+<p><code>ains poll</code> loops forever: run one cycle, sleep <code>AINS_POLL_SECONDS</code>, repeat. One cycle is deliberately small so that a crash or restart loses at most one transition, and so that the event log reads as one line per decision.</p>
+<ol class="proc">
+  <li><b>Claim.</b> JQL <code>project in (&lt;targets&gt;) AND labels = ai-native AND status = Ready</code>. For each hit without an active session the target's <code>FlowEngine.claim()</code> creates the session (stage <code>spec</code>), moves the story to <code>Specifying</code> and records <code>claimed</code>. A hit whose session is <code>blocked</code> is a human resume: the poller computes the stage to resume at from the event history and sets it.</li>
+  <li><b>Step.</b> For every session not in <code>released</code>, <code>abandoned</code>, <code>blocked</code> or <code>pr_reviewed</code>, call <code>engine.step()</code> once. One call performs at most one transition: run an agent and commit, or check a gate, or merge. Errors are caught per session and reported in the cycle line, never propagated.</li>
+  <li><b>Watch.</b> <code>PRWatcher.cycle()</code> lists open PRs carrying <code>review_label</code> in each target, skips PRs that belong to a story session, and reviews each new head SHA once, recording a <code>pr-review</code> session.</li>
+  <li><b>Report.</b> One log line: <code>cycle: claimed=[...] stepped={KEY: new_stage} skipped=[...] reviewed=[...] errors=[...]</code>. This line is what the monitors and the implementation log quote.</li>
+</ol>
+<p>A per-target lock prevents two cycles from stepping the same target concurrently; the poll loop is single-threaded anyway, but <code>session advance</code> from the CLI can run alongside.</p>
+
+<h2 id="statemachine"><span class="num">6</span>The story state machine</h2>
+<figure>
+<div class="figwrap">
+<svg viewBox="0 0 1100 300" role="img" aria-label="Stages spec, wait_g1, plan, wait_g2, implement, review, wait_g3, merge, released in a line. Rework edges return from wait_g1 to spec, from wait_g2 to plan, from wait_g3 to implement (label, request changes or CI failure). Any agent stage can go to blocked after two failed attempts; blocked returns to the stage before the block when the story is moved to Ready.">
+  <defs><marker id="sm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, Consolas, monospace" font-size="12" fill="currentColor">
+    <g id="agents" fill="var(--machine-soft)" stroke="var(--machine)">
+      <rect x="20" y="120" width="100" height="40" rx="20"/>
+      <rect x="260" y="120" width="100" height="40" rx="20"/>
+      <rect x="500" y="120" width="120" height="40" rx="20"/>
+      <rect x="640" y="120" width="100" height="40" rx="20"/>
+      <rect x="880" y="120" width="90" height="40" rx="20"/>
+    </g>
+    <g fill="var(--human-soft)" stroke="var(--human)" stroke-width="2">
+      <rect x="140" y="120" width="100" height="40" rx="6"/>
+      <rect x="380" y="120" width="100" height="40" rx="6"/>
+      <rect x="760" y="120" width="100" height="40" rx="6"/>
+    </g>
+    <rect x="990" y="120" width="100" height="40" rx="6" fill="var(--panel)" stroke="currentColor"/>
+    <rect x="440" y="230" width="120" height="40" rx="6" fill="var(--bad-soft)" stroke="var(--bad)"/>
+    <text x="70" y="145" text-anchor="middle">spec</text>
+    <text x="190" y="145" text-anchor="middle">wait_g1</text>
+    <text x="310" y="145" text-anchor="middle">plan</text>
+    <text x="430" y="145" text-anchor="middle">wait_g2</text>
+    <text x="560" y="145" text-anchor="middle">implement</text>
+    <text x="690" y="145" text-anchor="middle">review</text>
+    <text x="810" y="145" text-anchor="middle">wait_g3</text>
+    <text x="925" y="145" text-anchor="middle">merge</text>
+    <text x="1040" y="145" text-anchor="middle">released</text>
+    <text x="500" y="255" text-anchor="middle">blocked</text>
+    <g stroke="currentColor" stroke-width="1.4" fill="none" marker-end="url(#sm)">
+      <line x1="120" y1="140" x2="140" y2="140"/><line x1="240" y1="140" x2="260" y2="140"/><line x1="360" y1="140" x2="380" y2="140"/>
+      <line x1="480" y1="140" x2="500" y2="140"/><line x1="620" y1="140" x2="640" y2="140"/><line x1="740" y1="140" x2="760" y2="140"/>
+      <line x1="860" y1="140" x2="880" y2="140"/><line x1="970" y1="140" x2="990" y2="140"/>
+    </g>
+    <g stroke="var(--bad)" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#sm)">
+      <path d="M190,120 L190,70 L70,70 L70,120"/>
+      <path d="M430,120 L430,70 L310,70 L310,120"/>
+      <path d="M810,120 L810,40 L560,40 L560,120"/>
+      <path d="M690,160 L690,200 L560,200 L560,230"/>
+      <path d="M560,160 L540,230"/>
+      <path d="M70,160 L70,200 L440,200 L440,230"/>
+    </g>
+    <path d="M560,270 L560,290 L200,290 L200,160" stroke="var(--human)" stroke-width="1.4" fill="none" marker-end="url(#sm)"/>
+    <g font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--muted)">
+      <text x="130" y="64" text-anchor="middle">Rework status + comment</text>
+      <text x="370" y="64" text-anchor="middle">Rework status + comment</text>
+      <text x="685" y="34" text-anchor="middle">g3-rework / changes requested / CI failed (≤2 rounds)</text>
+      <text x="300" y="196" text-anchor="middle">agent failed twice, or CI failed 3×</text>
+      <text x="380" y="286" text-anchor="middle" fill="var(--human)">human moves story to Ready → resume at the stage before the block</text>
+    </g>
+  </g>
+</svg>
+</div>
+<figcaption>Rounded nodes run an agent; square blue nodes wait for a human; dashed red edges are rework. The stage name is the single <code>sessions.stage</code> column, so the whole machine is resumable from the database alone.</figcaption>
+</figure>
+
+<div class="tablewrap">
+<table>
+  <tr><th>Stage</th><th>Handler</th><th>Does</th><th>Next</th></tr>
+  <tr><td><code>spec</code></td><td><code>_run_stage_and_gate</code></td><td>ensure workspace and branch; spec agent; commit; draft PR; Jira <code>Spec Review</code> + comment</td><td><code>wait_g1</code></td></tr>
+  <tr><td><code>wait_g1</code></td><td><code>_wait_jira_gate</code></td><td>Jira status <code>Planning</code> → pass; <code>Rework</code> → rework spec with latest comment; <code>Blocked</code> → block</td><td><code>plan</code> / <code>spec</code></td></tr>
+  <tr><td><code>plan</code></td><td><code>_run_stage_and_gate</code></td><td>plan agent; commit; Jira <code>Plan Review</code></td><td><code>wait_g2</code></td></tr>
+  <tr><td><code>wait_g2</code></td><td><code>_wait_jira_gate</code></td><td><code>Implementing</code> → pass; <code>Rework</code> → rework plan</td><td><code>implement</code> / <code>plan</code></td></tr>
+  <tr><td><code>implement</code></td><td><code>_do_implement</code></td><td>implement agent; commit; push; PR ready; Jira <code>Code Review</code>; record <code>head_sha</code></td><td><code>review</code></td></tr>
+  <tr><td><code>review</code></td><td><code>_do_review</code></td><td>skip if <code>reviewed_sha == head</code>; review agent (read-only); post PR review COMMENT or REQUEST_CHANGES; restore <code>Code Review</code></td><td><code>wait_g3</code></td></tr>
+  <tr><td><code>wait_g3</code></td><td><code>_do_wait_g3</code></td><td>new commits → <code>review</code>; CI failed → rework implement with log excerpt (rounds in <code>gate_state.ci_rework_rounds</code>); <code>g3-rework</code> label or human changes requested → rework implement with the comment; human approved (label or review) and CI green → <code>merge</code>; gate off → merge on green</td><td><code>merge</code> / <code>implement</code> / <code>review</code></td></tr>
+  <tr><td><code>merge</code></td><td><code>_do_merge</code></td><td><code>gh pr merge --squash</code> (client refuses without human approval and green CI); Jira comment; workspace cleanup</td><td><code>released</code></td></tr>
+  <tr><td><code>released</code></td><td>terminal</td><td>G4, G5 and the Jira transitions to Staging and Done happen in Actions</td><td></td></tr>
+  <tr><td><code>blocked</code></td><td>terminal until resumed</td><td>Jira <code>Blocked</code> with the error in a comment; the poller resumes when the story is in <code>Ready</code></td><td>stage before the block</td></tr>
+</table>
+</div>
+<p>Agent failures: <code>_retry_or_block</code> allows <code>attempts &lt; max_attempts</code> (2) retries with the agent template's back-off, then blocks. On resume, a stage whose output files already exist (<code>STAGE_OUTPUTS</code>) skips the agent and only commits, so a crash between agent and push does not pay for a second run.</p>
+
+<h2 id="data"><span class="num">7</span>Persistent state</h2>
+<p>SQLite at <code>/work/sessions.sqlite</code> (WAL mode). Two tables.</p>
+<div class="tablewrap">
+<table>
+  <tr><th>sessions</th><th>Meaning</th></tr>
+  <tr><td><code>key</code></td><td>Jira issue key, primary key; one session per story</td></tr>
+  <tr><td><code>target, repo, flow</code></td><td>Jira project key, GitHub repo, flow name at claim time</td></tr>
+  <tr><td><code>stage</code></td><td>current state-machine stage (section 6)</td></tr>
+  <tr><td><code>gate_state</code></td><td>JSON: <code>summary</code>, <code>rework_&lt;stage&gt;</code> (pending rework text, consumed by the next run of that stage), <code>rework_count</code>, <code>ci_rework_rounds</code></td></tr>
+  <tr><td><code>branch, pr_number, head_sha, reviewed_sha</code></td><td>GitHub coordinates; <code>reviewed_sha</code> makes review idempotent per commit</td></tr>
+  <tr><td><code>attempts, last_error</code></td><td>retry counter for the current stage and the last failure text</td></tr>
+</table>
+</div>
+<div class="tablewrap">
+<table>
+  <tr><th>events.kind</th><th>Detail JSON</th></tr>
+  <tr><td><code>claimed</code>, <code>resumed</code>, <code>manual.reset</code></td><td>stage</td></tr>
+  <tr><td><code>agent.start</code>, <code>agent.done</code>, <code>agent.retry</code>, <code>agent.skipped</code></td><td>stage, attempt, ok, turns, cost_usd, duration_ms, error, <b>result</b> (first 3000 chars of the agent's final reply)</td></tr>
+  <tr><td><code>stage.done</code></td><td>stage, sha, pr</td></tr>
+  <tr><td><code>pr.opened</code>, <code>pr.new_commits</code>, <code>review.posted</code>, <code>merged</code></td><td>pr, sha, event</td></tr>
+  <tr><td><code>gate.waiting</code>, <code>gate.passed</code>, <code>gate.rework</code></td><td>gate, mode (human/off), stage, comment</td></tr>
+  <tr><td><code>blocked</code></td><td>error</td></tr>
+</table>
+</div>
+<p>Every event is also mirrored as a Jira comment where a human would want to see it, so the story and the database tell the same story. <code>ains session status KEY</code> prints both tables for one key.</p>
+
+<h2 id="config"><span class="num">8</span>Configuration</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>File</th><th>Model</th><th>Fields that matter</th></tr>
+  <tr><td><code>targets.yaml</code></td><td><code>Target</code></td><td><code>repo</code>, <code>default_branch</code>, <code>flow</code>, <code>gates</code> (G1..G5 on/off; a validator turns YAML booleans back into strings), <code>review_label</code> (<code>ai-review</code>), <code>approval_mode</code> (<code>label</code> or <code>review</code>), <code>approval_label</code> (<code>g3-approved</code>), <code>rework_label</code> (<code>g3-rework</code>), optional <code>bot_login</code></td></tr>
+  <tr><td><code>flows/story.yaml</code></td><td><code>Flow</code></td><td><code>stages</code>, <code>gates</code> (where and how each is approved), <code>jira_status</code> (the names the engine transitions to; change these if a Jira project uses other names)</td></tr>
+  <tr><td><code>agents/claude-code.yaml</code></td><td><code>AgentTemplate</code></td><td><code>command</code> (must not contain <code>--bare</code>), <code>env_passthrough</code> (no <code>ANTHROPIC_*</code>), per stage <code>prompt</code>, <code>permission_mode</code>, <code>max_turns</code>, <code>read_only</code>; <code>retry</code>, <code>wall_clock_limit_minutes</code></td></tr>
+  <tr><td><code>agents/stages/*.md</code></td><td>prompt templates</td><td>placeholders <code>{key} {summary} {description} {repo} {branch} {pr} {head_sha}</code>; unknown placeholders are left as-is; rework text is appended under "Rework requested by the reviewer"</td></tr>
+  <tr><td><code>claude-settings.json</code></td><td>Claude Code settings</td><td>allow list (git read commands, <code>uv</code>, <code>uvx ruff</code>, pytest, ruff, file tools), deny list (<code>git push</code>, <code>git commit</code>, <code>gh pr merge</code>, approve, curl, wget, web tools); passed with <code>--settings</code> and merged by Claude Code with the target repo's <code>.claude/settings.json</code></td></tr>
+  <tr><td><code>.env</code></td><td>environment</td><td>the three tokens, <code>JIRA_BASE_URL</code>, <code>JIRA_EMAIL</code>, <code>AINS_POLL_SECONDS</code>, <code>AINS_WORK_DIR</code>; <code>AINS_CONFIG_ROOT=/app</code> inside the container</td></tr>
+</table>
+</div>
+<p><code>ains schema export</code> writes the JSON schemas under <code>schemas/</code>; keep them committed so editors can validate the YAML.</p>
+
+<h2 id="agent"><span class="num">9</span>The agent runner</h2>
+<ol class="proc">
+  <li><b>Render</b> the stage template with the story context; append rework text if <code>gate_state.rework_&lt;stage&gt;</code> is set.</li>
+  <li><b>Build argv</b> from the template command plus <code>--permission-mode</code>, <code>--max-turns</code>, and for read-only stages <code>--disallowedTools Edit,Write,MultiEdit,NotebookEdit,WebFetch,WebSearch</code>. The prompt goes through <b>stdin</b>, never argv (an earlier version lost the prompt to option parsing).</li>
+  <li><b>Build the environment</b> with <code>minimal_env()</code>: base keys (<code>PATH</code>, <code>HOME</code>, locale) plus <code>env_passthrough</code>; raise if anything starts with <code>ANTHROPIC_</code>; refuse to run without <code>CLAUDE_CODE_OAUTH_TOKEN</code>.</li>
+  <li><b>Trust the workspace</b>: write the project path into <code>~/.claude.json</code> so the repo's <code>.claude/settings.json</code> allow list is honoured (headless runs ignore it otherwise).</li>
+  <li><b>Run</b> with the wall-clock limit; kill on timeout. Parse the single JSON object (or the last <code>result</code> message of an array) into <code>AgentResult</code>: ok, text, turns, cost, duration, error.</li>
+  <li><b>Review verdict</b>: the review prompt asks for a final <code>VERDICT:</code> line; <code>extract_verdict()</code> maps it to <code>comment</code> or <code>request_changes</code>. Anything else is <code>comment</code>. <code>APPROVE</code> is unreachable by construction.</li>
+</ol>
+<p><code>DryRunAgents</code> replaces the runner under <code>--dry-run</code>: it writes the expected output files and returns success, which is how the full flow is exercised offline in under a minute (test plan T-I7-8).</p>
+
+<h2 id="clients"><span class="num">10</span>Jira, GitHub and workspace clients</h2>
+<h3>JiraClient</h3>
+<p>httpx with basic auth, retries on 429 and 5xx, dry-run mode that logs writes. Endpoints used: <code>POST /rest/api/3/search/jql</code> (paged with <code>nextPageToken</code>), <code>GET/POST issue/{key}/transitions</code> (by name; raises <code>TransitionUnavailable</code> with the available names), <code>POST issue/{key}/comment</code> (ADF body), <code>POST issue/{key}/remotelink</code>, <code>POST project</code> (team-managed Kanban template), <code>POST statuses</code> and the workflows bulk read, validate and update endpoints to add the status set to a project's workflow (statusReferences must be UUIDs).</p>
+<h3>GitHubClient</h3>
+<p>No GitHub SDK: every call is <code>gh</code> or <code>git</code> through an injectable runner (<code>argv, cwd, stdin</code>), which is what the unit tests replace. Rules baked into the client:</p>
+<ul>
+  <li><code>pr_review</code> refuses <code>APPROVE</code> and prefixes bodies with <code>[ains review agent]</code>.</li>
+  <li><code>pr_merge</code> refuses unless <code>human_approved</code> and <code>ci_green</code>; the engine only relaxes <code>human_approved</code> when G3 is off.</li>
+  <li><code>_to_pr</code> keys checks by full name and by last segment, because a reusable workflow called from job <code>ci</code> reports as <code>ci / ci</code>; <code>ci_green</code> reads <code>checks["ci"]</code>.</li>
+  <li><code>ci_failure_log</code> takes the latest <code>ci</code> run on the branch and <code>failed_step_excerpt()</code> windows 60 lines before the last <code>##[error]</code> marker, stripping the <code>job\tstep\ttimestamp</code> prefixes; the whole-job tail is service-container teardown noise.</li>
+  <li>Commits pass <code>-c user.name/-c user.email</code> from <code>AINS_GIT_NAME/EMAIL</code> with the Dockerfile defaults; pushes authenticate through <code>credential.helper "!gh auth git-credential"</code>.</li>
+  <li>Write operations are skipped and logged under <code>dry_run</code>.</li>
+</ul>
+<h3>Workspace</h3>
+<p><code>/work/&lt;KEY&gt;/</code> is a clone of the target on the story branch <code>&lt;KEY&gt;-&lt;slug&gt;</code>. <code>commit(key, stage, message)</code> commits only if <code>git status --porcelain</code> is non-empty. <code>cleanup</code> deletes the directory after merge. The directory survives restarts because it lives on the named volume.</p>
+
+<h2 id="actions"><span class="num">11</span>The GitHub Actions side</h2>
+<figure>
+<div class="figwrap">
+<svg viewBox="0 0 900 250" role="img" aria-label="A target repo's thin ci.yml and release.yml call the platform's reusable workflows with secrets inherit. reusable-ci-python runs lint and tests, then calls reusable-jira-callback to set Code Review. reusable-release builds and pushes the image, waits on the staging environment, calls back Staging, waits on production, calls back Done.">
+  <defs><marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+  <g font-family="IBM Plex Mono, Consolas, monospace" font-size="12" fill="currentColor">
+    <text x="20" y="30" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--muted)" font-weight="600">TARGET REPO</text>
+    <text x="330" y="30" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--muted)" font-weight="600">PLATFORM REPO (workflow_call, secrets: inherit)</text>
+    <rect x="20" y="50" width="160" height="44" rx="6" fill="var(--ext-soft)" stroke="var(--ext)"/><text x="100" y="70" text-anchor="middle">ci.yml</text><text x="100" y="86" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">on: pull_request</text>
+    <rect x="20" y="150" width="160" height="44" rx="6" fill="var(--ext-soft)" stroke="var(--ext)"/><text x="100" y="170" text-anchor="middle">release.yml</text><text x="100" y="186" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">on: push main</text>
+    <rect x="330" y="50" width="200" height="44" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="430" y="70" text-anchor="middle">reusable-ci-python</text><text x="430" y="86" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">uv sync · uvx ruff · pytest</text>
+    <rect x="330" y="150" width="200" height="44" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="430" y="170" text-anchor="middle">reusable-release</text><text x="430" y="186" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">build → GHCR → staging → production</text>
+    <rect x="660" y="100" width="210" height="44" rx="6" fill="var(--panel)" stroke="currentColor"/><text x="765" y="120" text-anchor="middle">reusable-jira-callback</text><text x="765" y="136" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">transition + comment + link</text>
+    <g fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"><rect x="560" y="210" width="90" height="28" rx="6"/><rect x="670" y="210" width="110" height="28" rx="6"/></g>
+    <text x="605" y="229" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">env staging G4</text>
+    <text x="725" y="229" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11">env production G5</text>
+    <g stroke="currentColor" stroke-width="1.4" fill="none" marker-end="url(#am)">
+      <line x1="180" y1="72" x2="330" y2="72"/><line x1="180" y1="172" x2="330" y2="172"/>
+      <line x1="530" y1="72" x2="660" y2="112"/><line x1="530" y1="172" x2="660" y2="132"/>
+      <line x1="500" y1="194" x2="580" y2="210"/><line x1="650" y1="224" x2="670" y2="224"/>
+    </g>
+    <g font-family="IBM Plex Sans, sans-serif" font-size="11" fill="var(--muted)">
+      <text x="560" y="60">check name: ci / ci</text>
+      <text x="580" y="168">→ Code Review</text>
+      <text x="800" y="168">Staging, then Done</text>
+    </g>
+  </g>
+</svg>
+</div>
+<figcaption>Targets carry two thin callers; all logic is in the platform's reusable workflows, so a platform change rolls out to every target on its next run. The check-run name is <code>&lt;caller job&gt; / &lt;called job&gt;</code>, which is why branch protection requires <code>ci / ci</code>.</figcaption>
+</figure>
+<ul>
+  <li><b>reusable-ci-python:</b> <code>astral-sh/setup-uv</code> with <code>enable-cache: false</code>, <code>uv sync</code>, <code>uvx ruff check . &amp;&amp; uvx ruff format --check .</code> (ruff as a tool so targets need not declare it), <code>uv run pytest</code>, then a nested call to the Jira callback with transition <code>Code Review</code>. The issue key is taken from the branch name.</li>
+  <li><b>reusable-release:</b> builds only if a <code>Dockerfile</code> exists; without one the environment jobs still run so the gates are exercised. The issue key is parsed from the squash-merge commit subject (<code>AINSSB-2: ...</code>), which is why the orchestrator's PR titles start with the key.</li>
+  <li><b>reusable-jira-callback:</b> curl against REST v3 with <code>JIRA_EMAIL</code> and <code>JIRA_API_TOKEN</code> from the target repo's secrets.</li>
+  <li><b>intake-ack:</b> listens to <code>repository_dispatch</code> on the platform repo; an optional audit trace, not a trigger.</li>
+</ul>
+
+<h2 id="onboarding"><span class="num">12</span>Onboarding internals</h2>
+<p><code>Onboarder.add(repo_name, jira_key, jira_name, gates, approval_mode)</code> runs these steps in order, each idempotent and each reported as <code>planned</code> (dry run), <code>done</code>, <code>exists</code> or <code>failed</code>:</p>
+<ol class="proc">
+  <li><b>github repo:</b> <code>gh repo create</code> private, or reuse.</li>
+  <li><b>templates:</b> clone to a temp dir, render <code>bootstrap/templates/</code> (placeholders <code>{{platform_repo}}</code>, <code>{{platform_ref}}</code>, <code>{{jira_base_url}}</code>, <code>{{image_name}}</code>), run <code>specify init --here --force --non-interactive --integration claude --ignore-agent-tools</code>, commit if dirty, push.</li>
+  <li><b>labels:</b> <code>ai-review</code>, <code>g3-approved</code>, <code>g3-rework</code>, <code>ai-native</code>.</li>
+  <li><b>secrets:</b> <code>JIRA_EMAIL</code>, <code>JIRA_API_TOKEN</code> via <code>gh secret set</code>.</li>
+  <li><b>environments:</b> <code>staging</code>, <code>production</code> with the PAT owner as required reviewer (REST).</li>
+  <li><b>branch protection:</b> <code>main</code> requires the context <code>REQUIRED_CHECK_CONTEXT = "ci / ci"</code>, no force pushes, admins not enforced (so the engineer can repair main by hand).</li>
+  <li><b>jira project:</b> create team-managed Kanban project if the key is free; <b>jira statuses:</b> create missing statuses and add them to the project's workflow via the workflows update API; <b>jira lane:</b> verify the label convention; <b>jira automation:</b> print the manual checklist.</li>
+  <li><b>targets.yaml:</b> append the block. Running inside the container this file is read-only, so onboarding is run on the host with <code>uv run ains target add</code>.</li>
+</ol>
+<p><code>remove</code> reverses the platform-owned pieces and leaves the repository unless <code>--delete-repo</code>.</p>
+
+<h2 id="devloop"><span class="num">13</span>Development loop</h2>
+<pre><code>cd ains-orchestrator
+uv sync                         # creates .venv with dev tools
+uv run pytest -q                # offline suite, fakes only (97 tests, ~5 s)
+uv run ruff format . && uv run ruff check .
+AINS_LIVE=1 uv run pytest -m live   # the few tests that touch real Jira/GitHub/Claude; needs .env
+docker compose up -d --build    # ship the change to the running platform
+docker compose logs -f orchestrator</code></pre>
+<ul>
+  <li><b>Tests use fakes, not mocks.</b> <code>tests/fakes.py</code> has <code>FakeJira</code>, <code>FakeGitHub</code>, <code>FakeAgents</code> with small test helpers (<code>ci(number, "FAILURE")</code>, <code>approve</code>, <code>new_commit</code>). Flow tests drive the engine with <code>run_until(engine, store, key, stage)</code>. The GitHub client is tested by recording the <code>gh</code>/<code>git</code> argv through <code>FakeRunner</code>.</li>
+  <li><b>Test names carry the test-plan id</b> (<code>test_T_I4_7_...</code>) so the traceability matrix in <code>plan/ains-platform-test-plan.md</code> can be checked by grep. Add a row there for every new behaviour.</li>
+  <li><b>Log every change</b> in <code>docs/implementation-log.md</code>: what was observed, the cause, the fix, the commit. The user has asked for that log to be always current; it is also the acceptance evidence.</li>
+  <li><b>Plan copies:</b> the working plan lives outside the repo in <code>PoC/plan/</code>; copy both files into <code>plan/</code> when they change, and check the diff direction first.</li>
+  <li><b>Windows:</b> the CLI reconfigures stdout with <code>errors="replace"</code>; keep <code>.gitattributes</code> LF normalisation; prefer small Python patch scripts over shell heredocs when the text contains backslashes.</li>
+  <li><b>Regression:</b> after any flow change, run a story through the sandbox (<code>AINSSB</code>). The dry-run flow test (T-I7-8) is the fast offline equivalent.</li>
+</ul>
+
+<h2 id="extend"><span class="num">14</span>Extending the platform</h2>
+<h3>Add a stage (for example a <code>docs</code> agent after implement)</h3>
+<ol class="proc">
+  <li>Add the stage to <code>flows/story.yaml</code> <code>stages</code> and, if it ends in a gate, to <code>gates</code>; add any new Jira status names under <code>jira_status</code> and to the onboarding status list.</li>
+  <li>Add a prompt template under <code>agents/stages/</code> and a stage block in <code>agents/claude-code.yaml</code>.</li>
+  <li>In <code>flow.py</code>: declare its outputs in <code>STAGE_OUTPUTS</code> (resume skips the agent when they exist), write a handler, and register it in <code>step()</code>'s dispatch. Reuse <code>_run_stage_and_gate</code> if the stage is "run agent, commit, set a review status, wait".</li>
+  <li>Add rows to the state table in the plan (9.3) and parametrised cases to <code>test_flow.py</code>.</li>
+</ol>
+<h3>Change how a gate is approved</h3>
+<p>Jira gates: <code>_wait_jira_gate</code> compares the status to the flow's <code>approve</code> name; change the name in <code>story.yaml</code>. G3: <code>_do_wait_g3</code> reads <code>PullRequest.human_approved</code>, which <code>_to_pr</code> derives from reviews (review mode, ignoring the bot and the agent marker) or labels (label mode). A new signal, for example a required reviewer team, belongs in <code>_to_pr</code>, not in the engine.</p>
+<h3>Add a flow</h3>
+<p>Drop a second YAML into <code>flows/</code> and reference it from a target's <code>flow</code>. <code>FlowEngine</code> reads stage order and gates from the flow, but the handlers are the ones in <code>flow.py</code>; a flow with a stage the engine does not know fails validation at load.</p>
+<h3>A second harness</h3>
+<p>Not planned: subscription tokens are only valid inside Claude Code, and the orchestrator deliberately has no model API client. If a harness is ever added, it is a new <code>AgentRunner</code> implementation selected by <code>agents/*.yaml</code>, and it must keep the prompt-on-stdin and minimal-env contract.</p>
+<h3>Another language stack for targets</h3>
+<p>Add <code>reusable-ci-&lt;stack&gt;.yml</code> next to the Python one and a matching <code>bootstrap/templates/ci.yml</code> variant selected by a new <code>target add --stack</code> option; keep the job name <code>ci</code> so the check context stays <code>ci / ci</code>.</p>
+
+<h2 id="invariants"><span class="num">15</span>Invariants and security model</h2>
+<div class="note bad">Breaking any of these needs a plan decision, a test change and a log entry, in that order.</div>
+<ul>
+  <li>The orchestrator never merges without <code>human_approved</code> and <code>ci_green</code> (client guard), except that an <code>off</code> G3 counts as approval.</li>
+  <li>The review agent never approves: <code>pr_review</code> rejects <code>APPROVE</code>; the verdict parser cannot produce it.</li>
+  <li>No agent process ever sees <code>ANTHROPIC_*</code>; the config schema, <code>minimal_env</code> and <code>ains doctor</code> all check it.</li>
+  <li>Agents cannot push, commit, merge, fetch the web or read <code>.env</code> (deny list in both settings files; the review stage additionally has no edit tools).</li>
+  <li>Secrets live in <code>.env</code> (gitignored) and in target repo secrets; nothing in <code>docs/</code>, <code>plan/</code> or the log ever holds a token value. Rotate all three after the PoC.</li>
+  <li>The container has no inbound network; every integration is a poll or a subprocess.</li>
+  <li>One transition per session per cycle; every transition writes an event before it returns.</li>
+</ul>
+
+<h2 id="debug"><span class="num">16</span>Debugging</h2>
+<pre><code>docker compose exec orchestrator ains session status AINSSB-2      # stage, PR, events incl. agent replies
+docker compose logs --since 10m orchestrator | grep -v "wait_g3'}"  # cycle lines without the idle noise
+docker compose exec orchestrator sh -c 'cd /work/AINSSB-2 && git status && git log --oneline -3'
+gh pr view 2 --repo niloyray/ains-sandbox --json statusCheckRollup,labels,reviews
+gh run view &lt;id&gt; --repo niloyray/ains-sandbox --log-failed | tail -40</code></pre>
+<div class="tablewrap">
+<table>
+  <tr><th>Signature</th><th>Cause seen on the sandbox</th><th>Fix</th></tr>
+  <tr><td><code>stage.done</code> with unchanged sha after a rework</td><td>the agent changed nothing because its input was unusable (whole-job CI log)</td><td>read <code>agent.done.result</code>; fix the input, reset <code>gate_state</code> and stage with a <code>manual.reset</code> event</td></tr>
+  <tr><td><code>wait_g3</code> forever with CI red</td><td>check named <code>ci / ci</code>, engine looked up <code>ci</code></td><td>name normalisation in <code>_to_pr</code>; protection context <code>ci / ci</code></td></tr>
+  <tr><td>"This command requires approval" in an agent reply</td><td>allow list missing the command (<code>uvx ruff</code>)</td><td>add to <code>claude-settings.json</code>, the template and the target's <code>.claude/settings.json</code></td></tr>
+  <tr><td>"workspace has not been trusted"</td><td>headless run ignored the repo settings</td><td><code>trust_workspace()</code> writes <code>~/.claude.json</code></td></tr>
+  <tr><td><code>could not read Username for 'https://github.com'</code></td><td>no git credential in the container</td><td><code>credential.helper "!gh auth git-credential"</code> in the Dockerfile</td></tr>
+  <tr><td>old behaviour after a code change</td><td>source is baked into the image</td><td><code>docker compose up -d --build</code></td></tr>
+  <tr><td>Jira status wrong after a resume</td><td>handler skipped the status call on the skip-agent path</td><td>status calls are idempotent and sit after the skip</td></tr>
+</table>
+</div>
+<p><b>State surgery</b> is allowed on the sandbox when the platform, not the story, was wrong: stop the container, edit <code>sessions</code> with sqlite3 inside a one-off <code>docker compose run</code>, insert a <code>manual.reset</code> event saying why, restart. Never do it to skip a gate.</p>
+
+<h2 id="backlog"><span class="num">17</span>Known limits and backlog</h2>
+<ul>
+  <li>G3 in <code>review</code> mode needs a second GitHub account (<code>bot_login</code>); untested live.</li>
+  <li>Onboarding must run on the host because <code>targets.yaml</code> is a read-only mount in the container.</li>
+  <li>The Jira Automation rule is manual and optional; Jira statuses are created by API but the board columns are not arranged.</li>
+  <li>Cost per agent run is recorded from the CLI's <code>total_cost_usd</code> for information only; the subscription is what is billed.</li>
+  <li>The release workflow runs on every push to main, including hand edits; a run without an issue key moves nothing in Jira but still asks for approvals.</li>
+  <li>Plan steps still open after the AINSSB-2 acceptance: human-lane PR review (8.12), second onboarding and removal proof (6a.2), divergence notes and milestone close (9).</li>
+</ul>
+</main>
+
+</body>
+</html>
