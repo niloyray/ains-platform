@@ -3,18 +3,103 @@
 {% block content %}
 <h1>Add a project</h1>
 <p class="lead">Creates the GitHub repository with the starter files, labels, secrets, environments and branch protection, the Jira project with its statuses, and the target entry. Idempotent: run it again to repair a partial onboarding.</p>
-<div class="note">Run with <b>dry run</b> first. It lists every step as "planned" without changing anything. Then untick it and run again. The target entry is written to the mounted <code>targets.yaml</code>; commit it in the platform repository afterwards.</div>
-<form method="post" action="/add" class="card" style="max-width:640px">
-  <label for="repo_name">Repository name (lower case, hyphens)</label><input type="text" id="repo_name" name="repo_name" placeholder="ains-poc" required>
-  <label for="jira_key">Jira project key (2 to 10 capital letters)</label><input type="text" id="jira_key" name="jira_key" placeholder="AINSPOC" required pattern="[A-Za-z][A-Za-z0-9_]{1,9}">
-  <label for="jira_name">Jira project name</label><input type="text" id="jira_name" name="jira_name" placeholder="AINS PoC" required>
-  <label for="approval_mode">G3 approval mode</label>
-  <select id="approval_mode" name="approval_mode"><option value="label">label (single GitHub account: g3-approved / g3-rework)</option><option value="review">review (separate orchestrator account: PR approve / request changes)</option></select>
-  <label>Gates</label>
-  {% for g, what in [('g1','G1 spec'),('g2','G2 plan'),('g3','G3 code'),('g4','G4 staging'),('g5','G5 production')] %}
-  <label style="display:inline-block;margin-right:16px"><select name="{{ g }}" style="width:auto"><option value="on">on</option><option value="off">off</option></select> {{ what }}</label>
-  {% endfor %}
-  <label><input type="checkbox" name="dry_run" value="1" checked> dry run (plan only)</label>
-  <p><button class="primary">Onboard</button></p>
+{% if errors %}<div class="note bad"><b>Not started.</b><ul style="margin:4px 0 0 18px">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="note">Run with <b>dry run</b> first: every step is listed as "planned" and nothing changes. Then untick it and run again. The target entry lands in the mounted <code>targets.yaml</code>; commit it in the platform repository afterwards.</div>
+
+<form method="post" action="/add" id="addform">
+<div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0">Names</h3>
+    <label for="repo_name">Repository name (lower case, hyphens)</label><input type="text" id="repo_name" name="repo_name" placeholder="ains-poc" required value="{{ values.repo_name or '' }}">
+    <label for="jira_key">Jira project key (2 to 10 capital letters)</label><input type="text" id="jira_key" name="jira_key" placeholder="AINSPOC" required pattern="[A-Za-z][A-Za-z0-9_]{1,9}" value="{{ values.jira_key or '' }}">
+    <label for="jira_name">Jira project name</label><input type="text" id="jira_name" name="jira_name" placeholder="AINS PoC" required value="{{ values.jira_name or '' }}">
+    <label for="approval_mode">G3 approval mode</label>
+    <select id="approval_mode" name="approval_mode">
+      <option value="label" {{ 'selected' if values.approval_mode != 'review' }}>label (single GitHub account: g3-approved / g3-rework)</option>
+      <option value="review" {{ 'selected' if values.approval_mode == 'review' }}>review (separate orchestrator account: PR approve / request changes)</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Project class <span class="small">(Layer 1: sets depth, gates and the autonomy ceiling)</span></h3>
+    {% for e in catalog.project_classes %}
+    <label style="color:{{ 'inherit' if e.supported else 'var(--muted)' }}">
+      <input type="radio" name="project_class" value="{{ e.id }}" data-ceiling="{{ e.autonomy_ceiling }}" {{ 'disabled' if not e.supported }} {{ 'checked' if (values.project_class or 'small-poc') == e.id and e.supported }}>
+      {{ e.name }} {% if not e.supported %}<span class="chip muted">not yet</span>{% endif %}<div class="small" style="margin-left:22px">{{ e.note }} · ceiling {{ e.autonomy_ceiling }}</div>
+    </label>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Lifecycle phases <span class="small">(Layer 2: one organizational loop)</span></h3>
+    {% for e in catalog.lifecycle_phases %}
+    <label style="color:{{ 'inherit' if e.supported else 'var(--muted)' }}">
+      <input type="checkbox" name="phases" value="{{ e.id }}" {{ 'disabled' if not e.supported }} {{ 'checked' if e.supported and (not values.phases or e.id in values.phases) }}>
+      {{ e.name }} {% if not e.supported %}<span class="chip muted">not yet</span>{% elif e.fixed %}<span class="chip machine">in the story flow</span>{% endif %}<div class="small" style="margin-left:22px">{{ e.how }}</div>
+    </label>
+    {% endfor %}
+    <p class="small">Every supported phase runs in the story flow today; leaving one out is not available yet.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Methodology <span class="small">(Layer 3: methods arrive as skills)</span></h3>
+    {% for e in catalog.methodologies %}
+    <label style="color:{{ 'inherit' if e.supported else 'var(--muted)' }}">
+      <input type="radio" name="methodology" value="{{ e.id }}" {{ 'disabled' if not e.supported }} {{ 'checked' if (values.methodology or 'spec-kit') == e.id and e.supported }}>
+      {{ e.name }} {% if not e.supported %}<span class="chip muted">not yet</span>{% endif %}<div class="small" style="margin-left:22px">{{ e.note }}</div>
+    </label>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Autonomy level <span class="small">(Approach 2: who leads each phase, where the gates sit)</span></h3>
+    {% for e in catalog.autonomy_levels %}
+    <label style="color:{{ 'inherit' if e.supported else 'var(--muted)' }}">
+      <input type="radio" name="autonomy" value="{{ e.id }}" class="autonomy" {{ 'disabled' if not e.supported }} {{ 'checked' if (values.autonomy or 'L3') == e.id and e.supported }}>
+      {{ e.name }} {% if not e.supported %}<span class="chip muted">not yet</span>{% endif %}<div class="small" style="margin-left:22px">{{ e.note }}{% if e.supported %} · gates {{ gates_by_level[e.id].items()|map('join', '=')|join(', ') }}{% endif %}</div>
+    </label>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Gates <span class="small">(set by the autonomy level; override per gate if you must)</span></h3>
+    {% for g, what in [('G1','G1 spec'),('G2','G2 plan'),('G3','G3 code'),('G4','G4 staging'),('G5','G5 production')] %}
+    <label style="display:inline-block;margin-right:16px"><select name="{{ g|lower }}" class="gate" data-gate="{{ g }}" style="width:auto">
+      <option value="on" {{ 'selected' if values[g|lower] != 'off' }}>on</option><option value="off" {{ 'selected' if values[g|lower] == 'off' }}>off</option></select> {{ what }}</label>
+    {% endfor %}
+    <p class="small">An off gate is auto-passed with a Jira comment; the trail never has a silent skip.</p>
+    <label><input type="checkbox" name="dry_run" value="1" {{ 'checked' if values.dry_run is not defined or values.dry_run }}> dry run (plan only)</label>
+    <p><button class="primary">Onboard</button></p>
+  </div>
+</div>
 </form>
+<script>
+(function () {
+  var gatesByLevel = {{ gates_by_level|tojson }};
+  var order = {{ catalog.autonomy_levels|map(attribute='id')|list|tojson }};
+  function applyLevel() {
+    var lvl = document.querySelector('input.autonomy:checked');
+    if (!lvl) return;
+    var g = gatesByLevel[lvl.value] || {};
+    document.querySelectorAll('select.gate').forEach(function (sel) { if (g[sel.dataset.gate]) sel.value = g[sel.dataset.gate]; });
+  }
+  function applyCeiling() {
+    var cls = document.querySelector('input[name=project_class]:checked');
+    if (!cls) return;
+    var cap = order.indexOf(cls.dataset.ceiling);
+    document.querySelectorAll('input.autonomy').forEach(function (r) {
+      var supported = !r.hasAttribute('data-unsupported');
+      if (r.dataset.unsupported === undefined && r.getAttribute('data-supported') === null) {}
+      var above = cap >= 0 && order.indexOf(r.value) > cap;
+      if (above) { r.disabled = true; if (r.checked) { r.checked = false; } r.parentElement.style.color = 'var(--muted)'; r.title = 'above the ceiling for this project class'; }
+      else if (!r.dataset.locked) { if (r.getAttribute('data-unsupported') === null && !r.dataset.wasDisabled) { r.disabled = false; r.parentElement.style.color = 'inherit'; r.title = ''; } }
+    });
+    if (!document.querySelector('input.autonomy:checked')) { var first = document.querySelector('input.autonomy:not([disabled])'); if (first) first.checked = true; }
+    applyLevel();
+  }
+  document.querySelectorAll('input.autonomy').forEach(function (r) { if (r.disabled) r.dataset.wasDisabled = '1'; r.addEventListener('change', applyLevel); });
+  document.querySelectorAll('input[name=project_class]').forEach(function (r) { r.addEventListener('change', applyCeiling); });
+  applyCeiling();
+})();
+</script>
 {% endblock %}

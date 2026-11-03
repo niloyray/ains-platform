@@ -88,3 +88,24 @@ def test_fsm_current_mapping():
     assert fsm_current("Done", "released", {"merged": True}) == {"Done", "merged", "production approved"}
     assert fsm_current("Staging", "released", None) == {"Staging", "staging approved"}
     assert all(x in ids for x in fsm_current("Blocked", "blocked", None))
+
+
+def test_T_I21_2_add_form_greys_out_unsupported_options(client, config_root):
+    import shutil
+    from pathlib import Path
+
+    shutil.copy(Path(__file__).resolve().parents[1] / "profiles.yaml", config_root / "profiles.yaml")
+    html = client.get("/add").text
+    assert "Legacy modernization" in html and "L5 Closed-loop" in html and "BMAD" in html
+    assert html.count("disabled") >= 6  # unsupported classes, methods, levels and the maintain phase
+    data = {
+        "repo_name": "x",
+        "jira_key": "X1",
+        "jira_name": "x",
+        "project_class": "legacy-modernization",
+        "autonomy": "L3",
+        "methodology": "spec-kit",
+        "phases": ["intent", "spec", "plan", "develop", "test", "deploy"],
+    }
+    r = client.post("/add", data=data)
+    assert r.status_code == 200 and "not supported yet" in r.text

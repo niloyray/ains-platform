@@ -18,7 +18,15 @@ import typer
 
 from ains_orchestrator import __version__
 from ains_orchestrator.agent import ClaudeCodeRunner, DryRunAgents
-from ains_orchestrator.config import Config, Target, load_config
+from ains_orchestrator.config import (
+    Config,
+    Profile,
+    Target,
+    gates_for_autonomy,
+    load_config,
+    load_profiles,
+    validate_profile,
+)
 from ains_orchestrator.errors import AinsError
 from ains_orchestrator.flow import FlowEngine, Story, _adf_text
 from ains_orchestrator.github import GitHubClient
@@ -410,16 +418,39 @@ def target_add(
     jira_name: str = typer.Argument(..., help="Jira project name"),
     dry_run: bool = typer.Option(False, "--dry-run"),
     approval_mode: str = typer.Option("label", "--approval-mode", help="label | review"),
-    gates: str = typer.Option("", "--gates", help="e.g. G1=on,G2=on,G3=on,G4=off,G5=off"),
+    gates: str = typer.Option("", "--gates", help="e.g. G1=on,G2=off,G3=on (default: from the autonomy level)"),
     owner: str = typer.Option("", "--owner", help="GitHub owner (default: gh's current login)"),
+    project_class: str = typer.Option("small-poc", "--class", help="project class id from profiles.yaml"),
+    methodology: str = typer.Option("spec-kit", "--methodology", help="methodology id from profiles.yaml"),
+    autonomy: str = typer.Option("L3", "--autonomy", help="autonomy level id from profiles.yaml (L3 or L4 today)"),
+    phases: str = typer.Option("", "--phases", help="comma-separated phase ids (default: every supported phase)"),
 ) -> None:
     """Onboard a project: Jira project, GitHub repo, protection, environments, secrets, labels, templates."""
+    catalog = load_profiles(config_root())
+    phase_ids = [p.strip() for p in phases.split(",") if p.strip()] or [
+        e["id"] for e in catalog["lifecycle_phases"] if e.get("supported")
+    ]
+    profile = Profile(project_class=project_class, methodology=methodology, autonomy=autonomy, phases=phase_ids)
+    problems = validate_profile(catalog, profile)
+    if problems:
+        for p in problems:
+            typer.secho(f"profile: {p}", fg="red", err=True)
+        raise typer.Exit(2)
     ob = _onboarder(dry_run, owner)
     gate_map = {}
     for part in filter(None, gates.split(",")):
         g, _, v = part.partition("=")
         gate_map[g.strip()] = v.strip() or "on"
-    rep = ob.add(repo_name, jira_key.upper(), jira_name, gates=gate_map, approval_mode=approval_mode)
+    if not gate_map:
+        gate_map = gates_for_autonomy(catalog, autonomy)
+    rep = ob.add(
+        repo_name,
+        jira_key.upper(),
+        jira_name,
+        gates=gate_map,
+        approval_mode=approval_mode,
+        profile=profile.model_dump(),
+    )
     typer.echo(rep.text())
     if not dry_run and not rep.failed:
         typer.echo(f"\ntargets.yaml updated under {config_root()}; commit it in the platform repo.")

@@ -39,7 +39,7 @@ RUN git config --global user.name "ains-orchestrator" \
     && git config --global user.email "ains-orchestrator@users.noreply.github.com" \
     && git config --global --add safe.directory "*" \
     && git config --global credential.helper "!gh auth git-credential"
-COPY targets.yaml claude-settings.json ./
+COPY targets.yaml profiles.yaml claude-settings.json ./
 COPY flows ./flows
 COPY agents ./agents
 COPY schemas ./schemas

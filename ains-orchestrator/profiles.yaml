@@ -1,0 +1,116 @@
+# Catalog of project profiles, from the delivery view of "AI driven SDLC for IT" (init/, section
+# "Types of development approaches": Layer 1 project classes, Layer 2 lifecycle, Layer 3 methods, Approach 2 autonomy).
+# `supported: true` means the platform can run it today. Everything else is listed so the choice exists, shown
+# greyed out in the portal and refused by `ains target add`. To add an option later: add it here, build what it
+# needs, then flip `supported`. The catalog is mounted into the containers; no rebuild needed to edit it.
+
+project_classes:
+  - id: small-poc
+    name: Small projects and proofs of concept
+    supported: true
+    autonomy_ceiling: L4
+    note: short, time-boxed work; the story loop with every gate, or fewer gates at L4
+  - id: enterprise-greenfield
+    name: Enterprise greenfield
+    supported: true
+    autonomy_ceiling: L3
+    note: new applications built from the ground up; the same loop with every gate on
+  - id: feature-ai-native
+    name: Feature development and maintenance, AI-native applications
+    supported: true
+    autonomy_ceiling: L4
+    note: the onboarded repository is agent-ready (CLAUDE.md, Spec Kit, tests in CI); stories enter the loop directly
+  - id: feature-legacy
+    name: Feature development and maintenance, legacy applications
+    supported: false
+    autonomy_ceiling: L3
+    note: needs the brownfield on-ramp (context reconstruction, characterization tests) before the loop
+  - id: legacy-modernization
+    name: Legacy modernization
+    supported: false
+    autonomy_ceiling: L3
+    note: needs the modernization agent and segmentation by disposition
+  - id: skill-development
+    name: Skill development
+    supported: false
+    autonomy_ceiling: L3
+    note: needs the signed skill catalog
+
+lifecycle_phases:
+  - id: intent
+    name: Intent
+    supported: true
+    fixed: true
+    how: a person writes the story in Jira and moves it to Ready
+  - id: spec
+    name: Specification
+    supported: true
+    fixed: true
+    how: spec agent with /speckit-specify; gate G1
+  - id: plan
+    name: Plan
+    supported: true
+    fixed: true
+    how: plan agent with /speckit-plan and /speckit-tasks; gate G2
+  - id: develop
+    name: Develop
+    supported: true
+    fixed: true
+    how: implement agent with /speckit-implement
+  - id: test
+    name: Test
+    supported: true
+    fixed: true
+    how: CI workflow (lint and tests) and the review agent; gate G3
+  - id: deploy
+    name: Deploy
+    supported: true
+    fixed: true
+    how: release workflow to GHCR with the staging (G4) and production (G5) environments
+  - id: maintain
+    name: Maintain
+    supported: false
+    fixed: false
+    how: operations agent not built; incidents and alerts do not enter the loop yet
+
+methodologies:
+  - id: spec-kit
+    name: Spec Kit
+    supported: true
+    note: installed into every onboarded repository by `ains target add`; the stage prompts call its skills
+  - id: bmad
+    name: BMAD
+    supported: false
+    note: agent role set not packaged as a skill yet
+  - id: openspec
+    name: OpenSpec
+    supported: false
+    note: spec format not wired into the stage prompts yet
+  - id: gsd
+    name: GSD
+    supported: false
+    note: not packaged yet
+
+autonomy_levels:
+  - id: L1
+    name: L1 Assisted
+    supported: false
+    note: single-turn suggestions in an editor; nothing for the orchestrator to run
+  - id: L2
+    name: L2 Conversational
+    supported: false
+    note: interactive sessions with a person directing each step; nothing for the orchestrator to run
+  - id: L3
+    name: L3 Agentic
+    supported: true
+    note: agents plan and act toward a goal and report at checkpoints; a person reviews the spec, the plan and the diff
+    gates: {G1: on, G2: on, G3: on, G4: on, G5: on}
+  - id: L4
+    name: L4 Harness-driven
+    supported: true
+    note: agents run a story to completion; automated gates plus human spot-checks at code (G3) and production (G5)
+    gates: {G1: off, G2: off, G3: on, G4: off, G5: on}
+  - id: L5
+    name: L5 Closed-loop
+    supported: false
+    note: agents verify and self-correct, escalating only on a breach; needs closed-loop pipelines, rehearsed rollback and the full governance floor

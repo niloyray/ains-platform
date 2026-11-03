@@ -30,6 +30,15 @@ class Strict(BaseModel):
 
 
 # ----------------------------------------------------------------------------- targets.yaml
+class Profile(Strict):
+    """What kind of project this is, in the vocabulary of the delivery view (profiles.yaml is the catalog)."""
+
+    project_class: str = "small-poc"
+    phases: list[str] = Field(default_factory=lambda: ["intent", "spec", "plan", "develop", "test", "deploy"])
+    methodology: str = "spec-kit"
+    autonomy: str = "L3"
+
+
 class Target(Strict):
     repo: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
     default_branch: str = "main"
@@ -40,6 +49,7 @@ class Target(Strict):
     approval_label: str = "g3-approved"
     rework_label: str = "g3-rework"
     execution_lane_field_id: str | None = None
+    profile: Profile | None = None
 
     @field_validator("gates", mode="before")
     @classmethod
@@ -235,3 +245,54 @@ def export_schemas(out_dir: Path) -> list[Path]:
         p.write_text(json.dumps(model.model_json_schema(), indent=2) + "\n", encoding="utf-8")
         written.append(p)
     return written
+
+
+# ----------------------------------------------------------------------------- profile catalog (profiles.yaml)
+PROFILE_SECTIONS = ("project_classes", "lifecycle_phases", "methodologies", "autonomy_levels")
+
+
+def load_profiles(root: Path) -> dict[str, list[dict[str, Any]]]:
+    """The catalog of project classes, phases, methodologies and autonomy levels; empty sections when absent."""
+    p = root / "profiles.yaml"
+    data = yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {}
+    return {k: list((data or {}).get(k) or []) for k in PROFILE_SECTIONS}
+
+
+def _entry(catalog: dict[str, list[dict[str, Any]]], section: str, item_id: str) -> dict[str, Any] | None:
+    return next((e for e in catalog.get(section, []) if e.get("id") == item_id), None)
+
+
+def gates_for_autonomy(catalog: dict[str, list[dict[str, Any]]], level: str) -> dict[str, str]:
+    """The gate set an autonomy level implies; every gate on when the level is unknown."""
+    e = _entry(catalog, "autonomy_levels", level)
+    gates = (e or {}).get("gates") or {}
+    return {g: ("on" if gates.get(g, True) in (True, "on") else "off") for g in GATE_NAMES}
+
+
+def validate_profile(catalog: dict[str, list[dict[str, Any]]], profile: Profile) -> list[str]:
+    """Reasons a profile cannot be onboarded today: unknown or unsupported choices, autonomy above the class ceiling."""
+    errors: list[str] = []
+    checks = [
+        ("project_classes", profile.project_class, "project class"),
+        ("methodologies", profile.methodology, "methodology"),
+        ("autonomy_levels", profile.autonomy, "autonomy level"),
+    ] + [("lifecycle_phases", ph, "phase") for ph in profile.phases]
+    for section, item_id, label in checks:
+        e = _entry(catalog, section, item_id)
+        if e is None:
+            errors.append(f"unknown {label} '{item_id}'")
+        elif not e.get("supported"):
+            why = e.get("note") or e.get("how") or ""
+            errors.append(f"{label} '{item_id}' is not supported yet: {why}".rstrip(": "))
+    for e in catalog.get("lifecycle_phases", []):
+        if e.get("supported") and e.get("fixed") and e["id"] not in profile.phases:
+            errors.append(f"phase '{e['id']}' cannot be left out: the story flow runs it")
+    cls = _entry(catalog, "project_classes", profile.project_class)
+    order = [e["id"] for e in catalog.get("autonomy_levels", [])]
+    if cls and cls.get("autonomy_ceiling") in order and profile.autonomy in order:
+        if order.index(profile.autonomy) > order.index(cls["autonomy_ceiling"]):
+            errors.append(
+                f"autonomy {profile.autonomy} is above the ceiling {cls['autonomy_ceiling']} "
+                f"for class '{profile.project_class}'"
+            )
+    return errors

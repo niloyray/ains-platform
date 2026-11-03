@@ -105,3 +105,27 @@ def test_yaml_syntax_error_reports_line(tmp_path: Path):
     p.write_text("targets:\n  AINSSB:\n    repo: [unclosed\n", encoding="utf-8")
     with pytest.raises(ConfigError, match="YAML error"):
         load_targets(p)
+
+
+def test_T_I21_1_profile_catalog_and_validation(config_root):
+    from pathlib import Path
+
+    from ains_orchestrator.config import Profile, gates_for_autonomy, load_profiles, validate_profile
+
+    shipped = Path(__file__).resolve().parents[1]
+    catalog = load_profiles(shipped)
+    assert {e["id"] for e in catalog["autonomy_levels"] if e["supported"]} == {"L3", "L4"}
+    assert gates_for_autonomy(catalog, "L4") == {"G1": "off", "G2": "off", "G3": "on", "G4": "off", "G5": "on"}
+    assert gates_for_autonomy(catalog, "L3")["G1"] == "on" and gates_for_autonomy(catalog, "nope")["G2"] == "on"
+    assert validate_profile(catalog, Profile()) == []
+    bad = Profile(
+        project_class="legacy-modernization", methodology="bmad", autonomy="L5", phases=["intent", "maintain"]
+    )
+    msgs = validate_profile(catalog, bad)
+    assert any("legacy-modernization" in m and "not supported" in m for m in msgs)
+    assert any("bmad" in m for m in msgs) and any("L5" in m for m in msgs) and any("maintain" in m for m in msgs)
+    assert any("cannot be left out" in m for m in msgs)
+    ceiling = Profile(project_class="enterprise-greenfield", autonomy="L4")
+    assert any("above the ceiling" in m for m in validate_profile(catalog, ceiling))
+    empty = {k: [] for k in ("project_classes", "lifecycle_phases", "methodologies", "autonomy_levels")}
+    assert load_profiles(config_root) == empty

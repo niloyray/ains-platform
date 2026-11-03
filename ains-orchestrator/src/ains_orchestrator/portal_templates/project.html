@@ -13,6 +13,18 @@
   {% endfor %}
 </div>
 
+<h2>Profile</h2>
+{% if target.profile %}
+<div class="cards">
+  <div class="card"><div class="k">Project class</div><div class="v" style="font-size:16px">{{ target.profile.project_class }}</div><div class="d">{% for e in catalog.project_classes if e.id == target.profile.project_class %}{{ e.name }} · ceiling {{ e.autonomy_ceiling }}{% endfor %}</div></div>
+  <div class="card"><div class="k">Autonomy</div><div class="v" style="font-size:16px">{{ target.profile.autonomy }}</div><div class="d">{% for e in catalog.autonomy_levels if e.id == target.profile.autonomy %}{{ e.name }}{% endfor %}</div></div>
+  <div class="card"><div class="k">Methodology</div><div class="v" style="font-size:16px">{{ target.profile.methodology }}</div></div>
+  <div class="card"><div class="k">Phases</div><div class="d">{{ target.profile.phases|join(' → ') }}</div></div>
+</div>
+{% else %}
+<p class="small">No profile recorded for this project (onboarded before profiles existed). Add a <code>profile:</code> block to its entry in <code>targets.yaml</code>: <code>{project_class: small-poc, methodology: spec-kit, autonomy: L3, phases: [intent, spec, plan, develop, test, deploy]}</code>.</p>
+{% endif %}
+
 <h2>Links</h2>
 <div class="grid2">
   <div class="card"><h3 style="margin-top:0">Jira</h3>

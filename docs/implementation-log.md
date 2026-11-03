@@ -394,3 +394,14 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | control | `ains-platform.cmd start|stop|restart|build|down|status|logs|doctor|verify|portal` at the repo root; `start` brings up both containers |
 | tests | T-I20-1..6 and the state-map mapping; 112 pass. Verified live: all routes 200, state map highlights Done / merged / production approved for AINSSB-2 |
 
+### I21: project profiles from the delivery view (class, phases, methodology, autonomy)
+
+| Item | Detail |
+|------|--------|
+| catalog | `ains-orchestrator/profiles.yaml`, from "AI driven SDLC for IT" (Layer 1 classes, Layer 2 loop, Layer 3 methods, Approach 2 autonomy levels). Each entry has `supported`; classes carry an `autonomy_ceiling`; L3 and L4 carry their gate sets (L3 all on; L4 G1/G2/G4 off). Mounted read-only into both containers, so new options are a file edit |
+| model | `Target.profile` (`Profile`: project_class, phases, methodology, autonomy); `load_profiles`, `gates_for_autonomy`, `validate_profile` (unknown or unsupported choice, fixed phase left out, autonomy above the class ceiling) |
+| onboarding | `ains target add --class --methodology --autonomy --phases`; gates default from the autonomy level; the target block gains a `profile:` line. Portal add form: supported options selectable, unsupported greyed with "not yet", gates filled from the level, levels above the class ceiling disabled; server-side validation re-renders the form with the reasons. Project page shows the profile |
+| supported today | classes small-poc, enterprise-greenfield (ceiling L3), feature-ai-native; phases intent to deploy (all fixed in the story flow; maintain not yet); methodology Spec Kit; autonomy L3 and L4 |
+| sandbox | `AINSSB` profile recorded: small-poc, spec-kit, L3 |
+| tests | T-I21-1 (catalog and validation), T-I21-2 (form greys out, rejects unsupported); 114 pass |
+

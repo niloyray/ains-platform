@@ -123,6 +123,7 @@ class Onboarder:
         *,
         gates: dict[str, str] | None = None,
         approval_mode: str = "label",
+        profile: dict[str, Any] | None = None,
     ) -> Report:
         rep = Report()
         repo = f"{self.owner}/{repo_name}"
@@ -147,7 +148,7 @@ class Onboarder:
         self._github_environments(rep, repo)
         self._github_protection(rep, repo)
         self._jira_project(rep, jira_key, jira_name, repo)
-        self._targets_block(rep, jira_key, repo, gates, approval_mode)
+        self._targets_block(rep, jira_key, repo, gates, approval_mode, profile)
         return rep
 
     # ---------------------------------------------------------------- github
@@ -388,7 +389,15 @@ class Onboarder:
             rep.add("jira project", "failed", str(e)[:300])
 
     # ---------------------------------------------------------------- targets.yaml
-    def _targets_block(self, rep: Report, key: str, repo: str, gates: dict[str, str], approval_mode: str) -> None:
+    def _targets_block(
+        self,
+        rep: Report,
+        key: str,
+        repo: str,
+        gates: dict[str, str],
+        approval_mode: str,
+        profile: dict[str, Any] | None = None,
+    ) -> None:
         path = self.root / "targets.yaml"
         text = path.read_text(encoding="utf-8") if path.exists() else "targets: {}\n"
         if re.search(rf"^\s{{2}}{re.escape(key)}:\s*$", text, flags=re.M):
@@ -399,6 +408,13 @@ class Onboarder:
             f"  {key}:\n    repo: {repo}\n    default_branch: main\n    flow: story\n"
             f"    gates: {{{gates_txt}}}\n    review_label: ai-review\n    approval_mode: {approval_mode}\n"
         )
+        if profile:
+            phases = ", ".join(str(p) for p in profile.get("phases", []))
+            block += (
+                f"    profile: {{project_class: {profile.get('project_class', 'small-poc')}, "
+                f"methodology: {profile.get('methodology', 'spec-kit')}, autonomy: {profile.get('autonomy', 'L3')}, "
+                f"phases: [{phases}]}}\n"
+            )
         if re.search(r"^targets:\s*\{\}\s*$", text, flags=re.M):
             new = re.sub(r"^targets:\s*\{\}\s*$", "targets:\n" + block.rstrip("\n"), text, count=1, flags=re.M)
         elif re.search(r"^targets:\s*$", text, flags=re.M):

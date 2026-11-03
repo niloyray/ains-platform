@@ -21,7 +21,15 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.templating import Jinja2Templates
 
 from ains_orchestrator import __version__
-from ains_orchestrator.config import Config, Target, load_config
+from ains_orchestrator.config import (
+    Config,
+    Profile,
+    Target,
+    gates_for_autonomy,
+    load_config,
+    load_profiles,
+    validate_profile,
+)
 from ains_orchestrator.errors import AinsError
 from ains_orchestrator.github import GitHubClient
 from ains_orchestrator.jira import JiraClient
@@ -302,10 +310,18 @@ def _now() -> str:
 
 
 def run_add(
-    portal: Portal, jid: str, repo: str, key: str, name: str, gates: dict[str, str], mode: str, dry: bool
+    portal: Portal,
+    jid: str,
+    repo: str,
+    key: str,
+    name: str,
+    gates: dict[str, str],
+    mode: str,
+    dry: bool,
+    profile: dict[str, Any] | None = None,
 ) -> None:
     try:
-        rep = portal.onboarder(dry_run=dry).add(repo, key, name, gates=gates, approval_mode=mode)
+        rep = portal.onboarder(dry_run=dry).add(repo, key, name, gates=gates, approval_mode=mode, profile=profile)
         _job_finish(jid, rep.text().splitlines(), rep.failed)
     except Exception as e:  # noqa: BLE001 - the report page must always render
         _job_finish(jid, [f"failed: {e}"], True)
@@ -394,6 +410,7 @@ def create_app(root: Path | None = None) -> FastAPI:
             rows=rows,
             labels=LABELS,
             statuses=REQUIRED_STATUSES,
+            catalog=load_profiles(portal.root),
             jobs=[j for j in JOBS.values() if j.get("project") == key.upper()][-5:],
         )
         return TEMPLATES.TemplateResponse(request, "project.html", ctx)
@@ -454,33 +471,53 @@ def create_app(root: Path | None = None) -> FastAPI:
         )
         return TEMPLATES.TemplateResponse(request, "story.html", ctx)
 
+    def _add_ctx(
+        request: Request, cfg: Config, errors: list[str] | None = None, values: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        catalog = load_profiles(portal.root)
+        ctx = base_ctx(request, cfg, "add")
+        ctx.update(
+            catalog=catalog,
+            gates_by_level={e["id"]: gates_for_autonomy(catalog, e["id"]) for e in catalog["autonomy_levels"]},
+            errors=errors or [],
+            values=values or {},
+        )
+        return ctx
+
     @app.get("/add", response_class=HTMLResponse)
     def add_form(request: Request) -> Any:
-        cfg = portal.config()
-        ctx = base_ctx(request, cfg, "add")
-        return TEMPLATES.TemplateResponse(request, "add.html", ctx)
+        return TEMPLATES.TemplateResponse(request, "add.html", _add_ctx(request, portal.config()))
 
     @app.post("/add")
-    def add_submit(
-        background: BackgroundTasks,
-        repo_name: str = Form(...),
-        jira_key: str = Form(...),
-        jira_name: str = Form(...),
-        approval_mode: str = Form("label"),
-        g1: str = Form("on"),
-        g2: str = Form("on"),
-        g3: str = Form("on"),
-        g4: str = Form("on"),
-        g5: str = Form("on"),
-        dry_run: str = Form(""),
-    ) -> Any:
-        gates = {"G1": g1, "G2": g2, "G3": g3, "G4": g4, "G5": g5}
-        key = jira_key.strip().upper()
-        jid = _job_start("add", f"onboard {repo_name.strip()} as {key}{' [dry run]' if dry_run else ''}")
-        JOBS[jid]["project"] = key
-        background.add_task(
-            run_add, portal, jid, repo_name.strip(), key, jira_name.strip(), gates, approval_mode, bool(dry_run)
+    async def add_submit(request: Request, background: BackgroundTasks) -> Any:
+        form = await request.form()
+        f = {k: str(v) for k, v in form.items()}
+        phases = [str(v) for v in form.getlist("phases")]
+        profile = Profile(
+            project_class=f.get("project_class", "small-poc"),
+            methodology=f.get("methodology", "spec-kit"),
+            autonomy=f.get("autonomy", "L3"),
+            phases=phases,
         )
+        cfg = portal.config()
+        errors = validate_profile(load_profiles(portal.root), profile)
+        key = f.get("jira_key", "").strip().upper()
+        repo_name = f.get("repo_name", "").strip()
+        jira_name = f.get("jira_name", "").strip()
+        if not repo_name or not key or not jira_name:
+            errors.append("repository name, Jira key and Jira name are required")
+        if errors:
+            values = {**f, "phases": phases}
+            return TEMPLATES.TemplateResponse(request, "add.html", _add_ctx(request, cfg, errors, values))
+        gates = {g: f.get(g.lower(), "on") for g in ("G1", "G2", "G3", "G4", "G5")}
+        dry = bool(f.get("dry_run"))
+        title = (
+            f"onboard {repo_name} as {key} ({profile.project_class}, {profile.autonomy}){' [dry run]' if dry else ''}"
+        )
+        jid = _job_start("add", title)
+        JOBS[jid]["project"] = key
+        mode = f.get("approval_mode", "label")
+        background.add_task(run_add, portal, jid, repo_name, key, jira_name, gates, mode, dry, profile.model_dump())
         return RedirectResponse(f"/jobs/{jid}", status_code=303)
 
     @app.get("/jobs/{jid}", response_class=HTMLResponse)

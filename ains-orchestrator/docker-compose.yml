@@ -16,6 +16,7 @@ services:
       - ains-workspaces:/work
       # config is mounted, not baked: `ains target add` edits take effect on the next poll without a rebuild
       - ./targets.yaml:/app/targets.yaml:ro
+      - ./profiles.yaml:/app/profiles.yaml:ro
       - ./flows:/app/flows:ro
       - ./agents:/app/agents:ro
       - ./claude-settings.json:/app/claude-settings.json:ro
@@ -38,6 +39,7 @@ services:
     volumes:
       - ains-workspaces:/work
       - ./targets.yaml:/app/targets.yaml          # read-write: onboarding from the portal appends the target block
+      - ./profiles.yaml:/app/profiles.yaml:ro
       - ./flows:/app/flows:ro
       - ./agents:/app/agents:ro
       - ./claude-settings.json:/app/claude-settings.json:ro
