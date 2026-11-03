@@ -276,7 +276,7 @@ Note on 3.4. With polling (D3) the Automation rule is the **audit trace**, not t
 
 | Sub-step | Action | Owner | Verification | Status |
 |----------|--------|-------|--------------|--------|
-| 6a.1 | `ains target add ains-sandbox AINSSB sandbox`: the first real onboarding, creating the throwaway repo `niloyray/ains-sandbox` and Jira project `AINSSB` with everything step 3 and 6.8 describe; used by every L4 live test and by the acceptance run | Claude | T-I16-3, T-I16-5 | `[ ]` |
+| 6a.1 | `ains target add ains-sandbox AINSSB sandbox`: the first real onboarding, creating the throwaway repo `niloyray/ains-sandbox` and Jira project `AINSSB` with everything step 3 and 6.8 describe; used by every L4 live test and by the acceptance run | Claude | T-I16-3, T-I16-5 | `[x]` |
 | 6a.2 | `ains target add ains-sandbox-2 AINSSB2 sandbox-2` a second time proves the capability is reusable, then `ains target remove ains-sandbox-2` proves the inverse | Claude | T-I16-7, T-I16-6 | `[ ]` |
 | 6a.3 | At the end of Phase 1 the sandbox **stays** as the permanent regression target (`targets.yaml` keeps its block); only `ains-sandbox-2` is removed. Evidence kept in `docs/test-evidence.md` | Claude | T-I16-6 | `[ ]` |
 
@@ -296,17 +296,17 @@ Not part of Phase 1. Listed here only so the hand-off is explicit; these rows mo
 
 | Sub-step | Action | Owner | Verification | Status |
 |----------|--------|-------|--------------|--------|
-| 8.1 | Story `AINSSB-1 "Repository scaffold: README section and health-check script"` in the sandbox project, Execution Lane AI-native, small unambiguous description; all five gates on (O4) | Claude | story URL | `[ ]` |
-| 8.2 | Transition to Ready. Observe: intake-ack comment, claim (Specifying), spec agent, draft PR with `spec.md`, status `Spec Review` (phases 1 to 3) | Claude (observe) | timestamps | `[ ]` |
-| 8.3 | **G1:** user reads `spec.md`, transitions to `Spec Approved` (or `Rework` once, to prove the loop) | user | transition | `[ ]` |
-| 8.4 | Observe plan agent, `plan.md`, `tasks.md` committed, status `Plan Review` (phase 4) | Claude (observe) | timestamps | `[ ]` |
-| 8.5 | **G2:** user transitions to `Plan Approved` | user | transition | `[ ]` |
-| 8.6 | Observe implement agent, PR ready, CI green, status `Code Review`, then the **review agent's PR review posted** (phases 5 and 6) | Claude (observe) | PR URL, review URL, run URL | `[ ]` |
-| 8.7 | **G3:** user approves the PR after reading the agent review | user | approval | `[ ]` |
-| 8.8 | Observe squash merge, release run, image in GHCR, status `Staging` (phase 8 begins) | Claude (observe) | run URL | `[ ]` |
-| 8.9 | **G4:** user approves `staging` environment | user | deployment | `[ ]` |
-| 8.10 | **G5:** user approves `production` environment; observe Jira `Done` with PR and run links | user, then Claude (observe) | story `Done` | `[ ]` |
-| 8.11 | Acceptance criterion: the only manual touches were the five gate actions (plus one deliberate `Rework`). Anything else means fix the platform directly (D13) and re-run with `AINSSB-2` | Claude | checklist | `[ ]` |
+| 8.1 | Story `AINSSB-2 "Repository scaffold: README section and health-check script"` (AINSSB-1 was used up as the CI smoke story) in the sandbox project, Execution Lane AI-native, small unambiguous description; all five gates on (O4) | Claude | story URL | `[x]` |
+| 8.2 | Transition to Ready. Observe: intake-ack comment, claim (Specifying), spec agent, draft PR with `spec.md`, status `Spec Review` (phases 1 to 3) | Claude (observe) | timestamps | `[x]` |
+| 8.3 | **G1:** user reads `spec.md`, transitions to `Spec Approved` (or `Rework` once, to prove the loop) | user | transition | `[x]` |
+| 8.4 | Observe plan agent, `plan.md`, `tasks.md` committed, status `Plan Review` (phase 4) | Claude (observe) | timestamps | `[x]` |
+| 8.5 | **G2:** user transitions to `Plan Approved` | user | transition | `[x]` |
+| 8.6 | Observe implement agent, PR ready, CI green, status `Code Review`, then the **review agent's PR review posted** (phases 5 and 6) | Claude (observe) | PR URL, review URL, run URL | `[x]` |
+| 8.7 | **G3:** user approves the PR after reading the agent review | user | approval | `[x]` |
+| 8.8 | Observe squash merge, release run, image in GHCR, status `Staging` (phase 8 begins) | Claude (observe) | run URL | `[x]` |
+| 8.9 | **G4:** user approves `staging` environment | user | deployment | `[x]` |
+| 8.10 | **G5:** user approves `production` environment; observe Jira `Done` with PR and run links | user, then Claude (observe) | story `Done` | `[x]` |
+| 8.11 | Acceptance criterion: the only manual touches were the five gate actions (plus one deliberate `Rework`). Anything else means fix the platform directly (D13) and re-run with `AINSSB-2` | Claude | checklist | `[x]` |
 | 8.12 | Human-lane smoke test: a tiny PR opened by hand in `ains-sandbox` with label `ai-review` gets a review from the review agent and still needs G3 | user + Claude (observe) | review URL | `[ ]` |
 | 8.13 | Generic-capability check: the whole of 8.1 to 8.12 used only `ains target add`, the shipped templates and the orchestrator; nothing in `ains-platform` names the sandbox except `targets.yaml` and the evidence log | Claude | `grep -r sandbox ains-platform` | `[ ]` |
 
@@ -315,7 +315,7 @@ Not part of Phase 1. Listed here only so the hand-off is explicit; these rows mo
 | Sub-step | Action | Owner | Verification | Status |
 |----------|--------|-------|--------------|--------|
 | 9.1 | `docs/divergence.md`: table against section 05 of the architecture doc. Known entries: (a) intake is pull, not push; (b) orchestrator is the homegrown `ains-orchestrator`, not a third-party Ark; (c) runs in a local container, not a VM; (d) release environments are gates, not hosts; (e) platform and application split across two GitHub repos, one Jira project for the PoC only, platform outside the story lane; (f) five switchable gates instead of the doc's single review gate; (g) four stage roles on one harness instead of eight agents | Claude | file committed | `[ ]` |
-| 9.2 | `docs/gates.md` and `docs/targets.md` written | Claude | files committed | `[ ]` |
+| 9.2 | `docs/gates.md` and `docs/targets.md` written | Claude | files committed | `[x]` |
 | 9.3 | Update the status summary to all `[x]` and close the "Phase 1" milestone in `ains-platform` | Claude | milestone closed | `[ ]` |
 
 ---
