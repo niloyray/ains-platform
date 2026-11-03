@@ -433,3 +433,14 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | guided onboarding | the skill asks one question per turn through the question tool: repository name, Jira key, Jira name, project class (supported entries of `profiles.yaml`, unsupported named as not available), autonomy level within the class ceiling with the gates it implies, G3 approval mode, gate overrides; phases and methodology stated, not asked, while one option exists; dry run shown, explicit yes before the real run, verify afterwards, reminder to commit the target entry. Same style for removal |
 | docs | user guide section 10 and developer manual 12c updated; README |
 
+### Restart test through the control script (user request)
+
+| Step | Result |
+|------|--------|
+| `ains-platform.cmd stop` | both containers stopped (orchestrator exit 137 from the stop signal, expected) |
+| `ains-platform.cmd start` | both recreated and healthy within 16 s; portal link printed |
+| `ains-platform.cmd status` | containers, both stories with their next action, portal link |
+| portal | all six routes 200; heartbeat 9 s old after the first cycle |
+| data volume | `/data/logs/orchestrator.log` kept across the restart (two "poll loop started" lines, 89 cycle lines); store intact |
+| `ains-platform.cmd doctor` | 15 checks ok, including gh auth and Jira login |
+
