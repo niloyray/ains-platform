@@ -378,3 +378,10 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | defects seen in the review text | (1) the agent reports `git diff` and `git log` "required approval", so it reviewed from the working tree and commit subjects; (2) it was told the story key is `AINSSB-PR1`, the watcher's synthetic session key, and flagged a spec-folder mismatch that is an artefact of that |
 | fix | review prompts now receive the PR diff from `gh pr diff` inline (bounded), so a review never depends on shell permissions; read-only git commands are allowed in both rule spellings (`git diff *`, `git diff:*`); the watcher derives the story key from the branch name (`AINSSB-1`) and tells the agent when a PR has no story |
 
+### Review prompt fix verified; state map added to the user guide
+
+| Item | Detail |
+|------|--------|
+| fix | `render_prompt` defaults `story_key` to the Jira key, so the shipped review prompt renders for story sessions and for human-lane PRs alike (test T-I9-1 had caught the gap). 105 tests pass; container rebuilt |
+| docs | user guide section 7 now has "The state map": one diagram with the Jira status machine, the pull-request machine and the release-run machine, coloured by who makes each move, plus a from/to/who/cause table of every transition and a note on which statuses are the human's and which are the platform's |
+

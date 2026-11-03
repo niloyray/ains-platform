@@ -126,6 +126,7 @@ def minimal_env(parent: Mapping[str, str], passthrough: list[str]) -> dict[str, 
 def render_prompt(template_text: str, key: str, context: dict[str, Any]) -> str:
     """Substitute {key}, {summary}, ... in the stage prompt; unknown placeholders are left as-is."""
     values = {"key": key, **{k: ("" if v is None else str(v)) for k, v in context.items()}}
+    values.setdefault("story_key", key)  # flows pass the Jira key; human-lane PRs pass their own
 
     class _Safe(dict):
         def __missing__(self, k: str) -> str:
