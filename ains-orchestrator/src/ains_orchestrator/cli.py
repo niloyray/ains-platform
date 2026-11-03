@@ -90,6 +90,44 @@ def load_dotenv(root: Path) -> None:
         os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+def work_dir(root: Path) -> Path:
+    """Story clones (throwaway)."""
+    return Path(os.environ.get("AINS_WORK_DIR", "/work" if os.name != "nt" else str(root / "work")))
+
+
+def data_dir(root: Path) -> Path:
+    """Durable platform data: sessions.sqlite, heartbeat.json, logs/. Defaults to the work dir for older setups."""
+    d = Path(os.environ.get("AINS_DATA_DIR") or work_dir(root))
+    d.mkdir(parents=True, exist_ok=True)
+    _migrate_store(work_dir(root), d)
+    return d
+
+
+def _migrate_store(old: Path, new: Path) -> None:
+    """One-time move of the store from the work volume to the data volume (first start after the split)."""
+    if old == new or (new / "sessions.sqlite").exists() or not (old / "sessions.sqlite").exists():
+        return
+    for name in ("sessions.sqlite", "sessions.sqlite-wal", "sessions.sqlite-shm", "heartbeat.json"):
+        if (old / name).exists():
+            shutil.copy2(old / name, new / name)
+    log.warning("store migrated from %s to %s; the old copy is left in place", old, new)
+
+
+def setup_file_log(data: Path, name: str) -> None:
+    """Rotating log under <data>/logs next to the container's stdout log, so it survives `docker compose down`."""
+    from logging.handlers import RotatingFileHandler
+
+    logs = data / "logs"
+    try:
+        logs.mkdir(parents=True, exist_ok=True)
+        h = RotatingFileHandler(logs / f"{name}.log", maxBytes=5_000_000, backupCount=5, encoding="utf-8")
+        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        h.formatter.converter = time.gmtime  # type: ignore[union-attr]
+        logging.getLogger().addHandler(h)
+    except OSError as e:
+        log.warning("file log not available: %s", e)
+
+
 @dataclass
 class Runtime:
     root: Path
@@ -126,8 +164,8 @@ def build_runtime(dry_run: bool = False, *, need_jira: bool = True) -> Runtime:
     except AinsError as e:
         typer.secho(f"config error: {e}", fg="red", err=True)
         raise typer.Exit(2) from e
-    work = Path(os.environ.get("AINS_WORK_DIR", "/work" if os.name != "nt" else str(root / "work")))
-    store = Store(work / "sessions.sqlite")
+    work = work_dir(root)
+    store = Store(data_dir(root) / "sessions.sqlite")
     gh = GitHubClient(dry_run=dry_run, bot_login=os.environ.get("AINS_BOT_LOGIN"))
     ws = Workspace(work, gh)
     agent = next(iter(cfg.agents.values()))
@@ -368,14 +406,18 @@ def poll(
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.Formatter.converter = time.gmtime
     logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per Jira call is noise
+    setup_file_log(rt.store.path.parent, "orchestrator")
+    log.info("poll loop started: every %ss, data in %s, work in %s", every, rt.store.path.parent, rt.workspace.root)
     while True:
         rep = poller.cycle()
         wrep = watcher.cycle()
         stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-        typer.echo(
-            f"{stamp} cycle: claimed={rep.claimed} stepped={rep.stepped} skipped={rep.skipped} "
+        line = (
+            f"cycle: claimed={rep.claimed} stepped={rep.stepped} skipped={rep.skipped} "
             f"reviewed={wrep.reviewed} errors={rep.errors + wrep.errors}"
         )
+        typer.echo(f"{stamp} {line}")
+        log.info(line)
         write_heartbeat(
             rt.store.path.parent,
             {
@@ -552,8 +594,10 @@ def doctor(live: bool = typer.Option(True, "--live/--no-live", help="Also call J
     for tool in ("git", "gh", "claude", "specify"):
         path = _which(tool)
         check(f"tool {tool}", path is not None, _version([path, "--version"]) if path else "not on PATH")
-    work = Path(os.environ.get("AINS_WORK_DIR", "/work" if os.name != "nt" else str(root / "work")))
+    work = work_dir(root)
     try:
+        data = data_dir(root)
+        check("data dir", True, f"{data} (sessions.sqlite, heartbeat.json, logs/)")
         work.mkdir(parents=True, exist_ok=True)
         (work / ".write-test").write_text("ok")
         (work / ".write-test").unlink()

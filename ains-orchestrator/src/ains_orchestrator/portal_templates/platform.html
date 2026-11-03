@@ -5,7 +5,8 @@
 <p class="lead">The running configuration, read from the mounted files. Edit them on the laptop; the poller reads them on its next cycle.</p>
 <div class="cards">
   <div class="card"><div class="k">Config root</div><div class="v mono" style="font-size:14px">{{ root }}</div></div>
-  <div class="card"><div class="k">Work volume</div><div class="v mono" style="font-size:14px">{{ work }}</div><div class="d">clones under &lt;KEY&gt;/, sessions.sqlite, heartbeat.json</div></div>
+  <div class="card"><div class="k">Data volume</div><div class="v mono" style="font-size:14px">{{ data }}</div><div class="d">sessions.sqlite, heartbeat.json, logs/ (durable; back up with ains-platform.cmd backup)</div></div>
+  <div class="card"><div class="k">Work volume</div><div class="v mono" style="font-size:14px">{{ work }}</div><div class="d">story clones under &lt;KEY&gt;/ (throwaway)</div></div>
   <div class="card"><div class="k">Credentials present</div><div class="d">{% for k, ok in env.items() %}{{ '✓' if ok else '✗' }} {{ k }}<br>{% endfor %}</div></div>
   <div class="card"><div class="k">Last poll cycle</div><div class="d">{% if heartbeat.present %}{{ heartbeat.at }}<br>claimed {{ heartbeat.claimed }} · stepped {{ heartbeat.stepped }} · reviewed {{ heartbeat.reviewed }}<br>errors {{ heartbeat.errors }}{% else %}none yet{% endif %}</div></div>
 </div>

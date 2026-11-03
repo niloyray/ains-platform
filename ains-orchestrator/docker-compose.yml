@@ -11,9 +11,11 @@ services:
     environment:
       AINS_CONFIG_ROOT: /app
       AINS_WORK_DIR: /work
+      AINS_DATA_DIR: /data
       AINS_POLL_SECONDS: ${AINS_POLL_SECONDS:-60}
     volumes:
-      - ains-workspaces:/work
+      - ains-workspaces:/work                      # story clones: throwaway
+      - ains-data:/data                            # sessions.sqlite, heartbeat.json, logs/: durable; ains-platform.cmd backup
       # config is mounted, not baked: `ains target add` edits take effect on the next poll without a rebuild
       - ./targets.yaml:/app/targets.yaml:ro
       - ./profiles.yaml:/app/profiles.yaml:ro
@@ -34,10 +36,12 @@ services:
     environment:
       AINS_CONFIG_ROOT: /app
       AINS_WORK_DIR: /work
+      AINS_DATA_DIR: /data
     ports:
       - "127.0.0.1:8787:8787"
     volumes:
       - ains-workspaces:/work
+      - ains-data:/data
       - ./targets.yaml:/app/targets.yaml          # read-write: onboarding from the portal appends the target block
       - ./profiles.yaml:/app/profiles.yaml:ro
       - ./flows:/app/flows:ro
@@ -51,3 +55,4 @@ services:
 
 volumes:
   ains-workspaces:
+  ains-data:

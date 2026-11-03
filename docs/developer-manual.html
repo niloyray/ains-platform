@@ -90,6 +90,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
     <li><span class="num">11</span><a href="#actions">The GitHub Actions side</a></li>
     <li><span class="num">12</span><a href="#onboarding">Onboarding internals</a></li>
     <li><span class="num">12b</span><a href="#scaffold">Acceptance scaffolding and status</a></li>
+    <li><span class="num">12c</span><a href="#portal">Portal, profiles and the management skill</a></li>
     <li><span class="num">13</span><a href="#devloop">Development loop</a></li>
     <li><span class="num">14</span><a href="#extend">Extending the platform</a></li>
     <li><span class="num">15</span><a href="#invariants">Invariants and security model</a></li>
@@ -120,14 +121,17 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
 ├── ains-orchestrator/
 │   ├── pyproject.toml              # typer, pydantic, pyyaml, httpx; dev: pytest, respx, ruff
 │   ├── Dockerfile, docker-compose.yml, .env.example, .env (gitignored)
-│   ├── targets.yaml                # onboarded projects (mounted into the container)
+│   ├── targets.yaml                # onboarded projects (mounted into the containers)
+│   ├── profiles.yaml               # catalog: project classes, lifecycle phases, methodologies, autonomy levels (I21)
 │   ├── flows/story.yaml            # stages, gates, Jira status names
 │   ├── agents/claude-code.yaml     # harness command, per-stage mode and limits
 │   ├── agents/stages/*.md          # prompt templates: spec, plan, implement, review
 │   ├── claude-settings.json        # tool allow/deny list given to every agent
 │   ├── schemas/*.json              # exported JSON schemas of the config models
-│   ├── src/ains_orchestrator/      # the package (section 4)
+│   ├── src/ains_orchestrator/      # the package (section 4); portal.py + portal_templates/ are the management portal
 │   └── tests/                      # pytest; fakes.py holds the in-memory doubles
+├── .claude/skills/ains-management/ # Claude Code skill for operating the platform (reads the same store)
+├── ains-platform.cmd               # start | stop | restart | build | down | status | logs | doctor | verify | portal | backup
 ├── docs/                           # implementation-log.md, gates.md, targets.md, this manual, the user guide, diagrams
 └── plan/                           # ainativesdlc_plan.md, ains-platform-test-plan.md (copies of the working plan)</code></pre>
 
@@ -198,7 +202,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
   </g>
 </svg>
 </div>
-<figcaption>One container, three outbound credentials, nothing listening. Source is baked into the image, so a code change needs <code>docker compose up -d --build</code>; configuration is mounted and does not.</figcaption>
+<figcaption>One image, two containers: <code>ains-orchestrator</code> runs <code>ains poll</code>; <code>ains-portal</code> runs <code>ains portal</code> and is published on <code>127.0.0.1:8787</code> only. Both mount the config files and two named volumes: <code>ains-data</code> at <code>/data</code> (sessions.sqlite, heartbeat.json, logs/) and <code>ains-workspaces</code> at <code>/work</code> (story clones). Three outbound credentials, nothing listening from outside. Source is baked into the image, so a code change needs <code>ains-platform.cmd build</code>; configuration is mounted and does not.</figcaption>
 </figure>
 
 <h2 id="modules"><span class="num">4</span>Module map</h2>
@@ -252,7 +256,8 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
   <tr><td><code>github.py</code></td><td><code>GitHubClient</code> over <code>gh</code> and <code>git</code> subprocesses via an injectable runner</td><td>clone, branch, commit, push, PR create/ready/view/list/review/merge, labels, comments, CI log</td></tr>
   <tr><td><code>workspace.py</code></td><td>per-story clone under <code>/work/&lt;KEY&gt;</code>; commit and push helpers; cleanup</td><td><code>ensure</code>, <code>commit</code>, <code>push</code>, <code>head_sha</code>, <code>cleanup</code></td></tr>
   <tr><td><code>store.py</code></td><td>SQLite <code>sessions</code> and <code>events</code>; dataclasses <code>Session</code>, <code>Event</code></td><td><code>get_session</code>, <code>update_session</code>, <code>add_event</code>, <code>events</code>, <code>active_sessions</code></td></tr>
-  <tr><td><code>onboard.py</code></td><td><code>Onboarder.add/remove</code>: repo, templates, labels, secrets, environments, protection, Jira project and statuses, targets.yaml</td><td>returns a step report; <code>--dry-run</code></td></tr>
+  <tr><td><code>onboard.py</code></td><td><code>Onboarder.add/remove</code>: repo, templates, labels, secrets, environments, protection, Jira project and statuses, targets.yaml (with the profile block); <code>verify_target()</code> read-only mirror</td><td>returns a step report; <code>--dry-run</code></td></tr>
+  <tr><td><code>portal.py</code></td><td>the management portal: pages, state-map highlighting, background jobs for add, remove and verify</td><td><code>create_app(root)</code>; templates under <code>portal_templates/</code></td></tr>
   <tr><td><code>errors.py</code></td><td><code>JiraError</code>, <code>GitHubError</code>, <code>TransitionUnavailable</code>, <code>MergeRefused</code>, <code>AgentError</code></td><td></td></tr>
 </table>
 </div>
@@ -342,7 +347,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
 <p>Agent failures: <code>_retry_or_block</code> allows <code>attempts &lt; max_attempts</code> (2) retries with the agent template's back-off, then blocks. On resume, a stage whose output files already exist (<code>STAGE_OUTPUTS</code>) skips the agent and only commits, so a crash between agent and push does not pay for a second run.</p>
 
 <h2 id="data"><span class="num">7</span>Persistent state</h2>
-<p>SQLite at <code>/work/sessions.sqlite</code> (WAL mode). Two tables.</p>
+<p>Everything durable lives under <code>AINS_DATA_DIR</code> (<code>/data</code>, volume <code>ains-data</code>): <code>sessions.sqlite</code> (WAL mode, two tables), <code>heartbeat.json</code> (the last cycle report, written by the poll loop and read by the portal and <code>ains status</code>) and <code>logs/orchestrator.log</code> (rotating, 5 × 5 MB, the same lines as the container's stdout). Story clones live under <code>AINS_WORK_DIR</code> (<code>/work</code>, volume <code>ains-workspaces</code>) and are deleted after the merge. <code>data_dir()</code> in <code>cli.py</code> resolves the directory, defaults it to the work dir for older setups, and migrates an existing store from the work volume once. <code>ains-platform.cmd backup</code> copies the data volume to <code>backup/data-&lt;stamp&gt;</code> with <code>docker cp</code>. A bind mount was rejected for the database on purpose: SQLite locking over Docker Desktop's Windows file sharing is unreliable; a named volume with a copy-out command is safer.</p>
 <div class="tablewrap">
 <table>
   <tr><th>sessions</th><th>Meaning</th></tr>
@@ -477,6 +482,14 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
   <li><b>In progress:</b> human-lane review of sandbox PR #1 (plan 8.12), waiting for the <code>ai-review</code> label.</li>
   <li><b>Next:</b> G5 on the AINSSB-2 release run; rework paths G1, G2, G3-label and block/resume on a second sandbox story (8.13); second onboarding and removal proof (6a.2); gates-off run; <code>docs/divergence.md</code> and milestone close (step 9); credential evidence screenshots T-L6-1/5; rotate the three tokens after the PoC. Phase 2 starts by onboarding <code>ains-poc</code> / <code>AINSPOC</code>.</li>
 </ul>
+
+<h2 id="portal"><span class="num">12c</span>Portal, profiles and the management skill</h2>
+<h3>Portal (<code>portal.py</code>, <code>portal_templates/</code>)</h3>
+<p>FastAPI with Jinja2 templates, started by <code>ains portal</code> and run as the compose service <code>portal</code> on the same image. A <code>Portal</code> object resolves config root, data and work dirs once; every request reloads <code>load_config()</code> and opens the store, so edits to the mounted files show at once. Read routes: <code>/</code> (dashboard), <code>/projects/{KEY}</code>, <code>/stories/{KEY}</code>, <code>/platform</code>, <code>/docs/{name}</code> (served from the mounted <code>docs/</code>), <code>/api/status</code> (the same rows as <code>ains status --json</code>). Write routes start background jobs and redirect to <code>/jobs/{id}</code>: <code>POST /add</code> (<code>Onboarder.add</code>), <code>POST /projects/{KEY}/remove</code> (typed confirmation, dry-run default, <code>Onboarder.remove</code>), <code>POST /projects/{KEY}/verify</code> (<code>verify_target</code>). Jobs are in memory (<code>JOBS</code>), so a portal restart forgets their reports; the store and the Jira comments keep what matters. The story page draws the state map from <code>FSM_NODES</code> and <code>fsm_current()</code>, which combines the live Jira status, the live PR state (<code>pr_view</code>) and the stage, with stage-implied fallbacks when Jira or GitHub are unreachable. The portal only reads Jira and GitHub; gates are never passed from it.</p>
+<h3>Profiles (<code>profiles.yaml</code>, <code>config.Profile</code>)</h3>
+<p>The catalog mirrors the delivery view of "AI driven SDLC for IT": project classes (Layer 1, with an <code>autonomy_ceiling</code>), lifecycle phases (Layer 2, all <code>fixed</code> in the story flow today), methodologies (Layer 3) and autonomy levels (Approach 2, with the gate set each implies). Each entry has <code>supported</code>; <code>validate_profile()</code> refuses unknown or unsupported choices, a fixed phase left out, and a level above the class ceiling; <code>gates_for_autonomy()</code> is the gate default for <code>target add</code> and the portal form. The chosen profile is stored on the target (<code>Target.profile</code>) and written into the <code>targets.yaml</code> block. To add an option: add the catalog entry, build what it needs (a flow variant, a prompt set, a workflow), then flip <code>supported</code>; the portal greys it out until then.</p>
+<h3>The management skill (<code>.claude/skills/ains-management/</code>)</h3>
+<p>A Claude Code skill for operating the platform from a terminal session in this repository (mirrored in the PoC workspace). It holds no state: every answer comes from <code>ains status --json</code>, <code>ains session status --json</code>, <code>/api/status</code> and <code>gh</code>, which read the same store the portal shows. It refuses to pass gates unless the user names the exact action, and it never writes tokens anywhere but <code>.env</code> and repository secrets. Keep <code>reference.md</code> in step with the command sheet in the user guide.</p>
 
 <h2 id="devloop"><span class="num">13</span>Development loop</h2>
 <pre><code>cd ains-orchestrator

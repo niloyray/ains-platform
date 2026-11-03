@@ -251,8 +251,9 @@ copy .env.example .env</code></pre>
 <div class="step"><div class="n">step<b>1</b></div><div>
   <h4>Run the onboarding command</h4>
   <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal, in ains-orchestrator</span></div>
-  <pre><code>uv run ains target add ains-poc AINSPOC "AINS PoC" --gates G1=on,G2=on,G3=on,G4=on,G5=on --approval-mode label</code></pre>
-  <p>Add <code>--dry-run</code> first to see what it would do without doing it. The command is safe to run again: it reports what already exists and re-applies the rest.</p>
+  <pre><code>uv run ains target add ains-poc AINSPOC "AINS PoC" --class small-poc --autonomy L3 --methodology spec-kit --approval-mode label</code></pre>
+  <p>Add <code>--dry-run</code> first to see what it would do without doing it. The command is safe to run again: it reports what already exists and re-applies the rest. The same form exists in the portal under <b>+ Add project</b>.</p>
+  <p><b>The profile.</b> Every project states what kind of work it is, in the words of the delivery framework: a <b>project class</b> (small projects and proofs of concept, enterprise greenfield, feature work on AI-native applications; legacy and modernization classes are listed but not supported yet), the <b>lifecycle phases</b> it runs (intent, specification, plan, develop, test, deploy; maintain is not supported yet), the <b>methodology</b> (Spec Kit; others listed, not yet) and the <b>autonomy level</b>. The autonomy level sets the gates: <b>L3 Agentic</b> keeps all five human gates; <b>L4 Harness-driven</b> keeps only G3 code and G5 production and auto-passes the rest. Each class has a ceiling (greenfield stops at L3). Unsupported choices are refused with the reason; the catalog is <code>ains-orchestrator/profiles.yaml</code>, so new options are added there as the platform grows.</p>
 </div></div>
 
 <h3>What the command creates</h3>
@@ -727,6 +728,18 @@ git push</code></pre>
 </table>
 </div>
 
+<h3>The management portal</h3>
+<p>Open <a href="http://localhost:8787">http://localhost:8787</a> on the laptop that runs the platform, or type <code>ains-platform.cmd portal</code>. It reads the same database as the orchestrator, so it never disagrees with the commands below. The left bar has:</p>
+<ul>
+  <li><b>Dashboard:</b> is the poller alive (last cycle and age), are the credentials present, which stories wait for a person and what to do, every story, recent events and jobs.</li>
+  <li><b>Platform:</b> the running flow, agents, gates, config files and where the data lives.</li>
+  <li><b>Projects:</b> one page per project with its gate cards, profile, Jira and GitHub links (board, pull requests, actions, environments, protection, labels, secrets, images), every story with its next action and links to spec, plan, tasks, diff, checks and CI runs, a <b>Run verify</b> button and a <b>Remove</b> form with typed confirmation and dry run.</li>
+  <li><b>+ Add project:</b> the onboarding form: names, project class, lifecycle phases, methodology and autonomy level, with the gates filled from the level. Options the platform cannot run yet are greyed out with "not yet". Dry run first.</li>
+  <li><b>Story page</b> (click a story): stage, live Jira status and pull-request state, the next action, the state map with the current states highlighted, artifact links and the full event trail including what each agent replied.</li>
+  <li><b>Documentation:</b> this guide, the developer manual and the implementation log, served from the repository.</li>
+</ul>
+<p>Onboarding, removal and verify run as background jobs; the job page refreshes until the report is complete. The portal is only reachable from the laptop itself.</p>
+
 <h3>The one-line answer: what is waiting for me?</h3>
 <pre><code>docker compose exec orchestrator ains status</code></pre>
 <p>Lists every story the platform knows with its stage and, under it, the one thing a person can do now, for example:</p>
@@ -783,6 +796,11 @@ gh run view &lt;run id&gt; --repo niloyray/ains-sandbox --log-failed</code></pre
 <pre><code>docker compose exec orchestrator sh -c "cd /work/AINSSB-2 && git status && git log --oneline -5"</code></pre>
 <p>Do not edit files there; the next agent run or commit would pick the edit up as the agent's work. After the merge the directory is deleted.</p>
 
+<h3>Where the data lives, and backing it up</h3>
+<p>Two Docker volumes on the laptop. <code>ains-data</code> holds what must survive: the story database (<code>sessions.sqlite</code>), the poller heartbeat and the log files under <code>logs/</code>. <code>ains-workspaces</code> holds the throwaway clones of story branches. Stopping, restarting or rebuilding the containers keeps both; only deleting the volumes loses them. To take a copy:</p>
+<pre><code>ains-platform.cmd backup        # copies the data volume to ains-platform\backup\data-&lt;date-time&gt;</code></pre>
+<p>The log file <code>logs/orchestrator.log</code> in that copy is the same text as the container log, kept across container restarts and rotated at 5 MB.</p>
+
 <h3>Health</h3>
 <pre><code>docker compose ps                                   # healthy?
 docker compose exec orchestrator ains doctor        # tokens, Jira, GitHub, Claude
@@ -831,12 +849,15 @@ docker compose exec orchestrator ains targets list  # which projects are onboard
 
 <h2 id="commands"><span class="num">13</span>Command sheet</h2>
 <p>All run on the laptop, in <code>ains-platform/ains-orchestrator</code>.</p>
-<pre><code># what is waiting for me?
+<pre><code># the short way: the control script at the repository root (double-click free; run in a terminal)
+ains-platform.cmd start | stop | restart | build | down | status | logs | doctor | verify &lt;repo&gt; &lt;KEY&gt; | portal | backup
+
+# what is waiting for me?
 docker compose exec orchestrator ains status
 uv run ains target verify &lt;repo&gt; &lt;KEY&gt;      # onboarding complete?
 
 # container
-docker compose up -d --build          # build (after code changes) and start
+docker compose up -d --build          # build (after code changes) and start both containers
 docker compose ps                     # is it healthy?
 docker compose logs -t -f orchestrator   # live log with timestamps; Ctrl+C to stop watching
 docker compose logs -t --since 1h orchestrator

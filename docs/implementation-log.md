@@ -405,3 +405,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | sandbox | `AINSSB` profile recorded: small-poc, spec-kit, L3 |
 | tests | T-I21-1 (catalog and validation), T-I21-2 (form greys out, rejects unsupported); 114 pass |
 
+### I22: data volume, file log, backup; management skill; docs for portal, profiles and skill
+
+| Item | Detail |
+|------|--------|
+| data split | `AINS_DATA_DIR=/data` on the named volume `ains-data` for `sessions.sqlite`, `heartbeat.json` and `logs/orchestrator.log` (rotating 5 x 5 MB); `/work` keeps the throwaway clones. `data_dir()` migrates an existing store from the work volume once (verified live: store, WAL and heartbeat copied, both containers healthy, portal sees the same stories). Decision: named volume, not a bind mount, because SQLite locking over Docker Desktop's Windows file sharing is unreliable; `ains-platform.cmd backup` copies the volume out with `docker cp` |
+| skill | `.claude/skills/ains-management/` (SKILL.md, reference.md), mirrored to `PoC/.claude/skills/`: how to read state (always from the store via `ains status --json`, `ains session status --json`, `/api/status`), operating commands, projects, stories, diagnosing, change discipline; never passes a gate on its own |
+| docs | user guide: the management portal, profile choices at onboarding, data and backup, control script in the command sheet; developer manual: repo map, runtime topology, persistent state, section 12c (portal, profiles, skill) |
+| tests | T-I22-1 (data dir default and one-time migration); 115 pass |
+

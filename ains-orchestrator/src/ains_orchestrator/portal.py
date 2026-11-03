@@ -128,7 +128,10 @@ class Portal:
 
         self.root = root or config_root()
         load_dotenv(self.root)
-        self.work = Path(os.environ.get("AINS_WORK_DIR", "/work" if os.name != "nt" else str(self.root / "work")))
+        from ains_orchestrator.cli import data_dir, work_dir
+
+        self.work = work_dir(self.root)
+        self.data = data_dir(self.root)
         self.docs_dir = next(
             (p for p in (self.root / "docs", self.root.parent / "docs", Path("/app/docs")) if p.exists()), None
         )
@@ -138,7 +141,7 @@ class Portal:
         return load_config(self.root)
 
     def store(self) -> Store:
-        return Store(self.work / "sessions.sqlite")
+        return Store(self.data / "sessions.sqlite")
 
     def jira(self) -> JiraClient | None:
         if all(os.environ.get(v) for v in ("JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN")):
@@ -154,7 +157,7 @@ class Portal:
     def heartbeat(self) -> dict[str, Any]:
         from ains_orchestrator.cli import read_heartbeat
 
-        hb = read_heartbeat(self.work) or {}
+        hb = read_heartbeat(self.data) or {}
         age: float | None = None
         if hb.get("at"):
             try:
@@ -543,7 +546,13 @@ def create_app(root: Path | None = None) -> FastAPI:
         }
         ctx = base_ctx(request, cfg, "platform")
         ctx.update(
-            files=files, env=env, flows=cfg.flows, agents=cfg.agents, work=str(portal.work), root=str(portal.root)
+            files=files,
+            env=env,
+            flows=cfg.flows,
+            agents=cfg.agents,
+            work=str(portal.work),
+            data=str(portal.data),
+            root=str(portal.root),
         )
         return TEMPLATES.TemplateResponse(request, "platform.html", ctx)
 

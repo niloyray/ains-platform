@@ -24,6 +24,12 @@ if /i "%~1"=="verify"  (
   uv run ains target verify %2 %3 & goto done
 )
 if /i "%~1"=="portal"  ( start "" "%PORTAL_URL%" & goto done )
+if /i "%~1"=="backup"  (
+  set "STAMP=%date:~-4%%date:~3,2%%date:~0,2%-%time:~0,2%%time:~3,2%"
+  set "STAMP=%STAMP: =0%"
+  if not exist "%HERE%backup" mkdir "%HERE%backup"
+  docker cp ains-orchestrator:/data "%HERE%backup\data-%STAMP%" & echo backup written to %HERE%backup\data-%STAMP% & goto done
+)
 if /i "%~1"=="status"  (
   echo == containers
   docker compose ps
@@ -47,6 +53,7 @@ echo   logs      follow the orchestrator log with timestamps (Ctrl+C to stop fol
 echo   doctor    check tokens, tools and connections inside the container
 echo   verify    verify a project's onboarding: %~n0 verify ains-sandbox AINSSB
 echo   portal    open the management portal in the browser (%PORTAL_URL%)
+echo   backup    copy the data volume (sessions.sqlite, heartbeat, logs) to backup\data-^<stamp^>
 exit /b 1
 :done
 endlocal

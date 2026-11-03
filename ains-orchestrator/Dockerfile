@@ -45,11 +45,11 @@ COPY agents ./agents
 COPY schemas ./schemas
 
 # the Claude Code review plugin is optional: the review prompt is self-contained
-RUN mkdir -p /work \
+RUN mkdir -p /work /data \
     && (claude plugin marketplace add anthropics/claude-plugins-official >/dev/null 2>&1 \
         && claude plugin install code-review@claude-plugins-official >/dev/null 2>&1 \
         || echo "code-review plugin not installed at build time (optional)")
 
-VOLUME ["/work"]
+VOLUME ["/work", "/data"]
 HEALTHCHECK --interval=5m --timeout=60s --start-period=30s --retries=2 CMD ains doctor --no-live || exit 1
 CMD ["ains", "poll"]

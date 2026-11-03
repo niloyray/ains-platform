@@ -102,3 +102,20 @@ def test_next_action_covers_every_stage():
     assert next_action(sess("released"), None, "Staging").startswith("G5")
     assert "nothing to do" in next_action(sess("implement"), None)
     assert "merging it is yours" in next_action(sess("pr_reviewed", flow="pr-review"), None)
+
+
+def test_T_I22_1_data_dir_defaults_to_work_and_migrates_once(tmp_path: Path, monkeypatch):
+    from ains_orchestrator.cli import data_dir, work_dir
+
+    monkeypatch.setenv("AINS_WORK_DIR", str(tmp_path / "work"))
+    monkeypatch.delenv("AINS_DATA_DIR", raising=False)
+    (tmp_path / "work").mkdir()
+    assert data_dir(tmp_path) == work_dir(tmp_path) == tmp_path / "work"
+    (tmp_path / "work" / "sessions.sqlite").write_bytes(b"db")
+    (tmp_path / "work" / "heartbeat.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("AINS_DATA_DIR", str(tmp_path / "data"))
+    d = data_dir(tmp_path)
+    assert d == tmp_path / "data" and (d / "sessions.sqlite").read_bytes() == b"db" and (d / "heartbeat.json").exists()
+    (tmp_path / "work" / "sessions.sqlite").write_bytes(b"changed")
+    data_dir(tmp_path)
+    assert (d / "sessions.sqlite").read_bytes() == b"db"  # migrated once, never overwritten
