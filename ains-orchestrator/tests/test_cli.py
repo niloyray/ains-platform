@@ -119,3 +119,20 @@ def test_T_I22_1_data_dir_defaults_to_work_and_migrates_once(tmp_path: Path, mon
     (tmp_path / "work" / "sessions.sqlite").write_bytes(b"changed")
     data_dir(tmp_path)
     assert (d / "sessions.sqlite").read_bytes() == b"db"  # migrated once, never overwritten
+
+
+def test_T_I6_7_config_reloaded_between_cycles(env_root, monkeypatch):
+    from types import SimpleNamespace
+
+    from ains_orchestrator.cli import build_runtime, reload_config
+
+    rt = build_runtime(need_jira=False)
+    poller, watcher = SimpleNamespace(config=rt.config), SimpleNamespace(config=rt.config)
+    assert reload_config(rt, poller, watcher) is False  # unchanged
+    (env_root / "targets.yaml").write_text(
+        "targets:\n  AINSSB:\n    repo: niloyray/ains-sandbox\n  NEWP:\n    repo: niloyray/newp\n", encoding="utf-8"
+    )
+    assert reload_config(rt, poller, watcher) is True
+    assert "NEWP" in rt.config.targets.targets and poller.config is rt.config and watcher.config is rt.config
+    (env_root / "targets.yaml").write_text("targets:\n  BAD: [\n", encoding="utf-8")
+    assert reload_config(rt, poller, watcher) is False and "NEWP" in rt.config.targets.targets  # kept the last good one

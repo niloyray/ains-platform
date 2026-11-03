@@ -124,8 +124,32 @@ def setup_file_log(data: Path, name: str) -> None:
         h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
         h.formatter.converter = time.gmtime  # type: ignore[union-attr]
         logging.getLogger().addHandler(h)
+        # the cycle line goes to stdout for `docker logs` and to the file only, never twice to the console
+        cycle_log.propagate = False
+        cycle_log.addHandler(h)
     except OSError as e:
         log.warning("file log not available: %s", e)
+
+
+cycle_log = logging.getLogger("ains.cycle")
+
+
+def reload_config(rt: Runtime, *consumers: Any) -> bool:
+    """Re-read the mounted config files before a cycle so `ains target add` takes effect without a restart.
+
+    On a parse error the previous config stays in force and the error is logged once per change."""
+    try:
+        cfg = load_config(rt.root)
+    except AinsError as e:
+        log.warning("config not reloaded, keeping the previous one: %s", e)
+        return False
+    if cfg == rt.config:
+        return False
+    rt.config = cfg
+    for c in consumers:
+        c.config = cfg
+    log.info("config reloaded: targets %s", sorted(cfg.targets.targets))
+    return True
 
 
 @dataclass
@@ -409,6 +433,7 @@ def poll(
     setup_file_log(rt.store.path.parent, "orchestrator")
     log.info("poll loop started: every %ss, data in %s, work in %s", every, rt.store.path.parent, rt.workspace.root)
     while True:
+        reload_config(rt, poller, watcher)
         rep = poller.cycle()
         wrep = watcher.cycle()
         stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -417,7 +442,7 @@ def poll(
             f"reviewed={wrep.reviewed} errors={rep.errors + wrep.errors}"
         )
         typer.echo(f"{stamp} {line}")
-        log.info(line)
+        cycle_log.info(line)
         write_heartbeat(
             rt.store.path.parent,
             {

@@ -452,3 +452,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | stories | `AINSSB-3` (version command) in Ready on the sandbox for the rework paths (8.13): the user will send it back at G1, G2 and G3 once; `AINSSB2-1` (health check) in Ready on sandbox 2 for the gates-off run at L4 (checklist row 11) |
 | docs | `docs/divergence.md` (plan 9.1: 15 rows against section 05 of the architecture document and the build prompt); `docs/cloud-deployment.md` (credentials, portal login, model access as the blocker); `docs/targets.md` row for AINSSB2 |
 
+### Defect: a new target was not polled until a restart; config now reloaded every cycle
+
+| Item | Detail |
+|------|--------|
+| observed | AINSSB2-1 stayed in Ready for 8 minutes while AINSSB-3 (existing target) was claimed; the running `ains poll` had loaded `targets.yaml` once at start, although the docs promised "live on the next poll" |
+| fix | `reload_config()` re-reads the mounted config before every cycle and hands it to the poller and the watcher; a parse error keeps the last good config and logs a warning. Test T-I6-7. The cycle line now goes to stdout and the file log once (a dedicated `ains.cycle` logger), no longer twice to the console |
+| verified | first cycle after the rebuild: `claimed=['AINSSB2-1']`, spec agent ran, **G1 auto-passed** (gate off at L4), stage `plan` |
+| note | `test_T_I2_1_shipped_files_validate` fails while `AINSSB2` is in `targets.yaml`; that is the D16 guard working, and it passes again after `target remove ains-sandbox-2` at the end of the L4 run |
+| Jira | a freshly created story took about 5 minutes to appear in JQL results (search index lag), so "claimed within a minute" holds for stories moved to Ready, not for ones created seconds earlier |
+
