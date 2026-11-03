@@ -7,7 +7,7 @@ description: Operate and manage the AINS platform (the AI-native SDLC orchestrat
 
 The platform is one Docker Compose stack in `ains-orchestrator/`: the **orchestrator** (`ains poll`, claims Jira stories, runs
 the stage agents, waits at gates, merges) and the **portal** (`ains portal`, http://localhost:8787). Both read and write the
-same state: `/work/sessions.sqlite` (sessions and events), `/work/heartbeat.json` (last poll cycle) and the mounted config
+same state: `/data/sessions.sqlite` (sessions and events), `/data/heartbeat.json` (last poll cycle), `/data/logs/` and the mounted config
 files (`targets.yaml`, `profiles.yaml`, `flows/`, `agents/`, `claude-settings.json`). **Never keep a parallel record of
 platform state in notes or memory; ask the store every time.**
 
@@ -38,7 +38,7 @@ from memory. Stage names: `spec, wait_g1, plan, wait_g2, implement, review, wait
 ## Operating the platform
 
 ```
-ains-platform.cmd start|stop|restart|build|down|status|logs|doctor|verify <repo> <KEY>|portal
+ains-platform.cmd start|stop|restart|build|down|status|logs|doctor|verify <repo> <KEY>|portal|backup
 ```
 - `build` after any change under `ains-orchestrator/src` (the image bakes the source); config files are mounted and need
   only the next poll cycle.
