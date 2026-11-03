@@ -194,21 +194,21 @@ ul.bullets .why { display: block; font-size: 12.5px; color: var(--fg-muted); mar
 <text x="42" y="151" class="bs" fill="#5B6168">repo ains-platform · built directly from the workstation · no Jira, CI or orchestrator for the platform · P1–P7</text>
 <rect x="510" y="120" width="470" height="690" rx="12" fill="#F6F5F1" stroke="#5B6168" stroke-width="1"/>
 <text x="522" y="138" class="cl" fill="#5B6168">PLATFORM RUNTIME · built in Phase 1, used only by onboarded projects</text>
-<text x="522" y="151" class="bs" fill="#5B6168">Jira Cloud · ains-orchestrator container · reusable Actions workflows · credentials · agent usage A1–A7</text>
+<text x="522" y="151" class="bs" fill="#5B6168">Jira Cloud · ains-orchestrator + portal containers · reusable Actions workflows · credentials · agent usage A1–A7</text>
 <rect x="55" y="160" width="400" height="56" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
 <text x="255.0" y="175" class="bt" text-anchor="middle" fill="#1B1F23">Workstation: VS Code + Claude Code CLI</text>
 <text x="255.0" y="187" class="bs" text-anchor="middle" fill="#5B6168">interactive sessions write and test the orchestrator</text>
 <text x="255.0" y="199" class="bs" text-anchor="middle" fill="#5B6168">same toolchain the Phase 2 developer uses</text>
 <rect x="55" y="240" width="400" height="56" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
 <text x="255.0" y="255" class="bt" text-anchor="middle" fill="#1B1F23">Jira onboarding  (part of ains target add)</text>
-<text x="255.0" y="267" class="bs" text-anchor="middle" fill="#5B6168">per project: Kanban project · field Execution Lane · 9 statuses</text>
-<text x="255.0" y="279" class="bs" text-anchor="middle" fill="#5B6168">Automation rule (audit trace) · site-wide field created once</text>
+<text x="255.0" y="267" class="bs" text-anchor="middle" fill="#5B6168">per project: Kanban project · label ai-native as the lane marker · 12 statuses via REST</text>
+<text x="255.0" y="279" class="bs" text-anchor="middle" fill="#5B6168">Automation rule (audit trace, optional) · profile: class · phases · method · autonomy</text>
 <rect x="55" y="320" width="400" height="86" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1.8"/>
 <text x="255.0" y="335" class="bt" text-anchor="middle" fill="#1B1F23">Repo ains-platform  (GitHub, code only, no Actions)</text>
-<text x="255.0" y="347" class="bs" text-anchor="middle" fill="#5B6168">ains-orchestrator/  src · Dockerfile · compose · flows · agents · stages · targets.yaml</text>
+<text x="255.0" y="347" class="bs" text-anchor="middle" fill="#5B6168">ains-orchestrator/  src · Dockerfile · compose · flows · agents · targets.yaml · profiles.yaml</text>
 <text x="255.0" y="359" class="bs" text-anchor="middle" fill="#5B6168">.github/workflows/  reusable-ci · reusable-release · reusable-jira-callback · intake-ack</text>
 <text x="255.0" y="371" class="bs" text-anchor="middle" fill="#5B6168">   (workflow_call definitions; they run only when ains-poc calls them)</text>
-<text x="255.0" y="383" class="bs" text-anchor="middle" fill="#5B6168">bootstrap/new-target.sh · docs/ · plan/ · commits straight to main</text>
+<text x="255.0" y="383" class="bs" text-anchor="middle" fill="#5B6168">bootstrap/templates · docs/ · plan/ · ains-platform.cmd · .claude/skills · commits straight to main</text>
 <rect x="55" y="430" width="400" height="58" rx="7" fill="#F2E9D0" stroke="#8A6D1D" stroke-width="1"/>
 <text x="255.0" y="445" class="bt" text-anchor="middle" fill="#1B1F23">Secrets placement</text>
 <text x="255.0" y="457" class="bs" text-anchor="middle" fill="#5B6168">claude setup-token → CLAUDE_CODE_OAUTH_TOKEN · GitHub PAT · Jira token</text>
@@ -219,7 +219,7 @@ ul.bullets .why { display: block; font-size: 12.5px; color: var(--fg-muted); mar
 <text x="255.0" y="551" class="bs" text-anchor="middle" fill="#5B6168">+ label ai-review + templates · targets.yaml entry · proven on the sandbox</text>
 <rect x="55" y="594" width="400" height="70" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
 <text x="255.0" y="609" class="bt" text-anchor="middle" fill="#1B1F23">Acceptance run on the sandbox  =  Phase 1 done</text>
-<text x="255.0" y="621" class="bs" text-anchor="middle" fill="#5B6168">AINSSB-1 'repository scaffold' through all phases and five gates, hands-off</text>
+<text x="255.0" y="621" class="bs" text-anchor="middle" fill="#5B6168">AINSSB-2 'repository scaffold' through all phases and five gates, hands-off (done 2026-11-03)</text>
 <text x="255.0" y="633" class="bs" text-anchor="middle" fill="#5B6168">ains-poc is never touched in Phase 1; it is onboarded on Phase 2 day one</text>
 <text x="255.0" y="645" class="bs" text-anchor="middle" fill="#5B6168">docs/divergence.md records the gaps vs. the architecture document</text>
 <rect x="55" y="688" width="400" height="46" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
@@ -227,7 +227,7 @@ ul.bullets .why { display: block; font-size: 12.5px; color: var(--fg-muted); mar
 <text x="255.0" y="715" class="bs" text-anchor="middle" fill="#5B6168">engineer edits ains-platform directly; image rebuilt with compose; no story lane</text>
 <rect x="535" y="160" width="420" height="56" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
 <text x="745.0" y="175" class="bt" text-anchor="middle" fill="#1B1F23">Jira Cloud · rayniloy.atlassian.net · one project per onboarded target</text>
-<text x="745.0" y="187" class="bs" text-anchor="middle" fill="#5B6168">Execution Lane: Human | AI-native · Ready → … → Done · Rework · Blocked</text>
+<text x="745.0" y="187" class="bs" text-anchor="middle" fill="#5B6168">label ai-native marks the lane · Ready → Specifying → … → Done · Rework · Blocked</text>
 <text x="745.0" y="199" class="bs" text-anchor="middle" fill="#5B6168">Automation rule = audit trace · project stories only, never platform work</text>
 <rect x="525" y="236" width="440" height="450" rx="12" fill="#E8F2F0" stroke="#146B63" stroke-width="1" stroke-dasharray="6 4"/>
 <text x="537" y="254" class="cl" fill="#146B63">Container: ains-orchestrator  (Docker Desktop on the laptop)</text>
@@ -251,8 +251,8 @@ ul.bullets .why { display: block; font-size: 12.5px; color: var(--fg-muted); mar
 <text x="847.5" y="479" class="bs" text-anchor="middle" fill="#5B6168">run inside the agent's session</text>
 <text x="847.5" y="491" class="bs" text-anchor="middle" fill="#5B6168">integration key: claude</text>
 <rect x="545" y="522" width="400" height="40" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
-<text x="745.0" y="537" class="bt" text-anchor="middle" fill="#1B1F23">Workspace volume</text>
-<text x="745.0" y="549" class="bs" text-anchor="middle" fill="#5B6168">/work/&lt;KEY&gt;/ · clone of the target repo · branch &lt;KEY&gt;-&lt;slug&gt;</text>
+<text x="745.0" y="537" class="bt" text-anchor="middle" fill="#1B1F23">Volumes</text>
+<text x="745.0" y="549" class="bs" text-anchor="middle" fill="#5B6168">/work/&lt;KEY&gt;/ clones (throwaway) · /data: sessions.sqlite · heartbeat · logs/ (durable)</text>
 <rect x="535" y="578" width="200" height="56" rx="7" fill="#F2E9D0" stroke="#8A6D1D" stroke-width="1"/>
 <text x="635.0" y="593" class="bt" text-anchor="middle" fill="#1B1F23">.env  (gitignored)</text>
 <text x="635.0" y="605" class="bs" text-anchor="middle" fill="#5B6168">CLAUDE_CODE_OAUTH_TOKEN · GITHUB_TOKEN</text>
@@ -261,6 +261,9 @@ ul.bullets .why { display: block; font-size: 12.5px; color: var(--fg-muted); mar
 <text x="855.0" y="593" class="bt" text-anchor="middle" fill="#1B1F23">Claude Max subscription</text>
 <text x="855.0" y="605" class="bs" text-anchor="middle" fill="#5B6168">plan usage, no API metering</text>
 <text x="855.0" y="617" class="bs" text-anchor="middle" fill="#5B6168">serves every claude -p run</text>
+<rect x="545" y="642" width="400" height="38" rx="7" fill="#DEEEEC" stroke="#146B63" stroke-width="1"/>
+<text x="745.0" y="657" class="bt" text-anchor="middle" fill="#1B1F23">Management portal  (ains portal · second container · localhost:8787)</text>
+<text x="745.0" y="669" class="bs" text-anchor="middle" fill="#5B6168">dashboard · projects (add · verify · remove) · stories with the state map · same /data store</text>
 <rect x="535" y="710" width="420" height="56" rx="7" fill="#ECEBE6" stroke="#5B6168" stroke-width="1"/>
 <text x="745.0" y="725" class="bt" text-anchor="middle" fill="#1B1F23">Reusable Actions workflows  (defined in ains-platform)</text>
 <text x="745.0" y="737" class="bs" text-anchor="middle" fill="#5B6168">ci · release · jira-callback · intake-ack  (workflow_call)</text>

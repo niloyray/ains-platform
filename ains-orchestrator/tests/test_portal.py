@@ -109,3 +109,18 @@ def test_T_I21_2_add_form_greys_out_unsupported_options(client, config_root):
     }
     r = client.post("/add", data=data)
     assert r.status_code == 200 and "not supported yet" in r.text
+
+
+def test_T_I20_7_board_link_uses_the_board_id(client, monkeypatch):
+    class J:
+        def board_id(self, key):
+            return 2
+
+        def status_of(self, key):
+            return "Code Review"
+
+    monkeypatch.setattr(Portal, "jira", lambda self: J())
+    monkeypatch.setenv("JIRA_BASE_URL", "https://x.atlassian.net")
+    Portal._board_ids.clear()
+    html = client.get("/projects/AINSSB").text
+    assert "https://x.atlassian.net/jira/software/projects/AINSSB/boards/2" in html

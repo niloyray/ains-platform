@@ -280,6 +280,37 @@ Columns: ID · level · test · expected result · evidence.
 
 ---
 
+### I20 Management portal
+
+| Id | Level | Input | Expected | Evidence |
+|----|-------|-------|----------|----------|
+| T-I20-1 | L1 | dashboard with a waiting story, a blocked story and a stale heartbeat | both stories listed with their gate; poller shown as stale; nav lists the project | pytest (TestClient) |
+| T-I20-2 | L1 | project page | PR, spec, plan, tasks links per story; verify and remove controls; unknown key redirects | pytest |
+| T-I20-3 | L1 | story page | current state highlighted on the state map; agent reply shown in the event trail; unknown key redirects | pytest |
+| T-I20-4 | L1 | remove with a wrong confirmation | redirected back with `error=confirm`; no job started | pytest |
+| T-I20-5 | L1 | `/api/status` | projects, stories with `next`, heartbeat with `ok` | pytest |
+| T-I20-6 | L1 | platform and add pages | flows, agents, files; onboarding form | pytest |
+| T-I20-7 | L1 | Jira board link | uses the board id from the Agile API (`/boards/<id>`), falls back to the issue list | pytest |
+| T-I20-8 | L4 | live: all routes on the running portal after a rebuild | 200; state map shows Done / merged / production approved for AINSSB-2 | evidence log |
+| Exit | | T-I20-1 to T-I20-7 green; T-I20-8 once per portal change | | |
+
+### I21 Project profiles
+
+| Id | Level | Input | Expected | Evidence |
+|----|-------|-------|----------|----------|
+| T-I21-1 | L1 | shipped `profiles.yaml` | L3 and L4 supported; L4 gates G1/G2/G4 off; unsupported class, method, level and phase each refused with a reason; fixed phase left out refused; autonomy above the class ceiling refused; empty catalog loads as empty sections | pytest |
+| T-I21-2 | L1 | portal add form and a submit with an unsupported class | unsupported options rendered disabled with "not yet"; submit re-renders with "not supported yet" | pytest |
+| T-I21-3 | L3 | `uv run ains target add x X1 x --class legacy-modernization --dry-run` | exit 2 with the reason, nothing created | output |
+| Exit | | T-I21-1, T-I21-2 green | | |
+
+### I22 Data volume and log
+
+| Id | Level | Input | Expected | Evidence |
+|----|-------|-------|----------|----------|
+| T-I22-1 | L1 | `AINS_DATA_DIR` unset, then set with an existing store in the work dir | defaults to the work dir; store, WAL and heartbeat copied once; never overwritten afterwards | pytest |
+| T-I22-2 | L4 | live: rebuild after the split | `/data` holds the store and `logs/orchestrator.log`; both containers healthy; portal sees the same stories | evidence log |
+| Exit | | T-I22-1 green; T-I22-2 once | | |
+
 ## 3. Credential and billing checks (L6)
 
 These answer the question "is the Claude Max subscription used, and never the Anthropic API?" with evidence rather than reasoning.
@@ -309,6 +340,7 @@ These answer the question "is the Claude Max subscription used, and never the An
 | 6a Sandbox onboarded, second onboarding, removal | I16 | T-I16-3, T-I16-6, T-I16-7 | capability proven reusable and reversible |
 | 7 Onboarding `ains-poc` | deferred to Phase 2 | — | — |
 | 8 Acceptance on the sandbox | I19 | T-I19-* | all green |
+| Portal, profiles, data (added 2026-11-03) | I20, I21, I22 | T-I20-*, T-I21-*, T-I22-* | all green |
 | 9 Docs and divergence | I17 | T-I17-* | — |
 | cross-cutting | I18, L6 | T-I18-*, T-L6-* | before declaring Phase 1 done |
 

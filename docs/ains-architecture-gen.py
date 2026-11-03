@@ -87,24 +87,24 @@ box(540, 24, 420, 82, "Runtime roles  (used only for onboarded projects)",
 
 # ------------------------------------------------------------------ columns
 cluster(30, 120, 450, 690, "PHASE 1 · build the platform", TEAL, "#F2F8F7", sub="repo ains-platform · built directly from the workstation · no Jira, CI or orchestrator for the platform · P1–P7")
-cluster(510, 120, 470, 690, "PLATFORM RUNTIME · built in Phase 1, used only by onboarded projects", GREY, "#F6F5F1", sub="Jira Cloud · ains-orchestrator container · reusable Actions workflows · credentials · agent usage A1–A7")
+cluster(510, 120, 470, 690, "PLATFORM RUNTIME · built in Phase 1, used only by onboarded projects", GREY, "#F6F5F1", sub="Jira Cloud · ains-orchestrator + portal containers · reusable Actions workflows · credentials · agent usage A1–A7")
 
 # ---------------- column A (Phase 1)
 box(55, 160, 400, 56, "Workstation: VS Code + Claude Code CLI",
     ["interactive sessions write and test the orchestrator", "same toolchain the Phase 2 developer uses"], TEAL, TEAL_BG)
 box(55, 240, 400, 56, "Jira onboarding  (part of ains target add)",
-    ["per project: Kanban project · field Execution Lane · 9 statuses", "Automation rule (audit trace) · site-wide field created once"], GREY, GREY_BG)
+    ["per project: Kanban project · label ai-native as the lane marker · 12 statuses via REST", "Automation rule (audit trace, optional) · profile: class · phases · method · autonomy"], GREY, GREY_BG)
 box(55, 320, 400, 86, "Repo ains-platform  (GitHub, code only, no Actions)",
-    ["ains-orchestrator/  src · Dockerfile · compose · flows · agents · stages · targets.yaml",
+    ["ains-orchestrator/  src · Dockerfile · compose · flows · agents · targets.yaml · profiles.yaml",
      ".github/workflows/  reusable-ci · reusable-release · reusable-jira-callback · intake-ack",
      "   (workflow_call definitions; they run only when ains-poc calls them)",
-     "bootstrap/new-target.sh · docs/ · plan/ · commits straight to main"], TEAL, TEAL_BG, bold=True)
+     "bootstrap/templates · docs/ · plan/ · ains-platform.cmd · .claude/skills · commits straight to main"], TEAL, TEAL_BG, bold=True)
 box(55, 430, 400, 58, "Secrets placement",
     ["claude setup-token → CLAUDE_CODE_OAUTH_TOKEN · GitHub PAT · Jira token", "→ .env (gitignored); ains target add copies Jira secrets into each repo · never committed"], SAND, SAND_BG)
 box(55, 512, 400, 58, "ains target add / remove  →  project onboarding",
     ["any project: Jira project + repo + protection + environments + secrets", "+ label ai-review + templates · targets.yaml entry · proven on the sandbox"], TEAL, TEAL_BG)
 box(55, 594, 400, 70, "Acceptance run on the sandbox  =  Phase 1 done",
-    ["AINSSB-1 'repository scaffold' through all phases and five gates, hands-off",
+    ["AINSSB-2 'repository scaffold' through all phases and five gates, hands-off (done 2026-11-03)",
      "ains-poc is never touched in Phase 1; it is onboarded on Phase 2 day one",
      "docs/divergence.md records the gaps vs. the architecture document"], GREY, GREY_BG)
 box(55, 688, 400, 46, "Platform changes after Phase 1",
@@ -112,7 +112,7 @@ box(55, 688, 400, 46, "Platform changes after Phase 1",
 
 # ---------------- column B (runtime)
 box(535, 160, 420, 56, "Jira Cloud · rayniloy.atlassian.net · one project per onboarded target",
-    ["Execution Lane: Human | AI-native · Ready → … → Done · Rework · Blocked", "Automation rule = audit trace · project stories only, never platform work"], GREY, GREY_BG)
+    ["label ai-native marks the lane · Ready → Specifying → … → Done · Rework · Blocked", "Automation rule = audit trace · project stories only, never platform work"], GREY, GREY_BG)
 cluster(525, 236, 440, 450, "Container: ains-orchestrator  (Docker Desktop on the laptop)", TEAL, "#E8F2F0", dashed=True)
 box(545, 266, 400, 40, "Poller + PR watcher", ["JQL every 60 s over all targets: AI-native ∧ Ready · PRs ready or labelled ai-review"], TEAL, TEAL_BG)
 box(545, 320, 400, 52, "Flow state machine + gates",
@@ -121,9 +121,11 @@ box(545, 386, 400, 52, "Dispatcher",
     ["targets.yaml: one block per onboarded project, empty at start", "agents/claude-code.yaml + agents/stages/*.md: one prompt and permission set per stage"], TEAL, TEAL_BG)
 box(545, 452, 195, 56, "Claude Code CLI  (stage agents)", ["spawned per stage: spec · plan ·", "implement · review · headless · OAuth only"], TEAL, TEAL_BG, bold=True)
 box(750, 452, 195, 56, "Spec Kit skills  (specify)", ["run inside the agent's session", "integration key: claude"], TEAL, TEAL_BG)
-box(545, 522, 400, 40, "Workspace volume", ["/work/<KEY>/ · clone of the target repo · branch <KEY>-<slug>"], TEAL, TEAL_BG)
+box(545, 522, 400, 40, "Volumes", ["/work/<KEY>/ clones (throwaway) · /data: sessions.sqlite · heartbeat · logs/ (durable)"], TEAL, TEAL_BG)
 box(535, 578, 200, 56, ".env  (gitignored)", ["CLAUDE_CODE_OAUTH_TOKEN · GITHUB_TOKEN", "JIRA_EMAIL · JIRA_API_TOKEN"], SAND, SAND_BG)
 box(755, 578, 200, 56, "Claude Max subscription", ["plan usage, no API metering", "serves every claude -p run"], ROSE, ROSE_BG)
+box(545, 642, 400, 38, "Management portal  (ains portal · second container · localhost:8787)",
+    ["dashboard · projects (add · verify · remove) · stories with the state map · same /data store"], TEAL, TEAL_BG)
 box(535, 710, 420, 56, "Reusable Actions workflows  (defined in ains-platform)",
     ["ci · release · jira-callback · intake-ack  (workflow_call)", "executed only by the thin workflows of onboarded repos"], GREY, GREY_BG)
 

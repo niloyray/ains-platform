@@ -2,11 +2,13 @@
 
 One row per project served by this platform. The source of truth is `ains-orchestrator/targets.yaml`; this file is the human-readable log of why each target exists.
 
-| Jira key | GitHub repo | Onboarded | Purpose | Gates | G3 mode | Status |
-|----------|-------------|-----------|---------|-------|---------|--------|
-| AINSSB | niloyray/ains-sandbox | 2026-11-02 by `ains target add ains-sandbox AINSSB sandbox` | permanent sandbox: Phase 1 acceptance (plan step 8) and regression target for later platform changes (D16) | all five on | label | active; Jira statuses added manually, Automation rule manual |
+| Jira key | GitHub repo | Onboarded | Purpose | Gates | G3 mode | Profile | Status |
+|----------|-------------|-----------|---------|-------|---------|---------|--------|
+| AINSSB | niloyray/ains-sandbox | 2026-11-02 by `ains target add ains-sandbox AINSSB sandbox` | permanent sandbox: Phase 1 acceptance (plan step 8) and regression target for later platform changes (D16) | all five on | label | small-poc · spec-kit · L3 · intent→deploy | active; Jira statuses added manually, Automation rule manual |
 
 Phase 2 will add `AINSPOC` → `niloyray/ains-poc` with the same command on its first day. The platform repository itself is never a target (D13).
+
+Targets can also be added, verified and removed from the management portal (http://localhost:8787, "+ Add project" and the project page), which runs the same code.
 
 ## Adding or removing a target
 

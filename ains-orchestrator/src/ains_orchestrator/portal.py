@@ -175,12 +175,25 @@ class Portal:
     def jira_base() -> str:
         return os.environ.get("JIRA_BASE_URL", "").rstrip("/")
 
+    _board_ids: dict[str, int | None] = {}
+
+    def board_url(self, key: str) -> str:
+        """Team-managed boards live at /jira/software/projects/<KEY>/boards/<id>; the id comes from the Agile API."""
+        jb = self.jira_base()
+        if not jb:
+            return ""
+        if key not in self._board_ids:
+            jira = self.jira()
+            self._board_ids[key] = jira.board_id(key) if jira else None
+        bid = self._board_ids[key]
+        return f"{jb}/jira/software/projects/{key}/boards/{bid}" if bid else f"{jb}/jira/software/projects/{key}/issues"
+
     def project_links(self, key: str, t: Target) -> dict[str, str]:
         gh = f"https://github.com/{t.repo}"
         owner, _, name = t.repo.partition("/")
         jb = self.jira_base()
         return {
-            "jira_board": f"{jb}/jira/software/projects/{key}/boards" if jb else "",
+            "jira_board": self.board_url(key),
             "jira_issues": f"{jb}/jira/software/projects/{key}/issues" if jb else "",
             "jira_waiting": f"{jb}/issues/?jql="
             + f"project%20%3D%20{key}%20AND%20labels%20%3D%20ai-native%20AND%20status%20not%20in%20(Done)"

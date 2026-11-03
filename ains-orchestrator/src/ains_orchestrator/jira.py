@@ -168,6 +168,17 @@ class JiraClient:
         return str(r.json()["key"])
 
     # ------------------------------------------------------------------ projects (onboarding)
+    def board_id(self, key: str) -> int | None:
+        """The project's first board (team-managed projects have exactly one); None when there is none or on error."""
+        try:
+            r = self._request("GET", "/rest/agile/1.0/board", params={"projectKeyOrId": key})
+            if r.status_code != 200:
+                return None
+            values = r.json().get("values") or []
+            return int(values[0]["id"]) if values else None
+        except (JiraError, ValueError, KeyError, TypeError):
+            return None
+
     def project_exists(self, key: str) -> bool:
         r = self._request("GET", f"/rest/api/3/project/{key}")
         if r.status_code == 404:

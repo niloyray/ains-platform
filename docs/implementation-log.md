@@ -414,3 +414,14 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | docs | user guide: the management portal, profile choices at onboarding, data and backup, control script in the command sheet; developer manual: repo map, runtime topology, persistent state, section 12c (portal, profiles, skill) |
 | tests | T-I22-1 (data dir default and one-time migration); 115 pass |
 
+### Documentation catch-up after I20 to I22; Jira board link fixed
+
+| Item | Detail |
+|------|--------|
+| board link | team-managed boards live at `/jira/software/projects/<KEY>/boards/<id>`; the portal now asks the Agile API for the id (`JiraClient.board_id`), cached per project, and falls back to the issue list. Verified live: `.../AINSSB/boards/2`. Test T-I20-7 |
+| plan | section 9.2 gains rows I20 (portal), I21 (profiles), I22 (data volume, log, backup, skill) with their test ids |
+| test plan | sections I20, I21, I22 (T-I20-1..8, T-I21-1..3, T-I22-1..2) and a traceability row |
+| README, targets.md | control script, skill, profiles catalog, data volumes, portal; profile column for AINSSB |
+| architecture diagram | generator updated (lane label instead of the Execution Lane field, 12 statuses, profiles.yaml, portal box inside the container cluster, /data volume, AINSSB-2 as the acceptance story), regenerated in `plan/` and `docs/`, re-embedded in `init/AI-native delivery stack.html` and its copy `docs/architecture.html` |
+| tests | 116 pass; container rebuilt |
+
