@@ -101,8 +101,9 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
     <li><span class="num">7</span><a href="#gates">The five gates</a></li>
     <li><span class="num">8</span><a href="#agents">The four agents</a></li>
     <li><span class="num">9</span><a href="#artifacts">Where everything lives</a></li>
-    <li><span class="num">10</span><a href="#trouble">When something goes wrong</a></li>
-    <li><span class="num">11</span><a href="#commands">Command sheet</a></li>
+    <li><span class="num">10</span><a href="#underhood">Looking under the hood</a></li>
+    <li><span class="num">11</span><a href="#trouble">When something goes wrong</a></li>
+    <li><span class="num">12</span><a href="#commands">Command sheet</a></li>
   </ol>
 </header>
 
@@ -536,7 +537,68 @@ git push</code></pre>
 </table>
 </div>
 
-<h2 id="trouble"><span class="num">10</span>When something goes wrong</h2>
+<h2 id="underhood"><span class="num">10</span>Looking under the hood</h2>
+<p>The story's Jira comments are the view most people need. When you want to see what the platform is doing right now, or why it did something, these are the lower-level views, from the least to the most technical. All terminal commands run on the laptop in <code>ains-platform/ains-orchestrator</code>.</p>
+
+<h3>Who logs what</h3>
+<div class="tablewrap">
+<table>
+  <tr><th>Event</th><th>Logged by</th><th>Where you see it</th></tr>
+  <tr><td>Claim, agent runs, G1, G2, G3, rework, merge</td><td>the orchestrator</td><td>container log, story events, Jira comments</td></tr>
+  <tr><td>CI result, Code Review status</td><td>the CI workflow</td><td>PR Checks tab, Jira comment</td></tr>
+  <tr><td>G4 and G5 approvals, Staging and Done</td><td>the release workflow</td><td>Actions run page, Jira comments. <b>Not</b> in the container log: after the merge the orchestrator's part is over, so approving a deployment produces no orchestrator line</td></tr>
+</table>
+</div>
+
+<h3>Docker Desktop (no terminal)</h3>
+<p>Open Docker Desktop, click <b>Containers</b>, then <code>ains-orchestrator</code>. The <b>Logs</b> tab shows the same text as the commands below, with a search box. A green dot and "Running" next to the name means the platform is alive.</p>
+
+<h3>The container log</h3>
+<pre><code>docker compose logs -t --since 30m orchestrator     # last 30 minutes, with timestamps
+docker compose logs -t -f orchestrator              # follow live; Ctrl+C stops watching, not the platform
+docker compose logs --since 2h orchestrator | Select-String -NotMatch "wait_g3'}"   # PowerShell: hide idle repeats</code></pre>
+<p>Once a minute the orchestrator prints one line, for example:</p>
+<pre><code>2026-11-03T02:07:40Z cycle: claimed=[] stepped={'AINSSB-2': 'released'} skipped=[] reviewed=[] errors=[]</code></pre>
+<ul>
+  <li><b>claimed</b>: stories it picked up from Ready in this cycle.</li>
+  <li><b>stepped</b>: each active story and the stage it is in after this cycle. A stage starting with <code>wait_</code> means it is waiting for a person; the same line repeating every minute is normal.</li>
+  <li><b>reviewed</b>: pull requests labelled <code>ai-review</code> that got an agent review.</li>
+  <li><b>errors</b>: anything that failed this cycle, with the story key.</li>
+</ul>
+<p>Between cycle lines you may see lines such as <code>agent implement for AINSSB-2: claude (max_turns=80, limit=1800s)</code>, which mark the start of an agent run. The <code>-t</code> flag adds Docker's own timestamp in front; the cycle line also carries its own UTC time.</p>
+
+<h3>One story's event list</h3>
+<pre><code>docker compose exec orchestrator ains session status AINSSB-2</code></pre>
+<p>Prints the story's current stage, branch, PR number and every event with a timestamp: claims, agent start and finish (with turns, seconds and the agent's final reply), gate decisions, rework, merge, blocks. This is the platform's own record and the first place to look when a story did something unexpected.</p>
+
+<h3>All platform stories in Jira</h3>
+<p>In Jira, open <b>Filters → View all issues</b>, switch to JQL and paste:</p>
+<pre><code>labels = ai-native AND status not in (Done) ORDER BY updated DESC</code></pre>
+<p>Replace <code>status not in (Done)</code> with <code>status = Blocked</code> to see only what needs a person. Save the filter to reach it from the sidebar.</p>
+
+<h3>GitHub, by hand</h3>
+<ul>
+  <li><b>Pull requests tab</b> of the repository: every story's PR, open or merged. Filter by the story key.</li>
+  <li><b>Actions tab</b>: every CI and release run. A yellow dot is "waiting for you"; click the run, then <kbd>Review deployments</kbd>.</li>
+  <li><b>Insights → Network</b> or the branch list: the story branches that exist.</li>
+</ul>
+<p>With the GitHub command-line tool installed (the container has it; on the laptop it is optional):</p>
+<pre><code>gh pr list --repo niloyray/ains-sandbox --state all
+gh pr view 2 --repo niloyray/ains-sandbox --json statusCheckRollup,labels
+gh run list --repo niloyray/ains-sandbox --limit 10
+gh run view &lt;run id&gt; --repo niloyray/ains-sandbox --log-failed</code></pre>
+
+<h3>The working copy inside the container</h3>
+<p>While a story is between spec and merge, its branch is checked out at <code>/work/&lt;KEY&gt;</code> inside the container. To look without changing anything:</p>
+<pre><code>docker compose exec orchestrator sh -c "cd /work/AINSSB-2 && git status && git log --oneline -5"</code></pre>
+<p>Do not edit files there; the next agent run or commit would pick the edit up as the agent's work. After the merge the directory is deleted.</p>
+
+<h3>Health</h3>
+<pre><code>docker compose ps                                   # healthy?
+docker compose exec orchestrator ains doctor        # tokens, Jira, GitHub, Claude
+docker compose exec orchestrator ains targets list  # which projects are onboarded, with their gates</code></pre>
+
+<h2 id="trouble"><span class="num">11</span>When something goes wrong</h2>
 <div class="tablewrap">
 <table>
   <tr><th>You see</th><th>What it means</th><th>What to do</th></tr>
@@ -552,12 +614,13 @@ git push</code></pre>
 </div>
 <div class="note bad">Two things the platform refuses by design: merging a PR without a human approval and a green check, and running an agent with an API key. If you ever need either, it is a change to the platform, not a setting.</div>
 
-<h2 id="commands"><span class="num">11</span>Command sheet</h2>
+<h2 id="commands"><span class="num">12</span>Command sheet</h2>
 <p>All run on the laptop, in <code>ains-platform/ains-orchestrator</code>.</p>
 <pre><code># container
 docker compose up -d --build          # build (after code changes) and start
 docker compose ps                     # is it healthy?
-docker compose logs -f orchestrator   # live log; Ctrl+C to stop watching
+docker compose logs -t -f orchestrator   # live log with timestamps; Ctrl+C to stop watching
+docker compose logs -t --since 1h orchestrator
 docker compose stop orchestrator      # pause the platform
 
 # health and projects

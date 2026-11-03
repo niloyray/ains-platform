@@ -339,3 +339,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | docs | `docs/user-guide.html` (for people new to Jira, Git and Actions: words, roles, setup, onboarding, one story through all gates, artifacts, troubleshooting, commands) and `docs/developer-manual.html` (principles, repo map, runtime topology, module map, poll cycle, state machine, persistent state, configuration, agent runner, clients, Actions side, onboarding internals, dev loop, extension recipes, invariants, debugging, backlog), both with inline SVG diagrams |
 | next | user approves `staging` then `production` on the release run → Jira Staging → Done (plan steps 8.8 to 8.11); then 8.12 human-lane PR, 6a.2, 9 |
 
+### G4 passed; log lines now timestamped; user guide gained "Looking under the hood"
+
+| Item | Detail |
+|------|--------|
+| G4 | user approved `staging`; job `staging (G4)` success; Jira callback moved AINSSB-2 to **Staging**; `production (G5)` waiting |
+| observation | G4/G5 live in the release workflow, so the container log shows nothing for them (the orchestrator's part ended at `released`). Documented in the guide's "Who logs what" table |
+| change | `ains poll` prefixes the cycle line with a UTC timestamp and configures module logging with `asctime` (previously no timestamp and module INFO lines were dropped). `docker compose logs -t` documented as the other way to get times |
+| docs | user guide section 10 "Looking under the hood": who logs what, Docker Desktop, container log and how to read the cycle line, `ains session status`, a Jira JQL filter for platform stories, GitHub views and `gh` commands, the working copy in the container, health commands |
+

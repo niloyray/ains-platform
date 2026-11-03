@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -271,11 +273,15 @@ def poll(
     poller = Poller(rt.config, rt.store, rt.jira, rt.engine_for)
     watcher = PRWatcher(rt.config, rt.store, rt.github, rt.workspace, rt.agents)
     every = interval or int(os.environ.get("AINS_POLL_SECONDS", "60"))
+    # module logs (agent start, claims, warnings) go to stderr with a UTC timestamp, same as the cycle line
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.Formatter.converter = time.gmtime
     while True:
         rep = poller.cycle()
         wrep = watcher.cycle()
+        stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         typer.echo(
-            f"cycle: claimed={rep.claimed} stepped={rep.stepped} skipped={rep.skipped} "
+            f"{stamp} cycle: claimed={rep.claimed} stepped={rep.stepped} skipped={rep.skipped} "
             f"reviewed={wrep.reviewed} errors={rep.errors + wrep.errors}"
         )
         if once:
