@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}AINS portal · {{ row.key }}{% endblock %}
+{% block content %}
+<h1><span class="mono">{{ row.key }}</span> <span class="small">{{ row.summary }}</span></h1>
+<p class="lead">Project <a href="/projects/{{ row.target }}">{{ row.target }}</a> · flow <code>{{ row.flow }}</code> · branch <code>{{ row.branch or '–' }}</code></p>
+
+<div class="cards">
+  <div class="card"><div class="k">Platform stage</div><div class="v"><span class="chip {{ 'bad' if row.stage == 'blocked' else ('human' if row.waiting else 'machine') }}">{{ row.stage }}</span></div><div class="d">updated {{ row.updated }}</div></div>
+  <div class="card"><div class="k">Jira status</div><div class="v">{{ row.jira_status or '–' }}</div><div class="d">{% if row.links.jira %}<a href="{{ row.links.jira }}" target="_blank">open the story</a>{% else %}no Jira story (human-lane PR){% endif %}</div></div>
+  <div class="card"><div class="k">Pull request</div>
+    <div class="v">{% if pr %}#{{ pr.number }} <span class="chip {{ 'good' if pr.merged else ('muted' if pr.draft else 'machine') }}">{{ 'merged' if pr.merged else ('draft' if pr.draft else pr.state|lower) }}</span>{% else %}–{% endif %}</div>
+    <div class="d">{% if pr %}check ci / ci: <b>{{ pr.ci or 'not run' }}</b> · labels: {{ pr.labels|join(', ') or 'none' }} · head {{ pr.head[:7] }}{% endif %}</div></div>
+</div>
+
+<div class="note {{ 'bad' if row.stage == 'blocked' else ('good' if not row.waiting else '') }}"><b>Next:</b> {{ row.next }}</div>
+
+<h2>Where it is on the state map</h2>
+<figure>
+<div class="figwrap">{% include "fsm.svg" %}</div>
+<figcaption class="small">Highlighted: the current Jira status, the current pull-request state and, after the merge, the release state. Blue = a person moves it, teal = the platform, grey = a GitHub workflow.</figcaption>
+</figure>
+
+<h2>Artifacts</h2>
+<div class="links">
+  {% if row.links.jira %}<a href="{{ row.links.jira }}" target="_blank">Jira story and comment trail</a>{% endif %}
+  {% if row.links.pr %}<a href="{{ row.links.pr }}" target="_blank">PR #{{ row.pr }}</a> <a href="{{ row.links.pr_files }}" target="_blank">diff</a> <a href="{{ row.links.pr_checks }}" target="_blank">checks</a>{% endif %}
+  {% if row.links.spec %}<a href="{{ row.links.spec }}" target="_blank">spec.md</a> <a href="{{ row.links.plan }}" target="_blank">plan.md</a> <a href="{{ row.links.tasks }}" target="_blank">tasks.md</a>{% endif %}
+  {% if row.links.branch %}<a href="{{ row.links.branch }}" target="_blank">branch</a>{% endif %}
+  {% if row.links.ci_runs %}<a href="{{ row.links.ci_runs }}" target="_blank">CI runs</a>{% endif %}
+  <a href="{{ row.links.release_runs }}" target="_blank">release runs</a>
+</div>
+
+<h2>Event trail</h2>
+<div class="tw"><table>
+  <tr><th>When</th><th>Event</th><th>Detail</th></tr>
+  {% for e in events %}
+  <tr><td class="ev t">{{ e.ts }}</td><td class="ev">{{ e.kind }}</td>
+    <td class="small">
+      {% if e.kind == 'agent.done' %}
+        stage {{ e.detail.stage }} · {{ 'ok' if e.detail.ok else 'FAILED' }} · {{ e.detail.turns }} turns · {{ e.detail.duration_ms }} ms{% if e.detail.cost_usd %} · {{ '%.2f'|format(e.detail.cost_usd) }} USD{% endif %}
+        {% if e.detail.error %}<div class="chip bad">{{ e.detail.error }}</div>{% endif %}
+        {% if e.detail.result %}<details><summary>agent reply</summary><pre>{{ e.detail.result }}</pre></details>{% endif %}
+      {% elif e.kind == 'gate.rework' %}
+        {{ e.detail.gate }} → {{ e.detail.stage }}<details><summary>comment handed to the agent</summary><pre>{{ e.detail.comment }}</pre></details>
+      {% else %}
+        {% for k, v in e.detail.items() %}<span class="mono">{{ k }}</span>={{ v }} {% endfor %}
+      {% endif %}
+    </td></tr>
+  {% endfor %}
+</table></div>
+
+<details><summary class="small">Gate state (raw)</summary><pre>{{ gate_state }}</pre></details>
+{% endblock %}

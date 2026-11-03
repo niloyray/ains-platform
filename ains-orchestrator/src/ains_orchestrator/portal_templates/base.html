@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}AINS portal{% endblock %}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root { --bg:#f7f8fa; --fg:#1d2430; --muted:#5b6676; --line:#d6dbe3; --panel:#fff; --nav:#1d2430; --nav-fg:#e6eaf0; --nav-muted:#9aa5b5;
+  --human:#1f5fbf; --human-soft:#e4edfb; --machine:#0f766e; --machine-soft:#dcf2ee; --warn:#9a5a00; --warn-soft:#fff1d6; --bad:#a43e2a; --bad-soft:#fbe5e0; --good:#1f7a3d; --good-soft:#dff3e5;
+  --body:"IBM Plex Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:"IBM Plex Mono",Consolas,"Courier New",monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg:#151a21; --fg:#e6eaf0; --muted:#9aa5b5; --line:#2e3745; --panel:#1d242e; --nav:#0f1318; --human:#7fb0ff; --human-soft:#1c2d47; --machine:#5fd3c4; --machine-soft:#15332f; --warn:#f0b64b; --warn-soft:#3a2c10; --bad:#ff8d78; --bad-soft:#3d1f19; --good:#6fd38f; --good-soft:#15331f; color-scheme: dark } }
+* { box-sizing: border-box }
+body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--body); font-size:15px; line-height:1.5; display:grid; grid-template-columns:230px 1fr; min-height:100vh }
+nav { background:var(--nav); color:var(--nav-fg); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto }
+nav .brand { font-weight:600; font-size:17px; letter-spacing:.02em; margin:0 6px 4px }
+nav .sub { color:var(--nav-muted); font-size:12px; margin:0 6px 18px }
+nav h4 { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--nav-muted); margin:18px 6px 6px; font-weight:600 }
+nav a { display:block; color:var(--nav-fg); text-decoration:none; padding:6px 8px; border-radius:6px; font-size:14px }
+nav a:hover { background:rgba(255,255,255,.08) }
+nav a.active { background:rgba(255,255,255,.14); font-weight:500 }
+nav a.sub-item { padding-left:20px; font-family:var(--mono); font-size:13px }
+nav .foot { margin-top:24px; font-size:12px; color:var(--nav-muted); padding:0 6px }
+nav .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:-1px }
+main { padding:24px 32px 48px; min-width:0 }
+h1 { font-size:24px; font-weight:600; margin:0 0 4px } h2 { font-size:18px; font-weight:600; margin:28px 0 8px } h3 { font-size:15px; font-weight:600; margin:18px 0 6px }
+.lead { color:var(--muted); margin:0 0 16px }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:12px 0 }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px }
+.card .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em } .card .v { font-size:20px; font-weight:600; margin-top:2px } .card .d { font-size:13px; color:var(--muted) }
+table { border-collapse:collapse; width:100%; font-size:14px; background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden }
+th,td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--line) } th { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted) }
+tr:last-child td { border-bottom:0 }
+.tw { overflow-x:auto }
+code, .mono { font-family:var(--mono); font-size:.92em }
+pre { font-family:var(--mono); font-size:13px; background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:12px; overflow:auto; max-height:420px }
+a { color:var(--human) }
+.chip { display:inline-block; border-radius:999px; padding:1px 9px; font-size:12px; font-weight:500; white-space:nowrap }
+.chip.human { background:var(--human-soft); color:var(--human) } .chip.machine { background:var(--machine-soft); color:var(--machine) }
+.chip.bad { background:var(--bad-soft); color:var(--bad) } .chip.good { background:var(--good-soft); color:var(--good) } .chip.warn { background:var(--warn-soft); color:var(--warn) } .chip.muted { background:var(--bg); border:1px solid var(--line); color:var(--muted) }
+.links a { margin-right:10px; white-space:nowrap }
+.note { background:var(--warn-soft); border-left:4px solid var(--warn); padding:8px 12px; border-radius:0 6px 6px 0; margin:12px 0; font-size:14px } .note.bad { background:var(--bad-soft); border-left-color:var(--bad) } .note.good { background:var(--good-soft); border-left-color:var(--good) }
+form.inline { display:inline } button, .btn { font:inherit; font-size:14px; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--panel); color:var(--fg); cursor:pointer }
+button.primary { background:var(--human); color:#fff; border-color:var(--human) } button.danger { background:var(--bad); color:#fff; border-color:var(--bad) }
+label { display:block; font-size:13px; color:var(--muted); margin:10px 0 3px } input[type=text], select { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--fg); width:100%; max-width:420px }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:18px }
+figure { margin:12px 0 } figure svg { max-width:100%; height:auto; display:block } .figwrap { overflow-x:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px }
+.current { stroke:var(--warn) !important; stroke-width:3 !important; fill:var(--warn-soft) !important }
+.ev { font-family:var(--mono); font-size:12.5px } .ev .t { color:var(--muted) } details summary { cursor:pointer }
+.small { font-size:13px; color:var(--muted) }
+@media (max-width:760px) { body { grid-template-columns:1fr } nav { position:static; height:auto } main { padding:16px } }
+</style>
+</head>
+<body>
+<nav>
+  <div class="brand">AINS platform</div>
+  <div class="sub">management portal</div>
+  <a href="/" class="{{ 'active' if active == 'dashboard' }}">Dashboard</a>
+  <a href="/platform" class="{{ 'active' if active == 'platform' }}">Platform</a>
+  <h4>Projects</h4>
+  {% for key, t in projects %}
+  <a href="/projects/{{ key }}" class="sub-item {{ 'active' if active == 'project:' ~ key }}">{{ key }}</a>
+  {% else %}
+  <span class="small" style="padding:0 8px">none onboarded</span>
+  {% endfor %}
+  <a href="/add" class="{{ 'active' if active == 'add' }}">+ Add project</a>
+  <h4>Documentation</h4>
+  {% if docs_available %}
+  <a href="/docs/user-guide" target="_blank">User guide</a>
+  <a href="/docs/developer-manual" target="_blank">Developer manual</a>
+  <a href="/docs/log" target="_blank">Implementation log</a>
+  {% else %}
+  <a href="https://github.com/niloyray/ains-platform/tree/main/docs" target="_blank">Docs on GitHub</a>
+  {% endif %}
+  <h4>Outside</h4>
+  {% if jira_base %}<a href="{{ jira_base }}" target="_blank">Jira</a>{% endif %}
+  <a href="https://github.com/niloyray" target="_blank">GitHub</a>
+  <a href="https://github.com/niloyray/ains-platform" target="_blank">Platform repository</a>
+  <div class="foot">
+    <span class="dot" style="background: {{ 'var(--good)' if heartbeat.ok else 'var(--bad)' }}"></span>
+    {% if heartbeat.present %}poller: last cycle {{ heartbeat.age_s }} s ago{% else %}poller: no heartbeat yet{% endif %}<br>
+    version {{ version }}
+  </div>
+</nav>
+<main>
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

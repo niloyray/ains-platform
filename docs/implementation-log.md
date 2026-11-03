@@ -385,3 +385,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | `render_prompt` defaults `story_key` to the Jira key, so the shipped review prompt renders for story sessions and for human-lane PRs alike (test T-I9-1 had caught the gap). 105 tests pass; container rebuilt |
 | docs | user guide section 7 now has "The state map": one diagram with the Jira status machine, the pull-request machine and the release-run machine, coloured by who makes each move, plus a from/to/who/cause table of every transition and a note on which statuses are the human's and which are the platform's |
 
+### I20: management portal, control script, heartbeat
+
+| Item | Detail |
+|------|--------|
+| portal | `ains portal` (FastAPI + Jinja2, `portal.py`, `portal_templates/`): left nav (dashboard, platform, projects, add project, docs, outside links, poller heartbeat); dashboard (poller health from `heartbeat.json`, credentials present, stories waiting for a person, all stories, recent events, recent jobs); project page (gate cards, Jira and GitHub links, stories with next action and artifact links, verify and remove with typed confirmation and dry run); story page (platform stage, live Jira status, live PR state, next action, the state map with the current states highlighted, artifact links, event trail with agent replies); add-project form; platform page (flows, agents, files); `/api/status` JSON. Onboard, remove and verify run as background jobs with a report page |
+| runtime | second compose service `portal` on the same image, published on `127.0.0.1:8787` only; `targets.yaml` mounted read-write for it, `bootstrap/templates` and `docs` read-only; the orchestrator writes `/work/heartbeat.json` every cycle |
+| control | `ains-platform.cmd start|stop|restart|build|down|status|logs|doctor|verify|portal` at the repo root; `start` brings up both containers |
+| tests | T-I20-1..6 and the state-map mapping; 112 pass. Verified live: all routes 200, state map highlights Done / merged / production approved for AINSSB-2 |
+

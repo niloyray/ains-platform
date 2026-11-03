@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}AINS portal · dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+<p class="lead">What the platform is doing and what a person must do next, across every onboarded project.</p>
+
+<div class="cards">
+  <div class="card"><div class="k">Poller</div>
+    <div class="v">{% if heartbeat.ok %}<span class="chip good">running</span>{% elif heartbeat.present %}<span class="chip bad">stale</span>{% else %}<span class="chip bad">no heartbeat</span>{% endif %}</div>
+    <div class="d">{% if heartbeat.present %}last cycle {{ heartbeat.at }} ({{ heartbeat.age_s }} s ago), every {{ heartbeat.interval_s }} s{% else %}start it with <code>ains-platform.cmd start</code>{% endif %}</div></div>
+  <div class="card"><div class="k">Projects</div><div class="v">{{ projects|length }}</div><div class="d">{{ projects|map(attribute=0)|join(', ') or 'none onboarded' }}</div></div>
+  <div class="card"><div class="k">Waiting for a person</div><div class="v">{{ waiting|length }}</div><div class="d">stories at a gate or blocked</div></div>
+  <div class="card"><div class="k">Credentials</div>
+    <div class="v">{% if env.values()|select('equalto', false)|list %}<span class="chip bad">missing</span>{% else %}<span class="chip good">present</span>{% endif %}</div>
+    <div class="d">{% for k, ok in env.items() %}{{ '✓' if ok else '✗' }} {{ k }}<br>{% endfor %}{% if anthropic_vars %}<span class="chip bad">ANTHROPIC_* set: {{ anthropic_vars|join(', ') }}</span>{% endif %}</div></div>
+</div>
+
+{% if heartbeat.errors %}<div class="note bad">Last cycle reported errors: {{ heartbeat.errors|join('; ') }}</div>{% endif %}
+
+<h2>Waiting for a person</h2>
+{% if waiting %}
+<div class="tw"><table>
+  <tr><th>Story</th><th>Project</th><th>Gate</th><th>What to do</th><th>Open</th></tr>
+  {% for r in waiting %}
+  <tr><td><a href="/stories/{{ r.key }}" class="mono">{{ r.key }}</a><div class="small">{{ r.summary }}</div></td>
+    <td><a href="/projects/{{ r.target }}">{{ r.target }}</a></td>
+    <td><span class="chip {{ 'bad' if r.waiting == 'Blocked' else 'human' }}">{{ r.waiting }}</span></td>
+    <td>{{ r.next }}</td>
+    <td class="links">{% if r.links.jira %}<a href="{{ r.links.jira }}" target="_blank">Jira</a>{% endif %}{% if r.links.pr %}<a href="{{ r.links.pr }}" target="_blank">PR #{{ r.pr }}</a>{% endif %}{% if r.waiting == 'G4/G5 release' %}<a href="{{ r.links.release_runs }}" target="_blank">release runs</a>{% endif %}</td></tr>
+  {% endfor %}
+</table></div>
+{% else %}
+<p class="small">Nothing is waiting. {% if not rows %}No stories yet: in Jira, give a story the label <code>ai-native</code> and move it to Ready.{% endif %}</p>
+{% endif %}
+
+<h2>All stories</h2>
+<div class="tw"><table>
+  <tr><th>Story</th><th>Project</th><th>Stage</th><th>Jira</th><th>PR</th><th>Updated</th></tr>
+  {% for r in rows %}
+  <tr><td><a href="/stories/{{ r.key }}" class="mono">{{ r.key }}</a><div class="small">{{ r.summary }}</div></td>
+    <td>{{ r.target }}</td>
+    <td><span class="chip {{ 'bad' if r.stage == 'blocked' else ('human' if r.waiting else 'machine') }}">{{ r.stage }}</span></td>
+    <td>{{ r.jira_status or ('human-lane PR' if r.flow == 'pr-review' else '–') }}</td>
+    <td>{% if r.links.pr %}<a href="{{ r.links.pr }}" target="_blank">#{{ r.pr }}</a>{% else %}–{% endif %}</td>
+    <td class="small mono">{{ r.updated }}</td></tr>
+  {% else %}
+  <tr><td colspan="6" class="small">no stories yet</td></tr>
+  {% endfor %}
+</table></div>
+
+<div class="grid2">
+<div>
+<h2>Recent events</h2>
+<div class="tw"><table>
+  {% for e in recent %}
+  <tr><td class="ev t">{{ e.ts }}</td><td><a href="/stories/{{ e.key }}" class="mono">{{ e.key }}</a></td><td class="ev">{{ e.kind }}</td><td class="small">{{ e.detail.stage or e.detail.gate or '' }} {{ e.detail.error[:80] if e.detail.error else '' }}</td></tr>
+  {% else %}
+  <tr><td class="small">no events yet</td></tr>
+  {% endfor %}
+</table></div>
+</div>
+<div>
+<h2>Recent jobs</h2>
+<div class="tw"><table>
+  {% for j in jobs %}
+  <tr><td class="ev t">{{ j.started }}</td><td><a href="/jobs/{{ j.id }}">{{ j.title }}</a></td><td><span class="chip {{ 'good' if j.status == 'done' else ('bad' if j.status == 'failed' else 'warn') }}">{{ j.status }}</span></td></tr>
+  {% else %}
+  <tr><td class="small">no onboarding, removal or verify jobs run from this portal yet</td></tr>
+  {% endfor %}
+</table></div>
+</div>
+</div>
+{% endblock %}

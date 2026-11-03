@@ -23,5 +23,29 @@ services:
     # no ports: intake is by polling (D3); nothing reaches this container from outside
     stop_grace_period: 2m
 
+  # The management portal: same image, read-only view of the same volume and config, plus onboarding.
+  # Published on the laptop's loopback interface only (D3: nothing from outside reaches the platform).
+  portal:
+    image: ains-orchestrator:local
+    container_name: ains-portal
+    command: ["ains", "portal", "--host", "0.0.0.0", "--port", "8787"]
+    env_file: .env
+    environment:
+      AINS_CONFIG_ROOT: /app
+      AINS_WORK_DIR: /work
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ains-workspaces:/work
+      - ./targets.yaml:/app/targets.yaml          # read-write: onboarding from the portal appends the target block
+      - ./flows:/app/flows:ro
+      - ./agents:/app/agents:ro
+      - ./claude-settings.json:/app/claude-settings.json:ro
+      - ../bootstrap/templates:/app/bootstrap/templates:ro
+      - ../docs:/app/docs:ro
+    depends_on:
+      - orchestrator
+    restart: unless-stopped
+
 volumes:
   ains-workspaces:

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}AINS portal · add project{% endblock %}
+{% block content %}
+<h1>Add a project</h1>
+<p class="lead">Creates the GitHub repository with the starter files, labels, secrets, environments and branch protection, the Jira project with its statuses, and the target entry. Idempotent: run it again to repair a partial onboarding.</p>
+<div class="note">Run with <b>dry run</b> first. It lists every step as "planned" without changing anything. Then untick it and run again. The target entry is written to the mounted <code>targets.yaml</code>; commit it in the platform repository afterwards.</div>
+<form method="post" action="/add" class="card" style="max-width:640px">
+  <label for="repo_name">Repository name (lower case, hyphens)</label><input type="text" id="repo_name" name="repo_name" placeholder="ains-poc" required>
+  <label for="jira_key">Jira project key (2 to 10 capital letters)</label><input type="text" id="jira_key" name="jira_key" placeholder="AINSPOC" required pattern="[A-Za-z][A-Za-z0-9_]{1,9}">
+  <label for="jira_name">Jira project name</label><input type="text" id="jira_name" name="jira_name" placeholder="AINS PoC" required>
+  <label for="approval_mode">G3 approval mode</label>
+  <select id="approval_mode" name="approval_mode"><option value="label">label (single GitHub account: g3-approved / g3-rework)</option><option value="review">review (separate orchestrator account: PR approve / request changes)</option></select>
+  <label>Gates</label>
+  {% for g, what in [('g1','G1 spec'),('g2','G2 plan'),('g3','G3 code'),('g4','G4 staging'),('g5','G5 production')] %}
+  <label style="display:inline-block;margin-right:16px"><select name="{{ g }}" style="width:auto"><option value="on">on</option><option value="off">off</option></select> {{ what }}</label>
+  {% endfor %}
+  <label><input type="checkbox" name="dry_run" value="1" checked> dry run (plan only)</label>
+  <p><button class="primary">Onboard</button></p>
+</form>
+{% endblock %}

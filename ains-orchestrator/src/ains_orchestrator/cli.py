@@ -37,6 +37,7 @@ for _stream in (sys.stdout, sys.stderr):
         except (ValueError, OSError):
             pass
 
+log = logging.getLogger("ains.cli")
 HELP = "AINS orchestrator: Jira stories to merged PRs through stage agents and gates."
 app = typer.Typer(no_args_is_help=True, help=HELP)
 agent_app = typer.Typer(no_args_is_help=True, help="Stage agent templates.")
@@ -329,6 +330,21 @@ def session_advance(key: str, dry_run: bool = typer.Option(False, "--dry-run")) 
 
 
 # ----------------------------------------------------------------------------- loop
+def write_heartbeat(work: Path, report: dict[str, Any]) -> None:
+    """Last cycle report for the portal and for `ains status`; a missing or stale file means the poller is down."""
+    try:
+        (work / "heartbeat.json").write_text(json.dumps(report), encoding="utf-8")
+    except OSError as e:  # never let a status file stop the loop
+        log.warning("heartbeat not written: %s", e)
+
+
+def read_heartbeat(work: Path) -> dict[str, Any] | None:
+    try:
+        return json.loads((work / "heartbeat.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 @app.command()
 def poll(
     once: bool = typer.Option(False, "--once"),
@@ -352,9 +368,38 @@ def poll(
             f"{stamp} cycle: claimed={rep.claimed} stepped={rep.stepped} skipped={rep.skipped} "
             f"reviewed={wrep.reviewed} errors={rep.errors + wrep.errors}"
         )
+        write_heartbeat(
+            rt.store.path.parent,
+            {
+                "at": stamp,
+                "claimed": rep.claimed,
+                "stepped": rep.stepped,
+                "skipped": rep.skipped,
+                "reviewed": wrep.reviewed,
+                "errors": rep.errors + wrep.errors,
+                "interval_s": every,
+            },
+        )
         if once:
             break
         time.sleep(every)
+
+
+# ----------------------------------------------------------------------------- portal (I20)
+@app.command()
+def portal(
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Bind address; the container binds 0.0.0.0 and compose maps it to localhost"
+    ),
+    port: int = typer.Option(8787, "--port"),
+) -> None:
+    """Serve the management portal: dashboard, projects, stories with the state map, onboarding, docs."""
+    import uvicorn
+
+    from ains_orchestrator.portal import create_app
+
+    load_dotenv(config_root())
+    uvicorn.run(create_app(config_root()), host=host, port=port, log_level="warning")
 
 
 # ----------------------------------------------------------------------------- onboarding (I16)

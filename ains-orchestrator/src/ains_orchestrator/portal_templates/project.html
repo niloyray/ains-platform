@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}AINS portal · {{ key }}{% endblock %}
+{% block content %}
+<h1>{{ key }} <span class="small mono">{{ target.repo }}</span></h1>
+<p class="lead">Flow <code>{{ target.flow }}</code> · G3 approval by <code>{{ target.approval_mode }}</code>{% if target.approval_mode == 'label' %} (<code>{{ target.approval_label }}</code> / <code>{{ target.rework_label }}</code>){% endif %} · human-lane review label <code>{{ target.review_label }}</code></p>
+{% if request.query_params.get('error') == 'confirm' %}<div class="note bad">Removal not started: type the project key exactly to confirm.</div>{% endif %}
+
+<div class="cards">
+  {% for g, v in target.gates.items() %}
+  <div class="card"><div class="k">{{ g }} {{ {'G1':'spec','G2':'plan','G3':'code','G4':'staging','G5':'production'}[g] }}</div>
+    <div class="v"><span class="chip {{ 'human' if v == 'on' else 'muted' }}">{{ 'human gate' if v == 'on' else 'auto-passed' }}</span></div>
+    <div class="d">{{ {'G1':'Jira: move to Planning','G2':'Jira: move to Implementing','G3':'PR: label or approval + green CI','G4':'Actions: approve staging','G5':'Actions: approve production'}[g] }}</div></div>
+  {% endfor %}
+</div>
+
+<h2>Links</h2>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">Jira</h3>
+    <div class="links"><a href="{{ links.jira_board }}" target="_blank">board</a> <a href="{{ links.jira_issues }}" target="_blank">all issues</a> <a href="{{ links.jira_waiting }}" target="_blank">platform stories not Done</a></div>
+    <p class="small">Statuses the platform uses: {{ statuses|join(', ') }}. Lane label: <code>ai-native</code>.</p></div>
+  <div class="card"><h3 style="margin-top:0">GitHub</h3>
+    <div class="links"><a href="{{ links.repo }}" target="_blank">repository</a> <a href="{{ links.pulls }}" target="_blank">pull requests</a> <a href="{{ links.actions }}" target="_blank">actions</a> <a href="{{ links.ci_runs }}" target="_blank">CI runs</a> <a href="{{ links.release_runs }}" target="_blank">release runs</a> <a href="{{ links.packages }}" target="_blank">images</a></div>
+    <div class="links" style="margin-top:6px"><a href="{{ links.environments }}" target="_blank">environments (G4, G5)</a> <a href="{{ links.branches }}" target="_blank">branch protection</a> <a href="{{ links.labels }}" target="_blank">labels</a> <a href="{{ links.secrets }}" target="_blank">secrets</a></div>
+    <div class="links" style="margin-top:6px"><a href="{{ links.claude_md }}" target="_blank">CLAUDE.md</a> <a href="{{ links.settings_json }}" target="_blank">.claude/settings.json</a> <a href="{{ links.ci_yml }}" target="_blank">ci.yml</a> <a href="{{ links.release_yml }}" target="_blank">release.yml</a></div>
+    <p class="small">Labels the platform created: {% for l, (c, d) in labels.items() %}<code>{{ l }}</code> {% endfor %}</p></div>
+</div>
+
+<h2>Stories</h2>
+<div class="tw"><table>
+  <tr><th>Story</th><th>Stage</th><th>Jira</th><th>What a person must do</th><th>Artifacts</th><th>Updated</th></tr>
+  {% for r in rows %}
+  <tr><td><a href="/stories/{{ r.key }}" class="mono">{{ r.key }}</a><div class="small">{{ r.summary }}</div></td>
+    <td><span class="chip {{ 'bad' if r.stage == 'blocked' else ('human' if r.waiting else 'machine') }}">{{ r.stage }}</span></td>
+    <td>{{ r.jira_status or ('human-lane PR' if r.flow == 'pr-review' else '–') }}</td>
+    <td>{{ r.next }}</td>
+    <td class="links">{% if r.links.jira %}<a href="{{ r.links.jira }}" target="_blank">Jira</a>{% endif %}{% if r.links.pr %}<a href="{{ r.links.pr }}" target="_blank">PR #{{ r.pr }}</a> <a href="{{ r.links.pr_files }}" target="_blank">diff</a> <a href="{{ r.links.pr_checks }}" target="_blank">checks</a>{% endif %}{% if r.links.spec %}<a href="{{ r.links.spec }}" target="_blank">spec</a> <a href="{{ r.links.plan }}" target="_blank">plan</a> <a href="{{ r.links.tasks }}" target="_blank">tasks</a>{% endif %}{% if r.links.ci_runs %}<a href="{{ r.links.ci_runs }}" target="_blank">CI</a>{% endif %}</td>
+    <td class="small mono">{{ r.updated }}</td></tr>
+  {% else %}
+  <tr><td colspan="6" class="small">no stories yet for this project</td></tr>
+  {% endfor %}
+</table></div>
+
+<h2>Project operations</h2>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">Verify onboarding</h3>
+    <p class="small">Read-only check of the repository files, labels, secrets, environments, branch protection, Jira project and statuses, and the target entry. Takes about ten seconds.</p>
+    <form method="post" action="/projects/{{ key }}/verify"><button class="primary">Run verify</button></form></div>
+  <div class="card"><h3 style="margin-top:0">Remove this project from the platform</h3>
+    <p class="small">Deletes the target entry, the platform's labels, environments and branch protection, and the Jira project; archives the repository unless "delete" is ticked. Stories in flight are abandoned. This cannot be undone from here.</p>
+    <form method="post" action="/projects/{{ key }}/remove">
+      <label for="confirm">Type <b>{{ key }}</b> to confirm</label><input type="text" id="confirm" name="confirm" autocomplete="off">
+      <label><input type="checkbox" name="dry_run" value="1" checked> dry run first (shows what would happen, changes nothing)</label>
+      <label><input type="checkbox" name="delete_repo" value="1"> delete the repository instead of archiving it</label>
+      <p><button class="danger">Remove {{ key }}</button></p>
+    </form></div>
+</div>
+{% if jobs %}
+<h3>Jobs for this project</h3>
+<div class="tw"><table>{% for j in jobs %}<tr><td class="ev t">{{ j.started }}</td><td><a href="/jobs/{{ j.id }}">{{ j.title }}</a></td><td><span class="chip {{ 'good' if j.status == 'done' else ('bad' if j.status == 'failed' else 'warn') }}">{{ j.status }}</span></td></tr>{% endfor %}</table></div>
+{% endif %}
+{% endblock %}

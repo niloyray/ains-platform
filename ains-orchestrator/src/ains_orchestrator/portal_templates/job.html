@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}AINS portal · job{% endblock %}
+{% block content %}
+{% if job.status == 'running' %}<meta http-equiv="refresh" content="3">{% endif %}
+<h1>{{ job.title }}</h1>
+<p class="lead">{{ job.kind }} · started {{ job.started }}{% if job.finished %} · finished {{ job.finished }}{% endif %} · <span class="chip {{ 'good' if job.status == 'done' else ('bad' if job.status == 'failed' else 'warn') }}">{{ job.status }}</span></p>
+{% if job.status == 'running' %}<p class="small">Running inside the container; this page refreshes every three seconds.</p>{% endif %}
+<pre>{% for line in job.lines %}{{ line }}
+{% else %}(no output yet){% endfor %}</pre>
+{% if job.kind == 'add' and job.status == 'done' %}<div class="note good">Onboarded. Commit <code>ains-orchestrator/targets.yaml</code> in the platform repository, then open the project from the left bar.</div>{% endif %}
+{% if job.project %}<p><a href="/projects/{{ job.project }}">Back to {{ job.project }}</a> · <a href="/">Dashboard</a></p>{% else %}<p><a href="/">Dashboard</a></p>{% endif %}
+{% endblock %}

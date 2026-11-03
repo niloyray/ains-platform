@@ -136,6 +136,10 @@ class Store:
         rows = self._db.execute("SELECT * FROM events WHERE key=? ORDER BY id", (key,)).fetchall()
         return [Event(r["id"], r["key"], r["ts"], r["kind"], json.loads(r["detail"])) for r in rows]
 
+    def recent_events(self, limit: int = 20) -> list[Event]:
+        rows = self._db.execute("SELECT * FROM events ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        return [Event(r["id"], r["key"], r["ts"], r["kind"], json.loads(r["detail"])) for r in rows]
+
     def export(self, key: str) -> dict[str, Any]:
         s = self.get_session(key)
         if not s:

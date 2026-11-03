@@ -1,0 +1,115 @@
+<svg viewBox="0 0 1420 580" role="img" aria-label="State machine. Jira lane: To Do, Ready, Specifying, Spec Review, Planning, Plan Review, Implementing, Code Review, Staging, Done, with Rework and Blocked as side states. GitHub pull request lane: draft, ready for review, ci green, g3-approved, merged, with ci red and g3-rework as side states that return to ready for review. Release lane: image built, staging approved, production approved. Blue arrows are moves a person makes, teal arrows the platform makes, grey arrows the CI or release workflow makes.">
+  <defs>
+    <marker id="fh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--human)"/></marker>
+    <marker id="fm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--machine)"/></marker>
+    <marker id="fg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+  </defs>
+  <g font-family="IBM Plex Sans, Segoe UI, sans-serif" font-size="11" fill="currentColor">
+    <!-- lane titles and dividers -->
+    <text x="20" y="40" font-weight="600" fill="var(--muted)">JIRA STORY STATUS</text>
+    <text x="20" y="318" font-weight="600" fill="var(--muted)">GITHUB PULL REQUEST</text>
+    <text x="20" y="503" font-weight="600" fill="var(--muted)">GITHUB ACTIONS RELEASE RUN</text>
+    <line x1="20" y1="300" x2="1400" y2="300" stroke="var(--line)"/>
+    <line x1="20" y1="492" x2="1400" y2="492" stroke="var(--line)"/>
+
+    <!-- ===== Jira lane: nodes ===== -->
+                <!-- forward moves -->
+    <g stroke-width="1.6" fill="none">
+      <line x1="120" y1="88" x2="135" y2="88" stroke="var(--human)" marker-end="url(#fh)"/>
+      <line x1="235" y1="88" x2="250" y2="88" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <line x1="350" y1="88" x2="365" y2="88" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <line x1="465" y1="88" x2="480" y2="88" stroke="var(--human)" marker-end="url(#fh)"/>
+      <line x1="580" y1="88" x2="595" y2="88" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <line x1="695" y1="88" x2="710" y2="88" stroke="var(--human)" marker-end="url(#fh)"/>
+      <line x1="810" y1="88" x2="825" y2="88" stroke="var(--muted)" marker-end="url(#fg)"/>
+      <line x1="925" y1="88" x2="940" y2="88" stroke="var(--muted)" marker-end="url(#fg)"/>
+      <line x1="1040" y1="88" x2="1055" y2="88" stroke="var(--muted)" marker-end="url(#fg)"/>
+    </g>
+    <g text-anchor="middle" font-size="9.5" fill="var(--muted)">
+      <text x="128" y="62">you</text><text x="243" y="62">claim</text><text x="358" y="62">spec done</text>
+      <text x="473" y="62">G1 yes</text><text x="588" y="62">plan done</text><text x="703" y="62">G2 yes</text>
+      <text x="818" y="62">CI ran</text><text x="933" y="62">G4 yes</text><text x="1048" y="62">G5 yes</text>
+    </g>
+    <!-- Rework: in from the two review states, back out to the two agent states -->
+    <g stroke-width="1.6" fill="none">
+      <path d="M415,106 L415,178 L480,178" stroke="var(--human)" marker-end="url(#fh)"/>
+      <path d="M645,106 L645,178 L580,178" stroke="var(--human)" marker-end="url(#fh)"/>
+      <path d="M545,160 L545,106" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <path d="M520,196 L520,218 L330,218 L330,106" stroke="var(--machine)" marker-end="url(#fm)"/>
+    </g>
+    <g font-size="9.5">
+      <text x="420" y="150" fill="var(--human)">G1 no + comment</text>
+      <text x="640" y="150" fill="var(--human)" text-anchor="end">G2 no + comment</text>
+      <text x="540" y="134" fill="var(--machine)" text-anchor="end">plan agent again</text>
+      <text x="336" y="232" fill="var(--machine)">spec agent again, with your comment</text>
+    </g>
+    <!-- Blocked: under Ready, one arrow back -->
+    <path d="M185,160 L185,106" stroke="var(--human)" stroke-width="1.6" fill="none" marker-end="url(#fh)"/>
+    <g font-size="9.5">
+      <text x="178" y="128" fill="var(--human)" text-anchor="end">you fix the cause, move to Ready;</text>
+      <text x="178" y="140" fill="var(--human)" text-anchor="end">it resumes where it stopped</text>
+      <text x="185" y="214" fill="var(--bad)" text-anchor="middle">entered from any agent stage after</text>
+      <text x="185" y="226" fill="var(--bad)" text-anchor="middle">2 failed agent runs or 3 red CI runs</text>
+    </g>
+
+    <!-- ===== Pull request lane ===== -->
+            <g stroke-width="1.6" fill="none">
+      <line x1="350" y1="358" x2="710" y2="358" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <line x1="810" y1="358" x2="825" y2="358" stroke="var(--muted)" marker-end="url(#fg)"/>
+      <line x1="925" y1="358" x2="940" y2="358" stroke="var(--human)" marker-end="url(#fh)"/>
+      <line x1="1040" y1="358" x2="1055" y2="358" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <!-- ci red: down from ready, back up from ci red -->
+      <path d="M785,376 L785,420" stroke="var(--muted)" marker-end="url(#fg)"/>
+      <path d="M735,420 L735,376" stroke="var(--machine)" marker-end="url(#fm)"/>
+      <!-- g3-rework: down from ci green, back to ready along the bottom -->
+      <path d="M875,376 L875,438 L940,438" stroke="var(--human)" marker-end="url(#fh)"/>
+      <path d="M990,456 L990,470 L690,470 L690,368 L710,368" stroke="var(--machine)" marker-end="url(#fm)"/>
+    </g>
+    <g font-size="9.5" fill="var(--muted)">
+      <text x="530" y="352" text-anchor="middle">spec, plan and code commits land here</text>
+      <text x="818" y="334" text-anchor="middle">CI passes</text>
+      <text x="933" y="334" text-anchor="middle" fill="var(--human)">G3 yes</text>
+      <text x="1048" y="334" text-anchor="middle" fill="var(--machine)">squash</text>
+      <text x="792" y="402">CI fails</text>
+      <text x="728" y="402" text-anchor="end" fill="var(--machine)">agent fixes, new commit</text>
+      <text x="880" y="412" fill="var(--human)">G3 no + PR comment</text>
+      <text x="840" y="483" text-anchor="middle" fill="var(--machine)">implement agent again with your comment, new commit, CI again</text>
+    </g>
+
+    <!-- ===== Release lane ===== -->
+            <g stroke-width="1.6" fill="none">
+      <path d="M1105,376 L1105,515" stroke="var(--muted)" marker-end="url(#fg)"/>
+      <line x1="1155" y1="533" x2="1170" y2="533" stroke="var(--human)" marker-end="url(#fh)"/>
+      <line x1="1280" y1="533" x2="1295" y2="533" stroke="var(--human)" marker-end="url(#fh)"/>
+    </g>
+    <g font-size="9.5" fill="var(--muted)">
+      <text x="1112" y="450">release run starts</text>
+      <text x="1162" y="563" text-anchor="middle" fill="var(--human)">G4</text>
+      <text x="1287" y="563" text-anchor="middle" fill="var(--human)">G5</text>
+    </g>
+
+    <!-- ===== Couplings between lanes: straight dashed verticals ===== -->
+    <g stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 3" fill="none">
+      <path d="M270,340 L270,106"/>
+      <path d="M740,340 L740,106"/>
+      <path d="M845,340 L845,106"/>
+      <path d="M1225,515 L1225,250 L1000,250 L1000,106"/>
+      <path d="M1350,515 L1350,236 L1130,236 L1130,106"/>
+    </g>
+    <g font-size="9.5" fill="var(--muted)">
+      <text x="276" y="296">opened when the story is claimed</text>
+      <text x="746" y="296">marked ready when code is pushed</text>
+      <text x="851" y="283">CI sets Code Review</text>
+      <text x="1008" y="264">sets Staging</text>
+      <text x="1138" y="232">sets Done</text>
+    </g>
+      <!-- nodes (highlighted when current) -->
+    {% for n in fsm_nodes %}
+    <rect x="{{ n.x }}" y="{{ n.y }}" width="{{ n.w }}" height="36" rx="6"
+      fill="{{ 'var(--human-soft)' if n.kind == 'human' else ('var(--bad-soft)' if n.kind == 'bad' else 'var(--panel)') }}"
+      stroke="{{ 'var(--human)' if n.kind == 'human' else ('var(--bad)' if n.kind == 'bad' else 'currentColor') }}"
+      {% if n.kind == 'human' %}stroke-width="2"{% endif %} {% if n.id in current %}class="current"{% endif %}/>
+    <text x="{{ n.x + n.w / 2 }}" y="{{ n.y + 22 }}" text-anchor="middle" font-size="11" {% if n.id in current %}font-weight="600"{% endif %}>{{ n.id }}</text>
+    {% endfor %}
+  </g>
+</svg>
