@@ -525,7 +525,10 @@ def verify_target(
         return checks
     for path in list(TEMPLATE_FILES.values()) + [".specify", ".claude/skills"]:
         try:
-            gh.exec(["gh", "api", f"repos/{repo}/contents/{path}", "--jq", ".path // .[0].path"], what="contents")
+            gh.exec(
+                ["gh", "api", f"repos/{repo}/contents/{path}", "--jq", 'if type == "array" then length else .path end'],
+                what="contents",
+            )
             add(f"file {path}", True)
         except GitHubError:
             add(f"file {path}", False, "missing")
