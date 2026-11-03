@@ -444,3 +444,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | data volume | `/data/logs/orchestrator.log` kept across the restart (two "poll loop started" lines, 89 cycle lines); store intact |
 | `ains-platform.cmd doctor` | 15 checks ok, including gh auth and Jira login |
 
+### 6a.2 second onboarding; 9.1 divergence notes; cloud note; rework and L4 stories queued
+
+| Item | Detail |
+|------|--------|
+| 6a.2 | `ains target add ains-sandbox-2 AINSSB2 "Sandbox 2" --class small-poc --autonomy L4`: dry run listed 11 steps; real run all done in about a minute (repo, templates + Spec Kit, 4 labels, secrets, environments, protection `ci / ci`, Jira project with 10 added statuses, target block with profile and gates G1/G2/G4 off); `target verify` all ok. Removal follows after the L4 story |
+| stories | `AINSSB-3` (version command) in Ready on the sandbox for the rework paths (8.13): the user will send it back at G1, G2 and G3 once; `AINSSB2-1` (health check) in Ready on sandbox 2 for the gates-off run at L4 (checklist row 11) |
+| docs | `docs/divergence.md` (plan 9.1: 15 rows against section 05 of the architecture document and the build prompt); `docs/cloud-deployment.md` (credentials, portal login, model access as the blocker); `docs/targets.md` row for AINSSB2 |
+

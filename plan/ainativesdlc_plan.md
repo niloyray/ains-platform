@@ -314,7 +314,7 @@ Not part of Phase 1. Listed here only so the hand-off is explicit; these rows mo
 
 | Sub-step | Action | Owner | Verification | Status |
 |----------|--------|-------|--------------|--------|
-| 9.1 | `docs/divergence.md`: table against section 05 of the architecture doc. Known entries: (a) intake is pull, not push; (b) orchestrator is the homegrown `ains-orchestrator`, not a third-party Ark; (c) runs in a local container, not a VM; (d) release environments are gates, not hosts; (e) platform and application split across two GitHub repos, one Jira project for the PoC only, platform outside the story lane; (f) five switchable gates instead of the doc's single review gate; (g) four stage roles on one harness instead of eight agents | Claude | file committed | `[ ]` |
+| 9.1 | `docs/divergence.md`: table against section 05 of the architecture doc. Known entries: (a) intake is pull, not push; (b) orchestrator is the homegrown `ains-orchestrator`, not a third-party Ark; (c) runs in a local container, not a VM; (d) release environments are gates, not hosts; (e) platform and application split across two GitHub repos, one Jira project for the PoC only, platform outside the story lane; (f) five switchable gates instead of the doc's single review gate; (g) four stage roles on one harness instead of eight agents | Claude | file committed | `[x]` |
 | 9.2 | `docs/gates.md` and `docs/targets.md` written | Claude | files committed | `[x]` |
 | 9.3 | Update the status summary to all `[x]` and close the "Phase 1" milestone in `ains-platform` | Claude | milestone closed | `[ ]` |
 
