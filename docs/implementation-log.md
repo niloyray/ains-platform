@@ -359,3 +359,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | 101 pass. Container rebuilt |
 | live state | AINSSB-2: G4 passed, Jira Staging, `production (G5)` waiting; sandbox PR #1 still without `ai-review` label; watch re-armed |
 
+### Phase 1 acceptance run complete: AINSSB-2 is Done through all five gates
+
+| Item | Detail |
+|------|--------|
+| G5 | user approved `production`; job `production (G5)` success; `jira-done` callback success; Jira AINSSB-2 **Done** at 2026-11-03 04:28 UTC with 17 comments as the trail |
+| run summary | Ready → Specifying → Spec Review → G1 (human, Planning) → Plan Review → G2 (human, Implementing) → implement → PR #2 ready → CI red twice (platform lint config, then a real ruff finding) → review agent x3 → automatic CI-failure rework → CI green → G3 (label) → squash-merge → release run → G4 (staging) → Staging → G5 (production) → Done |
+| agent runs | spec 1, plan 1, implement 2, review 3; about USD 0.70 reported by the CLI; all on the subscription token |
+| plan | step 8 (8.1 to 8.11) is done; 8.12 human-lane review of PR #1 still waiting for the `ai-review` label; 8.13 rework paths not yet exercised |
+| next | 8.12, 8.13 (G1/G2/G3 rework, block and resume), 6a.2 second onboarding and removal, gates-off run, step 9 (divergence notes, milestone close), T-L6-1/5 screenshots, token rotation |
+
