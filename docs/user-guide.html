@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>AINS Platform User Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column, numbered parts, each step as who/where/what; diagrams reuse the plan's colour code (blue = human acts, teal = the platform acts). */
+:root {
+  --bg: #f7f8fa; --fg: #1d2430; --muted: #5b6676; --line: #d6dbe3; --panel: #ffffff;
+  --human: #1f5fbf; --human-soft: #e4edfb; --machine: #0f766e; --machine-soft: #dcf2ee;
+  --warn: #9a5a00; --warn-soft: #fff1d6; --bad: #a43e2a; --bad-soft: #fbe5e0; --good: #1f7a3d;
+  --display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151a21; --fg: #e6eaf0; --muted: #9aa5b5; --line: #2e3745; --panel: #1d242e;
+  --human: #7fb0ff; --human-soft: #1c2d47; --machine: #5fd3c4; --machine-soft: #15332f;
+  --warn: #f0b64b; --warn-soft: #3a2c10; --bad: #ff8d78; --bad-soft: #3d1f19; --good: #6fd38f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151a21; --fg: #e6eaf0; --muted: #9aa5b5; --line: #2e3745; --panel: #1d242e;
+  --human: #7fb0ff; --human-soft: #1c2d47; --machine: #5fd3c4; --machine-soft: #15332f;
+  --warn: #f0b64b; --warn-soft: #3a2c10; --bad: #ff8d78; --bad-soft: #3d1f19; --good: #6fd38f; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+main { max-width: 860px; margin: 0 auto; }
+header.top { padding-block: 40px 24px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(30px, 5vw, 42px); line-height: 1.15; margin: 8px 0 12px; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 26px; margin: 48px 0 8px; text-wrap: balance; padding-top: 16px; border-top: 1px solid var(--line); }
+h3 { font-size: 18px; font-weight: 600; margin: 28px 0 6px; text-wrap: balance; }
+h2 .num, h3 .num { font-family: var(--mono); color: var(--muted); font-weight: 500; font-size: .8em; margin-right: 8px; }
+p, li { max-width: 68ch; }
+p.lead { font-size: 18px; color: var(--muted); max-width: 60ch; }
+a { color: var(--human); }
+code { font-family: var(--mono); font-size: .9em; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+pre { font-family: var(--mono); font-size: 13.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; line-height: 1.5; }
+pre code { background: none; border: 0; padding: 0; white-space: pre; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0 8px; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td:first-child { white-space: nowrap; font-weight: 500; }
+.toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 24px; padding: 0; margin: 16px 0 0; list-style: none; }
+.toc li { font-size: 15px; }
+.toc .num { font-family: var(--mono); color: var(--muted); margin-right: 6px; }
+
+/* step cards */
+.step { display: grid; grid-template-columns: 56px 1fr; gap: 0 16px; margin: 18px 0; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.step .n { font-family: var(--mono); font-size: 13px; color: var(--muted); padding-top: 3px; }
+.step .n b { display: block; font-size: 20px; color: var(--fg); font-weight: 500; line-height: 1.1; }
+.step h4 { margin: 0 0 6px; font-size: 17px; font-weight: 600; }
+.step .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 0 0 8px; font-size: 13px; }
+.step .meta span { border-radius: 999px; padding: 2px 10px; font-weight: 500; }
+.who-h { background: var(--human-soft); color: var(--human); }
+.who-m { background: var(--machine-soft); color: var(--machine); }
+.where { background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.step p, .step ul { margin: 4px 0; }
+.step ul { padding-left: 20px; }
+.step .see { font-size: 14px; color: var(--muted); margin-top: 8px; }
+.step .see b { color: var(--fg); font-weight: 600; }
+.gate { border-left: 4px solid var(--human); }
+.gate h4::before { content: "Gate "; color: var(--human); }
+.note { background: var(--warn-soft); border-left: 4px solid var(--warn); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 14px 0; font-size: 15px; }
+.note.bad { background: var(--bad-soft); border-left-color: var(--bad); }
+.note.good { background: var(--machine-soft); border-left-color: var(--machine); }
+figure { margin: 20px 0; }
+figure svg { max-width: 100%; height: auto; display: block; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; max-width: 70ch; }
+.figwrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+dl.gloss { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 12px 0; }
+dl.gloss dt { font-weight: 600; white-space: nowrap; }
+dl.gloss dd { margin: 0; max-width: 62ch; }
+@media (max-width: 560px) { dl.gloss { grid-template-columns: 1fr; gap: 2px 0; } dl.gloss dd { margin-bottom: 8px; } .step { grid-template-columns: 1fr; } }
+kbd { font-family: var(--body); font-size: 13px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 6px; background: var(--panel); }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
+</style>
+
+</head>
+<body>
+<main>
+<header class="top">
+  <div class="eyebrow">AINS · AI-native software delivery platform</div>
+  <h1>Taking a project from a written idea to a released change, step by step</h1>
+  <p class="lead">This guide is for people who will use the platform without knowing Jira, Git, GitHub or GitHub Actions. It names every piece you will see on screen, says who does what, and walks one project through setup, onboarding and the delivery of a single story.</p>
+  <ol class="toc">
+    <li><span class="num">1</span><a href="#idea">The idea in one picture</a></li>
+    <li><span class="num">2</span><a href="#words">The words you will meet</a></li>
+    <li><span class="num">3</span><a href="#cast">Who and what is involved</a></li>
+    <li><span class="num">4</span><a href="#setup">One-time platform setup</a></li>
+    <li><span class="num">5</span><a href="#onboard">Onboarding a new project</a></li>
+    <li><span class="num">6</span><a href="#story">Delivering one story</a></li>
+    <li><span class="num">7</span><a href="#gates">The five gates</a></li>
+    <li><span class="num">8</span><a href="#agents">The four agents</a></li>
+    <li><span class="num">9</span><a href="#artifacts">Where everything lives</a></li>
+    <li><span class="num">10</span><a href="#trouble">When something goes wrong</a></li>
+    <li><span class="num">11</span><a href="#commands">Command sheet</a></li>
+  </ol>
+</header>
+
+<h2 id="idea"><span class="num">1</span>The idea in one picture</h2>
+<p>A person writes what they want as a short story in Jira. The platform picks it up, and four AI agents do the work in turn: one writes the specification, one writes the plan, one writes the code and tests, one reviews the code. Between those steps the platform stops and waits for a person to look and say yes, or send it back. After the last yes the change is built and released. Nothing is merged or released without a human decision at the gates that are switched on.</p>
+
+<figure>
+<div class="figwrap">
+<svg viewBox="0 0 900 300" role="img" aria-label="The orchestrator sits between the people and the agents: it watches Jira, starts one agent per stage, opens and updates the pull request on GitHub, and waits at the gates for a human decision.">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+    <marker id="ah-h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--human)"/></marker>
+    <marker id="ah-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--machine)"/></marker>
+  </defs>
+  <g font-family="IBM Plex Sans, Segoe UI, sans-serif" font-size="13" fill="currentColor">
+    <!-- humans -->
+    <rect x="20" y="40" width="150" height="70" rx="8" fill="var(--human-soft)" stroke="var(--human)"/>
+    <text x="95" y="68" text-anchor="middle" font-weight="600">People</text>
+    <text x="95" y="88" text-anchor="middle" font-size="12">write stories, decide at gates</text>
+    <!-- jira -->
+    <rect x="250" y="20" width="150" height="54" rx="8" fill="var(--panel)" stroke="currentColor"/>
+    <text x="325" y="42" text-anchor="middle" font-weight="600">Jira</text>
+    <text x="325" y="60" text-anchor="middle" font-size="12">stories and statuses</text>
+    <!-- github -->
+    <rect x="250" y="100" width="150" height="54" rx="8" fill="var(--panel)" stroke="currentColor"/>
+    <text x="325" y="122" text-anchor="middle" font-weight="600">GitHub</text>
+    <text x="325" y="140" text-anchor="middle" font-size="12">code, pull request, checks</text>
+    <!-- actions -->
+    <rect x="250" y="180" width="150" height="54" rx="8" fill="var(--panel)" stroke="currentColor"/>
+    <text x="325" y="202" text-anchor="middle" font-weight="600">GitHub Actions</text>
+    <text x="325" y="220" text-anchor="middle" font-size="12">tests, build, release</text>
+    <!-- orchestrator -->
+    <rect x="490" y="60" width="170" height="134" rx="8" fill="var(--machine-soft)" stroke="var(--machine)"/>
+    <text x="575" y="88" text-anchor="middle" font-weight="600">Orchestrator</text>
+    <text x="575" y="108" text-anchor="middle" font-size="12">the platform program</text>
+    <text x="575" y="126" text-anchor="middle" font-size="12">in a Docker container</text>
+    <text x="575" y="144" text-anchor="middle" font-size="12">on the laptop</text>
+    <text x="575" y="170" text-anchor="middle" font-size="12" fill="var(--machine)">polls every 60 s</text>
+    <!-- agents -->
+    <rect x="730" y="40" width="150" height="40" rx="8" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="805" y="65" text-anchor="middle">spec agent</text>
+    <rect x="730" y="92" width="150" height="40" rx="8" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="805" y="117" text-anchor="middle">plan agent</text>
+    <rect x="730" y="144" width="150" height="40" rx="8" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="805" y="169" text-anchor="middle">implement agent</text>
+    <rect x="730" y="196" width="150" height="40" rx="8" fill="var(--panel)" stroke="var(--machine)"/>
+    <text x="805" y="221" text-anchor="middle">review agent</text>
+    <text x="805" y="262" text-anchor="middle" font-size="12" fill="var(--muted)">each one is a fresh Claude Code run</text>
+    <!-- arrows people -->
+    <line x1="170" y1="60" x2="250" y2="47" stroke="var(--human)" stroke-width="1.6" marker-end="url(#ah-h)"/>
+    <line x1="170" y1="90" x2="250" y2="127" stroke="var(--human)" stroke-width="1.6" marker-end="url(#ah-h)"/>
+    <line x1="170" y1="100" x2="250" y2="207" stroke="var(--human)" stroke-width="1.6" marker-end="url(#ah-h)"/>
+    <!-- arrows orchestrator -->
+    <line x1="490" y1="80" x2="400" y2="47" stroke="var(--machine)" stroke-width="1.6" marker-start="url(#ah-m)" marker-end="url(#ah-m)"/>
+    <line x1="490" y1="127" x2="400" y2="127" stroke="var(--machine)" stroke-width="1.6" marker-start="url(#ah-m)" marker-end="url(#ah-m)"/>
+    <line x1="400" y1="154" x2="400" y2="180" stroke="var(--machine)" stroke-width="1.6" marker-end="url(#ah-m)"/>
+    <text x="410" y="172" font-size="11" fill="var(--muted)">PR opened → CI runs</text>
+    <line x1="660" y1="90" x2="730" y2="60" stroke="var(--machine)" stroke-width="1.6" marker-end="url(#ah-m)"/>
+    <line x1="660" y1="112" x2="730" y2="112" stroke="var(--machine)" stroke-width="1.6" marker-end="url(#ah-m)"/>
+    <line x1="660" y1="140" x2="730" y2="164" stroke="var(--machine)" stroke-width="1.6" marker-end="url(#ah-m)"/>
+    <line x1="660" y1="170" x2="730" y2="216" stroke="var(--machine)" stroke-width="1.6" marker-end="url(#ah-m)"/>
+    <text x="695" y="34" text-anchor="middle" font-size="11" fill="var(--muted)">starts, one per stage</text>
+  </g>
+</svg>
+</div>
+<figcaption>The orchestrator is the only moving part the platform adds. People never talk to the agents directly: they write in Jira and click on GitHub, and the orchestrator turns that into agent runs.</figcaption>
+<div class="legend"><span><i style="background:var(--human)"></i>a person acts</span><span><i style="background:var(--machine)"></i>the platform acts</span></div>
+</figure>
+
+<h2 id="words"><span class="num">2</span>The words you will meet</h2>
+<p>You do not need to learn the tools. You need to recognise these names when they appear on screen.</p>
+<dl class="gloss">
+  <dt>Jira</dt><dd>The board where work is written down. Each item is a <b>story</b>: a short text saying what should change and how you will know it is done. A story is always in exactly one <b>status</b> (for example <code>Ready</code> or <code>Spec Review</code>). You change a status by dragging the card to another column or by picking a status from the drop-down on the story. A <b>comment</b> is a note under the story; the platform writes one at every step so the story is its own diary. A <b>label</b> is a tag on the story; the label <code>ai-native</code> tells the platform "this story is yours".</dd>
+  <dt>GitHub</dt><dd>The website where the project's files live. A <b>repository</b> ("repo") is one project's folder with its full history. The <b>main</b> branch is the official version of that folder.</dd>
+  <dt>Branch</dt><dd>A private working copy inside the repository, named after the story (for example <code>AINSSB-2-repository-scaffold</code>). Agents work there so the official version is untouched until a person agrees.</dd>
+  <dt>Commit</dt><dd>One saved set of changes with a one-line message. The platform prefixes every message with the story key, like <code>AINSSB-2: implement tasks.md</code>.</dd>
+  <dt>Pull request (PR)</dt><dd>A web page on GitHub that proposes merging a branch into main. It shows the changed files side by side, the test results, reviews, and labels. It is where you make the code decision. A PR starts as a <b>draft</b> (not ready) and is later marked <b>ready for review</b>.</dd>
+  <dt>Merge</dt><dd>Accepting a PR. Its changes join main and the PR shows a purple "Merged" badge. The platform merges for you, only after the gate is passed.</dd>
+  <dt>GitHub Actions</dt><dd>GitHub's automation. A <b>workflow</b> is a script that runs when something happens. A <b>run</b> is one execution; you see runs under the repository's <b>Actions</b> tab.</dd>
+  <dt>CI, the check</dt><dd>The workflow that installs the project, lints it and runs its tests every time the PR changes. On the PR it appears as a <b>check</b> named <code>ci / ci</code> with a green tick (passed) or a red cross (failed).</dd>
+  <dt>Environment</dt><dd>A named release stage inside GitHub, here <code>staging</code> and <code>production</code>. Each one is set to require a named person to approve before the workflow continues. That approval is a gate.</dd>
+  <dt>Image, GHCR</dt><dd>The packaged, runnable form of the project, stored in GitHub's container registry. The release workflow builds it once and tags it <code>staging</code> and then <code>production</code>.</dd>
+  <dt>Docker</dt><dd>The program that runs packaged software in isolated boxes called containers. The orchestrator runs in one on the platform engineer's laptop.</dd>
+  <dt>Orchestrator</dt><dd>The platform's own program, called <code>ains</code>. It watches Jira, starts agents, opens and updates the PR, waits at gates and keeps a record of every step.</dd>
+  <dt>Agent</dt><dd>One run of the Claude Code command-line program with a task written by the orchestrator. It can read and edit the files in the branch and run the tests. It cannot push, merge, approve or reach the internet. When the task is done the program ends; nothing lingers.</dd>
+  <dt>Spec Kit</dt><dd>A set of ready-made instructions the agents use so that specifications, plans and task lists always have the same shape and land in the same folder, <code>specs/&lt;story key&gt;/</code>.</dd>
+  <dt>Gate</dt><dd>A point where the platform stops and waits for a person. There are five. Each can be switched on or off per project.</dd>
+</dl>
+
+<h2 id="cast"><span class="num">3</span>Who and what is involved</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Role</th><th>What they do</th><th>Where they work</th></tr>
+  <tr><td>Product owner</td><td>Writes stories, approves or sends back the specification (G1) and the plan (G2)</td><td>Jira</td></tr>
+  <tr><td>Reviewer</td><td>Reads the agent's review and the code, approves the change (G3)</td><td>GitHub pull request</td></tr>
+  <tr><td>Release approver</td><td>Approves staging (G4) and production (G5)</td><td>GitHub Actions, "Review deployments"</td></tr>
+  <tr><td>Platform engineer</td><td>Sets the platform up once, onboards projects, looks after the container and the tokens</td><td>Laptop terminal, the platform repository</td></tr>
+  <tr><td>Orchestrator</td><td>Claims stories, starts agents, opens the PR, waits at gates, merges, writes the diary</td><td>Docker container, always running</td></tr>
+  <tr><td>Four agents</td><td>spec, plan, implement, review (section 8)</td><td>Started by the orchestrator, one per stage</td></tr>
+  <tr><td>CI and release workflows</td><td>Test every PR; after merge build the image and hold at staging and production</td><td>GitHub Actions in the project repository</td></tr>
+</table>
+</div>
+<p>One person can hold all the human roles. On the sandbox project that is the case.</p>
+
+<h2 id="setup"><span class="num">4</span>One-time platform setup</h2>
+<p>Done once by the platform engineer, on the laptop that will run the orchestrator. Everything in this section stays on that laptop; none of it is needed by the people who write stories or approve gates.</p>
+
+<h3>What you need before you start</h3>
+<ul>
+  <li><b>Docker Desktop</b> installed and running.</li>
+  <li><b>A GitHub account</b> that owns the project repositories, plus a classic <b>personal access token</b> with the <code>repo</code> and <code>workflow</code> scopes. GitHub: Settings → Developer settings → Personal access tokens.</li>
+  <li><b>A Jira Cloud site</b> and an <b>API token</b> for your Atlassian account (id.atlassian.com → Security → API tokens).</li>
+  <li><b>A Claude subscription</b> (Max). Run <code>claude setup-token</code> once in a normal terminal on the laptop; it opens the browser, you approve, and it prints a token starting with <code>sk-ant-oat01-</code>. That token makes the agents use your subscription, never a pay-per-use API.</li>
+</ul>
+<div class="note">Tokens are passwords. They go into one file, <code>ains-orchestrator/.env</code>, which Git is told to ignore. Never paste them into a story, a PR, a document or a chat.</div>
+
+<div class="step"><div class="n">step<b>1</b></div><div>
+  <h4>Get the platform</h4>
+  <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal</span></div>
+  <pre><code>git clone https://github.com/niloyray/ains-platform
+cd ains-platform/ains-orchestrator
+copy .env.example .env</code></pre>
+  <p>Open <code>.env</code> in an editor and fill in <code>CLAUDE_CODE_OAUTH_TOKEN</code>, <code>GITHUB_TOKEN</code> and <code>GH_TOKEN</code> (same value), <code>JIRA_BASE_URL</code>, <code>JIRA_EMAIL</code>, <code>JIRA_API_TOKEN</code>. Leave every <code>ANTHROPIC_*</code> line absent.</p>
+</div></div>
+
+<div class="step"><div class="n">step<b>2</b></div><div>
+  <h4>Build and start the orchestrator</h4>
+  <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal, in ains-orchestrator</span></div>
+  <pre><code>docker compose up -d --build</code></pre>
+  <p>This builds a container image with the orchestrator, the GitHub command-line tool, Claude Code and Spec Kit, then starts it. It polls Jira every 60 seconds from now on. Repeat the same command after any change to the platform code; configuration files (<code>targets.yaml</code>, the flow, the agent prompts, the agent permission file) are mounted and picked up without a rebuild.</p>
+  <p class="see"><b>You should see:</b> <code>Container ains-orchestrator Started</code>, and <code>docker compose ps</code> reports it as healthy.</p>
+</div></div>
+
+<div class="step"><div class="n">step<b>3</b></div><div>
+  <h4>Check the connections</h4>
+  <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal</span></div>
+  <pre><code>docker compose exec orchestrator ains doctor</code></pre>
+  <p>Checks that Jira answers with your account, that GitHub accepts the token, that Claude Code starts with the subscription token, and that no API key is set. Fix anything that is red before going on.</p>
+</div></div>
+
+<h2 id="onboard"><span class="num">5</span>Onboarding a new project</h2>
+<p>One command creates everything a project needs on GitHub and in Jira and registers it with the orchestrator. Pick three names first: the repository name (lower case, hyphens), the Jira project key (2 to 10 capital letters, this prefixes every story, for example <code>AINSPOC</code>), and the Jira project's display name.</p>
+
+<div class="step"><div class="n">step<b>1</b></div><div>
+  <h4>Run the onboarding command</h4>
+  <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal, in ains-orchestrator</span></div>
+  <pre><code>uv run ains target add ains-poc AINSPOC "AINS PoC" --gates G1=on,G2=on,G3=on,G4=on,G5=on --approval-mode label</code></pre>
+  <p>Add <code>--dry-run</code> first to see what it would do without doing it. The command is safe to run again: it reports what already exists and re-applies the rest.</p>
+</div></div>
+
+<h3>What the command creates</h3>
+<div class="tablewrap">
+<table>
+  <tr><th>Artifact</th><th>Where</th><th>Why it exists</th></tr>
+  <tr><td>Repository</td><td>GitHub, <code>niloyray/&lt;repo&gt;</code></td><td>The project's files and history</td></tr>
+  <tr><td>Starter files</td><td>repository, first commit</td><td><code>README.md</code>, <code>CLAUDE.md</code> (house rules the agents read first), <code>.claude/settings.json</code> (what the agents may run), <code>.github/workflows/ci.yml</code> and <code>release.yml</code> (thin workflows that call the platform's shared ones), <code>.specify/</code> and <code>.claude/skills/speckit-*</code> (Spec Kit)</td></tr>
+  <tr><td>Labels</td><td>repository</td><td><code>g3-approved</code>, <code>g3-rework</code> for the code gate; <code>ai-review</code> to ask for an agent review on a PR a person wrote</td></tr>
+  <tr><td>Secrets</td><td>repository settings</td><td>The Jira e-mail and token, so the workflows can move the story when CI runs and when releases are approved</td></tr>
+  <tr><td>Environments</td><td>repository settings</td><td><code>staging</code> and <code>production</code>, each with you as required reviewer. These are gates G4 and G5</td></tr>
+  <tr><td>Branch protection</td><td>repository settings, <code>main</code></td><td>Nothing reaches main except through a PR whose <code>ci / ci</code> check is green</td></tr>
+  <tr><td>Jira project</td><td>Jira, key <code>&lt;KEY&gt;</code></td><td>A Kanban board with the statuses the platform uses (section 9) and the label <code>ai-native</code> as the marker for platform stories</td></tr>
+  <tr><td>Target entry</td><td><code>ains-orchestrator/targets.yaml</code></td><td>Tells the orchestrator which Jira project maps to which repository, which gates are on, and how G3 is approved</td></tr>
+</table>
+</div>
+
+<div class="step"><div class="n">step<b>2</b></div><div>
+  <h4>Commit the target entry</h4>
+  <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal, in ains-platform</span></div>
+  <pre><code>git add ains-orchestrator/targets.yaml docs/targets.md
+git commit -m "targets: add AINSPOC"
+git push</code></pre>
+  <p>The running container reads <code>targets.yaml</code> on its next poll, so the project is live within a minute. Add a line to <code>docs/targets.md</code> saying why the project exists.</p>
+</div></div>
+
+<div class="step"><div class="n">step<b>3</b></div><div>
+  <h4>Optional: the Jira automation rule</h4>
+  <div class="meta"><span class="who-h">platform engineer</span><span class="where">Jira, Project settings → Automation</span></div>
+  <p>The command prints a short checklist for a rule that comments on a story when it enters <code>Ready</code>. It is an audit convenience only; the platform works without it.</p>
+</div></div>
+
+<p>To take a project off the platform: <code>uv run ains target remove &lt;repo&gt;</code> deletes the target entry and the platform's labels, environments and protection; add <code>--delete-repo</code> only if the repository itself should go.</p>
+
+<h2 id="story"><span class="num">6</span>Delivering one story</h2>
+<p>This is the daily path. It is shown with all five gates on. Times are what the sandbox run showed: each agent run takes between fifteen seconds and two minutes, and the orchestrator looks for work once a minute, so a stage normally completes within three minutes of your decision.</p>
+
+<figure>
+<div class="figwrap">
+<svg viewBox="0 0 1180 330" role="img" aria-label="A story moves through eight phases from writing to Done. Blue bands mark the five gates where a person decides. Rework arrows return from G1 to spec, from G2 to plan, and from G3 or a failed CI check to implement.">
+  <g font-family="IBM Plex Sans, Segoe UI, sans-serif" font-size="12" fill="currentColor">
+    <!-- lanes -->
+    <text x="8" y="70" font-size="11" fill="var(--human)" font-weight="600">PERSON</text>
+    <text x="8" y="160" font-size="11" fill="var(--machine)" font-weight="600">PLATFORM</text>
+    <text x="8" y="250" font-size="11" fill="var(--muted)" font-weight="600">STATUS</text>
+    <line x1="70" y1="40" x2="1170" y2="40" stroke="var(--line)"/>
+    <line x1="70" y1="120" x2="1170" y2="120" stroke="var(--line)"/>
+    <line x1="70" y1="210" x2="1170" y2="210" stroke="var(--line)"/>
+    <line x1="70" y1="290" x2="1170" y2="290" stroke="var(--line)"/>
+
+    <!-- phase 0 write -->
+    <rect x="80" y="50" width="110" height="50" rx="7" fill="var(--human-soft)" stroke="var(--human)"/>
+    <text x="135" y="70" text-anchor="middle" font-weight="600">Write story</text>
+    <text x="135" y="88" text-anchor="middle" font-size="11">label ai-native</text>
+    <text x="135" y="245" text-anchor="middle" font-size="11">To Do → Ready</text>
+
+    <!-- spec -->
+    <rect x="210" y="140" width="110" height="50" rx="7" fill="var(--machine-soft)" stroke="var(--machine)"/>
+    <text x="265" y="160" text-anchor="middle" font-weight="600">spec agent</text>
+    <text x="265" y="178" text-anchor="middle" font-size="11">spec.md, draft PR</text>
+    <text x="265" y="245" text-anchor="middle" font-size="11">Specifying</text>
+    <!-- G1 -->
+    <rect x="340" y="50" width="100" height="50" rx="7" fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"/>
+    <text x="390" y="70" text-anchor="middle" font-weight="600">G1 spec</text>
+    <text x="390" y="88" text-anchor="middle" font-size="11">move to Planning</text>
+    <text x="390" y="245" text-anchor="middle" font-size="11">Spec Review</text>
+
+    <!-- plan -->
+    <rect x="460" y="140" width="110" height="50" rx="7" fill="var(--machine-soft)" stroke="var(--machine)"/>
+    <text x="515" y="160" text-anchor="middle" font-weight="600">plan agent</text>
+    <text x="515" y="178" text-anchor="middle" font-size="11">plan.md, tasks.md</text>
+    <text x="515" y="245" text-anchor="middle" font-size="11">Planning</text>
+    <!-- G2 -->
+    <rect x="590" y="50" width="100" height="50" rx="7" fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"/>
+    <text x="640" y="70" text-anchor="middle" font-weight="600">G2 plan</text>
+    <text x="640" y="88" text-anchor="middle" font-size="11">move to Implementing</text>
+    <text x="640" y="245" text-anchor="middle" font-size="11">Plan Review</text>
+
+    <!-- implement + CI + review -->
+    <rect x="710" y="140" width="130" height="62" rx="7" fill="var(--machine-soft)" stroke="var(--machine)"/>
+    <text x="775" y="158" text-anchor="middle" font-weight="600">implement agent</text>
+    <text x="775" y="174" text-anchor="middle" font-size="11">code + tests, PR ready</text>
+    <text x="775" y="190" text-anchor="middle" font-size="11">CI check, review agent</text>
+    <text x="775" y="245" text-anchor="middle" font-size="11">Implementing → Code Review</text>
+    <!-- G3 -->
+    <rect x="860" y="50" width="100" height="50" rx="7" fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"/>
+    <text x="910" y="70" text-anchor="middle" font-weight="600">G3 code</text>
+    <text x="910" y="88" text-anchor="middle" font-size="11">label g3-approved</text>
+
+    <!-- merge + release -->
+    <rect x="980" y="140" width="80" height="50" rx="7" fill="var(--machine-soft)" stroke="var(--machine)"/>
+    <text x="1020" y="160" text-anchor="middle" font-weight="600">merge</text>
+    <text x="1020" y="178" text-anchor="middle" font-size="11">build image</text>
+    <!-- G4 G5 -->
+    <rect x="1080" y="50" width="90" height="50" rx="7" fill="var(--human-soft)" stroke="var(--human)" stroke-width="2"/>
+    <text x="1125" y="70" text-anchor="middle" font-weight="600">G4, G5</text>
+    <text x="1125" y="88" text-anchor="middle" font-size="11">approve deploys</text>
+    <text x="1125" y="245" text-anchor="middle" font-size="11">Staging → Done</text>
+
+    <!-- forward arrows -->
+    <g stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+      <path d="M190,75 L200,75 L200,165 L210,165"/>
+      <path d="M320,165 L330,165 L330,75 L340,75"/>
+      <path d="M440,75 L450,75 L450,165 L460,165"/>
+      <path d="M570,165 L580,165 L580,75 L590,75"/>
+      <path d="M690,75 L700,75 L700,165 L710,165"/>
+      <path d="M840,165 L850,165 L850,75 L860,75"/>
+      <path d="M960,75 L970,75 L970,165 L980,165"/>
+      <path d="M1060,165 L1070,165 L1070,75 L1080,75"/>
+    </g>
+    <!-- rework arrows -->
+    <g stroke="var(--bad)" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#ah)">
+      <path d="M390,100 L390,310 L265,310 L265,190"/>
+      <path d="M640,100 L640,310 L515,310 L515,190"/>
+      <path d="M910,100 L910,310 L775,310 L775,202"/>
+    </g>
+    <text x="330" y="325" font-size="11" fill="var(--bad)">Rework: the same agent runs again with your comment</text>
+    <text x="700" y="325" font-size="11" fill="var(--bad)">g3-rework or a red CI check: implement runs again</text>
+  </g>
+</svg>
+</div>
+<figcaption>One story, left to right. The platform row is where agents run; the person row is where you decide. The status row shows what the Jira card says at that moment.</figcaption>
+</figure>
+
+<div class="step"><div class="n">step<b>1</b></div><div>
+  <h4>Write the story</h4>
+  <div class="meta"><span class="who-h">product owner</span><span class="where">Jira, the project board</span></div>
+  <ul>
+    <li>Click <kbd>Create</kbd>, type Story. Give it a one-line <b>summary</b> (this becomes the PR title and the branch name) and a <b>description</b> that says what should change and how to tell it is done. Two to eight sentences is the sweet spot; the spec agent asks no questions, so what is not written is guessed.</li>
+    <li>Add the label <code>ai-native</code>. Without it the platform ignores the story.</li>
+    <li>Leave it in <code>To Do</code> until you want work to start, then move it to <code>Ready</code>.</li>
+  </ul>
+  <p class="see"><b>You should see</b> within about a minute: the status changes to <code>Specifying</code> by itself and a comment from the platform appears under the story.</p>
+</div></div>
+
+<div class="step"><div class="n">step<b>2</b></div><div>
+  <h4>The specification is written</h4>
+  <div class="meta"><span class="who-m">orchestrator + spec agent</span><span class="where">automatic</span></div>
+  <p>The orchestrator makes a copy of the repository, creates the story's branch, and starts the spec agent with your story text. The agent writes <code>specs/&lt;KEY&gt;/spec.md</code>. The orchestrator commits it, opens a <b>draft pull request</b> titled with the story key and summary, links the PR under the story, sets the status to <code>Spec Review</code> and comments with what to do next.</p>
+</div></div>
+
+<div class="step gate"><div class="n">gate<b>G1</b></div><div>
+  <h4>G1, approve the specification</h4>
+  <div class="meta"><span class="who-h">product owner</span><span class="where">Jira, with the PR open in another tab</span></div>
+  <ul>
+    <li>Open the PR link from the story's comment. Click the <b>Files changed</b> tab and read <code>specs/&lt;KEY&gt;/spec.md</code>. Ask: is this what I meant?</li>
+    <li><b>Yes:</b> in Jira, move the story to <code>Planning</code>.</li>
+    <li><b>No:</b> write a comment on the story saying what is wrong or missing, then move it to <code>Rework</code>. The newest comment is handed to the spec agent and it rewrites the spec. The story comes back to <code>Spec Review</code>.</li>
+  </ul>
+</div></div>
+
+<div class="step"><div class="n">step<b>3</b></div><div>
+  <h4>The plan is written</h4>
+  <div class="meta"><span class="who-m">orchestrator + plan agent</span><span class="where">automatic</span></div>
+  <p>The plan agent reads the spec and writes <code>plan.md</code> (how it will be built) and <code>tasks.md</code> (a checklist of concrete tasks) next to it. Both are committed to the same PR. Status becomes <code>Plan Review</code>.</p>
+</div></div>
+
+<div class="step gate"><div class="n">gate<b>G2</b></div><div>
+  <h4>G2, approve the plan</h4>
+  <div class="meta"><span class="who-h">product owner</span><span class="where">Jira, with the PR open</span></div>
+  <ul>
+    <li>Read <code>plan.md</code> and <code>tasks.md</code> under Files changed. Check the scope: nothing missing, nothing extra.</li>
+    <li><b>Yes:</b> move the story to <code>Implementing</code>.</li>
+    <li><b>No:</b> comment, then move to <code>Rework</code>. The plan agent runs again with your comment.</li>
+  </ul>
+</div></div>
+
+<div class="step"><div class="n">step<b>4</b></div><div>
+  <h4>The code is written, tested and reviewed</h4>
+  <div class="meta"><span class="who-m">implement agent, CI, review agent</span><span class="where">automatic</span></div>
+  <ul>
+    <li>The implement agent works through <code>tasks.md</code>, ticking each task, writing code and tests, and running the tests until they pass. It cannot commit or push; the orchestrator commits what it left and pushes.</li>
+    <li>The PR is marked <b>ready for review</b>. That starts the CI workflow, which installs the project, lints it and runs the tests. The result shows on the PR's Checks tab as <code>ci / ci</code>. CI also moves the story to <code>Code Review</code>.</li>
+    <li>The review agent reads the diff and the CI result with read-only permissions and posts a <b>review</b> on the PR, starting with <code>[ains review agent]</code>. It can comment or ask for changes; it can never approve or merge.</li>
+  </ul>
+  <p class="see"><b>You should see</b> on the PR: new commits, a green or red check, and a review from the orchestrator account. In Jira: <code>Code Review</code>.</p>
+</div></div>
+
+<div class="step gate"><div class="n">gate<b>G3</b></div><div>
+  <h4>G3, approve the code</h4>
+  <div class="meta"><span class="who-h">reviewer</span><span class="where">GitHub, the pull request</span></div>
+  <ul>
+    <li><b>Checks tab:</b> <code>ci / ci</code> must show a green tick. A red cross next to an older commit in the Conversation tab is history; what counts is the newest commit.</li>
+    <li><b>Conversation tab:</b> read the agent's review. <b>Files changed tab:</b> read the code if you want to.</li>
+    <li><b>Yes:</b> in the right sidebar click the gear next to <b>Labels</b> and tick <code>g3-approved</code>.</li>
+    <li><b>No:</b> write what should change as a comment at the bottom of the Conversation tab, then add the label <code>g3-rework</code>. The implement agent runs again with your comment, pushes, CI runs, the review agent reviews, and the PR waits for you again.</li>
+    <li><b>CI is red:</b> do nothing. The orchestrator sends the failed test output back to the implement agent by itself, up to two rounds. After that the story goes to <code>Blocked</code> with a comment, and a person has to look.</li>
+  </ul>
+  <p class="see"><b>Why a label and not the Approve button:</b> GitHub does not let an account approve a PR it opened itself. On a single-account setup the label carries the same meaning. Projects with a separate orchestrator account can use <code>--approval-mode review</code> and the normal Approve button instead.</p>
+</div></div>
+
+<div class="step"><div class="n">step<b>5</b></div><div>
+  <h4>Merge and build</h4>
+  <div class="meta"><span class="who-m">orchestrator, release workflow</span><span class="where">automatic</span></div>
+  <p>On its next poll the orchestrator sees the label and the green check, squash-merges the PR (all the story's commits become one on main), comments in Jira with the PR link, and deletes its working copy. The merge starts the <b>release</b> workflow, which builds the container image, pushes it to the registry, and then stops to wait for G4.</p>
+  <p class="see"><b>You should see:</b> the PR badge turns purple, "Merged". Under the repository's <b>Actions</b> tab a run named <code>release</code> with a yellow status.</p>
+</div></div>
+
+<div class="step gate"><div class="n">gate<b>G4</b></div><div>
+  <h4>G4, approve staging</h4>
+  <div class="meta"><span class="who-h">release approver</span><span class="where">GitHub, Actions tab</span></div>
+  <ul>
+    <li>Open the <code>release</code> run. A yellow banner says a deployment is waiting for review. Click <kbd>Review deployments</kbd>, tick <code>staging</code>, optionally leave a comment, click <kbd>Approve and deploy</kbd>.</li>
+    <li>The image is tagged <code>staging</code>. The workflow moves the story to <code>Staging</code> in Jira and comments with the run link.</li>
+    <li>To stop the release: click <kbd>Reject</kbd> instead. The run ends and the story stays where it is.</li>
+  </ul>
+</div></div>
+
+<div class="step gate"><div class="n">gate<b>G5</b></div><div>
+  <h4>G5, approve production</h4>
+  <div class="meta"><span class="who-h">release approver</span><span class="where">GitHub, the same run</span></div>
+  <p>The same run pauses again. <kbd>Review deployments</kbd>, tick <code>production</code>, <kbd>Approve and deploy</kbd>. The image is tagged <code>production</code> and the story moves to <code>Done</code>.</p>
+  <p class="see"><b>The story's comments now hold the whole trail:</b> every claim, every agent run, every gate decision, the PR link and the release run link.</p>
+</div></div>
+
+<div class="note good">A story that does not need all this: switch gates off for the project (section 7). An off gate is passed automatically and the platform leaves a comment saying so, so the trail never has a silent skip.</div>
+
+<h3>A pull request a person wrote</h3>
+<p>Developers can keep working the ordinary way. Add the label <code>ai-review</code> to any PR in an onboarded repository and the review agent reviews it once per new commit. Merging it is still a human decision; nothing else changes.</p>
+
+<h2 id="gates"><span class="num">7</span>The five gates</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>Gate</th><th>After</th><th>Where you act</th><th>Approve</th><th>Send back</th></tr>
+  <tr><td>G1 spec</td><td>spec agent wrote <code>spec.md</code></td><td>Jira</td><td>move to <code>Planning</code></td><td>comment, move to <code>Rework</code></td></tr>
+  <tr><td>G2 plan</td><td>plan agent wrote <code>plan.md</code>, <code>tasks.md</code></td><td>Jira</td><td>move to <code>Implementing</code></td><td>comment, move to <code>Rework</code></td></tr>
+  <tr><td>G3 code</td><td>code pushed, CI green, agent review posted</td><td>GitHub PR</td><td>label <code>g3-approved</code> (or Approve, in review mode)</td><td>PR comment + label <code>g3-rework</code> (or Request changes)</td></tr>
+  <tr><td>G4 staging</td><td>PR merged, image built</td><td>GitHub Actions run</td><td>Review deployments → staging → Approve</td><td>Reject</td></tr>
+  <tr><td>G5 production</td><td>staging approved</td><td>same run</td><td>Review deployments → production → Approve</td><td>Reject</td></tr>
+</table>
+</div>
+<p>Gates are set per project in <code>targets.yaml</code>, for example <code>gates: {G1: on, G2: off, G3: on, G4: off, G5: on}</code>, or at onboarding with <code>--gates</code>. Changing the file is enough; the container reads it on the next poll. Which gates a project runs with is itself something the research can vary.</p>
+
+<h2 id="agents"><span class="num">8</span>The four agents</h2>
+<p>Each agent is a fresh, headless run of Claude Code inside the orchestrator's container, with a prompt the orchestrator renders from a template, a turn limit, a wall-clock limit of 30 minutes, and a permission file that lists what it may run. It receives only the subscription token; no API key can reach it. If a run fails, the orchestrator retries once after five minutes, then marks the story <code>Blocked</code>.</p>
+<div class="tablewrap">
+<table>
+  <tr><th>Agent</th><th>Reads</th><th>Produces</th><th>Allowed to</th><th>Never</th></tr>
+  <tr><td>spec</td><td>the story, <code>CLAUDE.md</code></td><td><code>specs/&lt;KEY&gt;/spec.md</code> via <code>/speckit-specify</code></td><td>edit files (max 30 turns)</td><td>commit, push, browse the web</td></tr>
+  <tr><td>plan</td><td><code>spec.md</code></td><td><code>plan.md</code>, <code>tasks.md</code> via <code>/speckit-plan</code>, <code>/speckit-tasks</code></td><td>edit files (max 30 turns)</td><td>commit, push, browse the web</td></tr>
+  <tr><td>implement</td><td><code>tasks.md</code>, the repository</td><td>code and tests, ticked tasks</td><td>edit files, run tests and the linter (max 80 turns)</td><td>commit, push, edit workflows or settings, add secrets</td></tr>
+  <tr><td>review</td><td>the diff, CI result, spec and plan</td><td>a PR review with a verdict line: comment or request changes</td><td>read, run tests (max 25 turns)</td><td>edit, approve, merge</td></tr>
+</table>
+</div>
+<p>The prompts live in <code>ains-orchestrator/agents/stages/</code> and the limits in <code>agents/claude-code.yaml</code>. Rework hands the agent the human's comment under a heading "Rework requested by the reviewer"; a CI failure hands the implement agent the failing step's output.</p>
+
+<h2 id="artifacts"><span class="num">9</span>Where everything lives</h2>
+<h3>Jira statuses, in order</h3>
+<div class="tablewrap">
+<table>
+  <tr><th>Status</th><th>Set by</th><th>Meaning</th></tr>
+  <tr><td>To Do</td><td>person</td><td>written, not yet released to the platform</td></tr>
+  <tr><td>Ready</td><td>person</td><td>the platform may start; also how a Blocked story is resumed</td></tr>
+  <tr><td>Specifying</td><td>platform</td><td>claimed; spec agent running</td></tr>
+  <tr><td>Spec Review</td><td>platform</td><td>waiting at G1</td></tr>
+  <tr><td>Planning</td><td>person (G1 yes)</td><td>plan agent running</td></tr>
+  <tr><td>Plan Review</td><td>platform</td><td>waiting at G2</td></tr>
+  <tr><td>Implementing</td><td>person (G2 yes)</td><td>implement agent running</td></tr>
+  <tr><td>Code Review</td><td>CI workflow</td><td>PR ready, waiting at G3</td></tr>
+  <tr><td>Staging</td><td>release workflow</td><td>G4 approved</td></tr>
+  <tr><td>Done</td><td>release workflow</td><td>G5 approved, released</td></tr>
+  <tr><td>Rework</td><td>person</td><td>sent back from G1 or G2 with a comment</td></tr>
+  <tr><td>Blocked</td><td>platform</td><td>an agent failed twice, or CI failed three times; the comment says why</td></tr>
+</table>
+</div>
+
+<h3>Files and places</h3>
+<div class="tablewrap">
+<table>
+  <tr><th>Thing</th><th>Where to find it</th></tr>
+  <tr><td>The story's diary</td><td>Jira, the story's comments; also <code>ains session status &lt;KEY&gt;</code> for the platform's own event list</td></tr>
+  <tr><td>Spec, plan, tasks</td><td>the PR, Files changed, under <code>specs/&lt;KEY&gt;/</code>; after merge, the same path on main</td></tr>
+  <tr><td>The code change</td><td>the PR, Files changed</td></tr>
+  <tr><td>Test results</td><td>the PR, Checks tab, <code>ci / ci</code>; click Details for the log</td></tr>
+  <tr><td>The agent's review</td><td>the PR, Conversation tab, review beginning <code>[ains review agent]</code></td></tr>
+  <tr><td>Release approvals</td><td>repository, Actions tab, the <code>release</code> run</td></tr>
+  <tr><td>Built images</td><td>repository front page, Packages, tags <code>staging</code> and <code>production</code></td></tr>
+  <tr><td>Project settings the platform made</td><td>repository Settings: Branches (protection), Environments, Secrets; Labels under Issues</td></tr>
+  <tr><td>Onboarded projects</td><td><code>ains-platform/ains-orchestrator/targets.yaml</code> and <code>docs/targets.md</code></td></tr>
+  <tr><td>Gate rules, agent prompts, limits</td><td><code>ains-platform/ains-orchestrator/flows/story.yaml</code>, <code>agents/</code></td></tr>
+  <tr><td>Platform history</td><td><code>ains-platform/docs/implementation-log.md</code></td></tr>
+  <tr><td>Container log</td><td><code>docker compose logs -f orchestrator</code> on the laptop</td></tr>
+</table>
+</div>
+
+<h2 id="trouble"><span class="num">10</span>When something goes wrong</h2>
+<div class="tablewrap">
+<table>
+  <tr><th>You see</th><th>What it means</th><th>What to do</th></tr>
+  <tr><td>Story stays in Ready</td><td>the platform did not claim it</td><td>Check the label <code>ai-native</code> is on the story and the project is in <code>targets.yaml</code>; on the laptop, <code>docker compose ps</code> must show the container healthy</td></tr>
+  <tr><td>Story is Blocked</td><td>an agent failed twice, or CI failed three times</td><td>Read the comment. Fix the cause (often the story text or a broken test), then move the story to <code>Ready</code>. It resumes at the stage that failed, not from the start</td></tr>
+  <tr><td>Red <code>ci / ci</code> on the PR</td><td>tests or lint failed</td><td>Nothing at first: the platform reworks it. If it is red after the second round, the story will be Blocked; see above</td></tr>
+  <tr><td>Nothing happens after a label or status move</td><td>the poll has not run yet</td><td>Wait one minute. Then check the container log</td></tr>
+  <tr><td>Agent review says it could not run something</td><td>the project's <code>.claude/settings.json</code> does not allow that command</td><td>Platform engineer adds the command to the allow list in the template and the project</td></tr>
+  <tr><td>"requires approval" in the container log</td><td>same cause as above</td><td>same fix</td></tr>
+  <tr><td>Release run waits but you did nothing</td><td>any push to main starts the release workflow</td><td>Approve, or Cancel workflow on the run; without a story key it moves nothing in Jira</td></tr>
+  <tr><td>Token expired or revoked</td><td>Jira, GitHub or Claude calls fail in the log</td><td>Make a new token, put it in <code>.env</code>, run <code>docker compose up -d</code></td></tr>
+</table>
+</div>
+<div class="note bad">Two things the platform refuses by design: merging a PR without a human approval and a green check, and running an agent with an API key. If you ever need either, it is a change to the platform, not a setting.</div>
+
+<h2 id="commands"><span class="num">11</span>Command sheet</h2>
+<p>All run on the laptop, in <code>ains-platform/ains-orchestrator</code>.</p>
+<pre><code># container
+docker compose up -d --build          # build (after code changes) and start
+docker compose ps                     # is it healthy?
+docker compose logs -f orchestrator   # live log; Ctrl+C to stop watching
+docker compose stop orchestrator      # pause the platform
+
+# health and projects
+docker compose exec orchestrator ains doctor
+uv run ains targets list
+uv run ains target add &lt;repo&gt; &lt;KEY&gt; "&lt;Jira name&gt;" [--gates ...] [--approval-mode label|review] [--dry-run]
+uv run ains target remove &lt;repo&gt; [--delete-repo]
+
+# one story
+docker compose exec orchestrator ains session status &lt;KEY&gt;    # stage, PR, every event
+docker compose exec orchestrator ains session dispatch &lt;KEY&gt;  # claim a Ready story now, without waiting for the poll
+docker compose exec orchestrator ains session advance &lt;KEY&gt;   # run exactly one step now</code></pre>
+<p>A worked example of every step above, with the problems met and fixed on the way, is the sandbox story AINSSB-2 in <code>docs/implementation-log.md</code>.</p>
+</main>
+
+</body>
+</html>
