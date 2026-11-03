@@ -8,7 +8,7 @@ The platform half of the AINS research PoC: an AI-native SDLC that takes a Jira 
 - `docs/` — architecture document, the two diagrams, gates, targets, divergence notes, test evidence.
 - `plan/` — the implementation plan and the test plan. The plan is the source of truth.
 - `ains-platform.cmd` — control script: `start | stop | restart | build | down | status | logs | doctor | verify | portal | backup`. `start` runs both containers: the orchestrator and the management portal at http://localhost:8787.
-- `.claude/skills/ains-management/` — Claude Code skill for operating the platform; it reads the same store the portal shows.
+- `.claude/skills/ains/` — Claude Code skill for operating the platform; it reads the same store the portal shows.
 - `ains-orchestrator/profiles.yaml` — catalog of project classes, lifecycle phases, methodologies and autonomy levels; `supported` flags gate what `ains target add` and the portal offer.
 - Data: volume `ains-data` (`/data`: sessions.sqlite, heartbeat.json, logs/) is durable; volume `ains-workspaces` (`/work`) holds throwaway clones.
 

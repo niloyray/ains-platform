@@ -425,3 +425,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | architecture diagram | generator updated (lane label instead of the Execution Lane field, 12 statuses, profiles.yaml, portal box inside the container cluster, /data volume, AINSSB-2 as the acceptance story), regenerated in `plan/` and `docs/`, re-embedded in `init/AI-native delivery stack.html` and its copy `docs/architecture.html` |
 | tests | 116 pass; container rebuilt |
 
+### Skill renamed to /ains with guided onboarding
+
+| Item | Detail |
+|------|--------|
+| rename | `.claude/skills/ains-management` → `.claude/skills/ains` (repo and PoC mirror); invoked as `/ains <request>` |
+| guided onboarding | the skill asks one question per turn through the question tool: repository name, Jira key, Jira name, project class (supported entries of `profiles.yaml`, unsupported named as not available), autonomy level within the class ceiling with the gates it implies, G3 approval mode, gate overrides; phases and methodology stated, not asked, while one option exists; dry run shown, explicit yes before the real run, verify afterwards, reminder to commit the target entry. Same style for removal |
+| docs | user guide section 10 and developer manual 12c updated; README |
+

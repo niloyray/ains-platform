@@ -1,6 +1,6 @@
 ---
-name: ains-management
-description: Operate and manage the AINS platform (the AI-native SDLC orchestrator, its gates, projects and stories) from Claude Code. Use for any request about platform status, what a person must do next on a story, onboarding, verifying or removing a project, starting, stopping or diagnosing the platform, or reading its logs and event trail. All answers come from the platform's own store (the SQLite database and heartbeat on the container volume), the same source the management portal shows, so the two never disagree.
+name: ains
+description: Operate and manage the AINS platform; /ains <request> in plain words, or guided onboarding one question at a time (the AI-native SDLC orchestrator, its gates, projects and stories) from Claude Code. Use for any request about platform status, what a person must do next on a story, onboarding, verifying or removing a project, starting, stopping or diagnosing the platform, or reading its logs and event trail. All answers come from the platform's own store (the SQLite database and heartbeat on the container volume), the same source the management portal shows, so the two never disagree.
 ---
 
 # AINS platform management
@@ -44,6 +44,29 @@ ains-platform.cmd start|stop|restart|build|down|status|logs|doctor|verify <repo>
   only the next poll cycle.
 - A rebuilt orchestrator resumes from the store; nothing is lost. A story that was mid-agent re-runs that stage once.
 
+## Guided onboarding: one question at a time
+
+When the user wants to add a project (any wording: "add", "onboard", "start a project", "new project"), do not ask for
+everything at once. Ask one question per turn with the AskUserQuestion tool so the user picks from options, in this order,
+and skip a question when the user already gave the answer:
+
+1. **Repository name** (free text; lower case and hyphens; it will live under the GitHub owner from `gh api user`).
+2. **Jira project key** (free text; 2 to 10 capital letters; propose one derived from the repository name).
+3. **Jira project name** (free text; propose the repository name in words).
+4. **Project class**: options are the entries of `project_classes` in `ains-orchestrator/profiles.yaml` with
+   `supported: true`, each with its note and ceiling; mention the unsupported ones in one line as "not available yet".
+5. **Autonomy level**: options are the supported `autonomy_levels` at or below the class ceiling, each with the gate set it
+   implies (from `gates`). Recommend L3 for a first project.
+6. **G3 approval mode**: `label` (recommended; single GitHub account) or `review` (needs a separate orchestrator account).
+7. **Gate overrides**: offer "keep the level's gates" (recommended) or let the user name gates to switch on or off.
+   Lifecycle phases and methodology are not asked while only one supported option exists for each; state them.
+8. Show the summary as the exact command, run it with `--dry-run`, show the planned steps, and ask **"run it for real?"**
+   Only after a yes: run without `--dry-run`, then `ains target verify`, then remind the user to commit
+   `ains-orchestrator/targets.yaml` and add a line to `docs/targets.md`.
+
+Read the catalog file before asking questions 4 and 5 so the options are always the current ones. Use the same
+one-question style for removal: confirm the key, offer dry run first, then ask for the real run.
+
 ## Projects
 
 - Onboard: portal "Add project" (dry run first) or
@@ -77,4 +100,4 @@ Keep `docs/implementation-log.md` current (what was observed, cause, fix, commit
 name, run `uv run pytest -q` and `uv run ruff check .`, rebuild with `ains-platform.cmd build`, and re-run the relevant
 row of the self-test checklist in `docs/user-guide.html` section 11 on the sandbox.
 
-See `reference.md` in this skill for the command sheet, the gate table and the state names.
+Invoke as `/ains <request>`. See `reference.md` in this skill for the command sheet, the gate table and the state names.

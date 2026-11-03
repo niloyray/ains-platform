@@ -740,15 +740,16 @@ git push</code></pre>
 </ul>
 <p>Onboarding, removal and verify run as background jobs; the job page refreshes until the report is complete. The portal is only reachable from the laptop itself.</p>
 
-<h3>Asking Claude Code instead: the management skill</h3>
-<p>If you work in a Claude Code terminal opened in the platform repository (or in the PoC folder above it), a skill called <code>ains-management</code> is loaded. It is not a command with fixed subcommands: you write a request in plain words and Claude turns it into the right platform command, reads the result and answers in your words. Type the slash form to make it explicit, or just ask; both use the same instructions.</p>
-<pre><code>/ains-management status
-/ains-management what is waiting for me
-/ains-management why is AINSSB-3 blocked
-/ains-management what did the implement agent say on AINSSB-3
-/ains-management verify the sandbox
-/ains-management onboard ains-poc as AINSPOC at L3, dry run
-/ains-management start the platform and show the log</code></pre>
+<h3>Asking Claude Code instead: the <code>/ains</code> skill</h3>
+<p>If you work in a Claude Code terminal opened in the platform repository (or in the PoC folder above it), a skill called <code>ains</code> is loaded. It is not a command with fixed subcommands: you write a request in plain words and Claude turns it into the right platform command, reads the result and answers in your words. Type the slash form to make it explicit, or just ask; both use the same instructions.</p>
+<pre><code>/ains status
+/ains what is waiting for me
+/ains why is AINSSB-3 blocked
+/ains what did the implement agent say on AINSSB-3
+/ains verify the sandbox
+/ains add a project
+/ains start the platform and show the log</code></pre>
+<p><b>Adding a project this way is guided.</b> Say <code>/ains add a project</code> and Claude asks one question at a time, each with options to pick from: repository name, Jira key and name, project class, autonomy level (only the levels the class allows, each showing the gates it switches on), G3 approval mode, and whether to keep those gates. Phases and methodology are not asked while only one option is supported. It then shows the exact command, runs it as a dry run, shows the planned steps, and asks before running it for real; afterwards it verifies the project and reminds you to commit the target entry. Anything you already said in the request is not asked again.</p>
 <p>The skill keeps no record of its own. Every answer is read from the platform's store in the container, the same database the portal shows, so the terminal and the portal never disagree. It will not pass a gate, merge, approve as the agent, or put a token anywhere but the <code>.env</code> file and repository secrets. It approves a gate only when you name the exact action, for example "add g3-approved to PR 5", and then does only that.</p>
 
 <h3>The one-line answer: what is waiting for me?</h3>
