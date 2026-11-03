@@ -219,3 +219,11 @@ def test_T_I4_9_ci_failure_log_uses_run_list_then_log_failed():
     out = GitHubClient(runner=r).ci_failure_log("niloyray/ains-sandbox", "AINSSB-2-x")
     assert out.startswith("CI run u concluded failure.") and "boom" in out
     assert any(a[:3] == ["gh", "run", "view"] and "--log-failed" in a for a in r.calls)
+
+
+def test_pr_diff_uses_gh_pr_diff_and_truncates():
+    r = FakeRunner()
+    r.responses["gh pr diff 2"] = RunResult(0, "x" * 100, "")
+    out = GitHubClient(runner=r).pr_diff("niloyray/ains-sandbox", 2, max_chars=40)
+    assert out.startswith("x" * 40) and "truncated" in out
+    assert any(a[:3] == ["gh", "pr", "diff"] for a in r.calls)

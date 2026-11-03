@@ -232,6 +232,16 @@ class GitHubClient:
         self._exec(["git", "fetch", "origin", branch], cwd, what=f"fetch {branch}")
         self._exec(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd, what=f"checkout {branch}")
 
+    def pr_diff(self, repo: str, number: int, max_chars: int = 40000) -> str:
+        """Unified diff of the PR as GitHub sees it; truncated with a marker when very large."""
+        try:
+            text = self._exec(["gh", "pr", "diff", str(number), "--repo", repo], what=f"pr diff #{number}")
+        except GitHubError as e:
+            return f"(diff unavailable: {str(e)[:120]})"
+        if len(text) > max_chars:
+            return text[:max_chars] + f"\n... (diff truncated at {max_chars} characters; read the files for the rest)\n"
+        return text
+
     def pr_remove_label(self, repo: str, number: int, label: str) -> None:
         self._exec(
             ["gh", "pr", "edit", str(number), "--repo", repo, "--remove-label", label],

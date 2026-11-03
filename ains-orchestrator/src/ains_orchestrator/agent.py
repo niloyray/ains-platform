@@ -137,6 +137,8 @@ def render_prompt(template_text: str, key: str, context: dict[str, Any]) -> str:
             "\n\n## Rework requested by the reviewer\n\nThe previous output was sent back with this comment. "
             f"Address it explicitly:\n\n{context['rework_comment']}\n"
         )
+    if context.get("diff"):
+        text += "\n\n## Diff of the pull request\n\n```diff\n" + str(context["diff"]).rstrip() + "\n```\n"
     return text
 
 

@@ -369,3 +369,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | plan | step 8 (8.1 to 8.11) is done; 8.12 human-lane review of PR #1 still waiting for the `ai-review` label; 8.13 rework paths not yet exercised |
 | next | 8.12, 8.13 (G1/G2/G3 rework, block and resume), 6a.2 second onboarding and removal, gates-off run, step 9 (divergence notes, milestone close), T-L6-1/5 screenshots, token rotation |
 
+### Plan 8.12: human-lane review works
+
+| Item | Detail |
+|------|--------|
+| trigger | user added `ai-review` to sandbox PR #1 (a PR opened by hand, branch `AINSSB-1-ci-smoke`, head `8df0bd8`) |
+| result | next poll cycle (04:44 UTC): watcher session `AINSSB-PR1` (flow `pr-review`), review agent 9 turns, 17 s, USD 0.06, review posted as COMMENT with the `[ains review agent]` marker. PR left open: merging a human PR stays with the human |
+| defects seen in the review text | (1) the agent reports `git diff` and `git log` "required approval", so it reviewed from the working tree and commit subjects; (2) it was told the story key is `AINSSB-PR1`, the watcher's synthetic session key, and flagged a spec-folder mismatch that is an artefact of that |
+| fix | review prompts now receive the PR diff from `gh pr diff` inline (bounded), so a review never depends on shell permissions; read-only git commands are allowed in both rule spellings (`git diff *`, `git diff:*`); the watcher derives the story key from the branch name (`AINSSB-1`) and tells the agent when a PR has no story |
+

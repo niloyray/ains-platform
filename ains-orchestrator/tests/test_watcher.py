@@ -93,3 +93,22 @@ def test_request_changes_verdict_posted_as_such(world):
     gh.labelled.append(labelled(14, "sha-d"))
     w.cycle()
     assert gh.reviews[0][1] == "REQUEST_CHANGES"
+
+
+def test_story_key_from_branch():
+    from ains_orchestrator.watcher import story_key_from_branch
+
+    assert story_key_from_branch("AINSSB-1-ci-smoke", "AINSSB") == "AINSSB-1"
+    assert story_key_from_branch("feature/x", "AINSSB").startswith("none")
+    assert story_key_from_branch("OTHER-3-x", "AINSSB").startswith("none")
+
+
+def test_review_agent_receives_diff_and_story_key(world):
+    w, gh, agents = world["watcher"], world["gh"], world["agents"]
+    gh.labelled.append({**labelled(5, "sha-5"), "headRefName": "AINSSB-5-thing"})
+    w.cycle()
+    ctx = agents.runs[-1][2]
+    assert ctx["story_key"] == "AINSSB-5" and ctx["diff"].startswith("diff --git")
+    gh.labelled.append(labelled(6, "sha-6"))
+    w.cycle()
+    assert agents.runs[-1][2]["story_key"].startswith("none")

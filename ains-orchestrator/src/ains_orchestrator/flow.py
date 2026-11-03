@@ -151,7 +151,17 @@ class FlowEngine:
         if s.reviewed_sha == pr.head_sha:
             self.store.update_session(s.key, stage="wait_g3")
             return "wait_g3"
-        res = self._run_agent("review", s, story, context={"pr": pr.number, "head_sha": pr.head_sha})
+        res = self._run_agent(
+            "review",
+            s,
+            story,
+            context={
+                "pr": pr.number,
+                "head_sha": pr.head_sha,
+                "story_key": s.key,
+                "diff": self.gh.pr_diff(self.target.repo, pr.number),
+            },
+        )
         if not res.ok:
             return self._retry_or_block(s, "review", res.error)
         verdict = str(res.extra.get("verdict", "comment")).upper()

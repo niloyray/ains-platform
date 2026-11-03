@@ -128,6 +128,9 @@ class FakeGitHub:
         self.reviews.append((number, event, body))
         self.calls.append(f"pr review #{number} {event}")
 
+    def pr_diff(self, repo, number, max_chars=40000):
+        return f"diff --git a/impl.txt b/impl.txt (pr #{number})"
+
     def pr_remove_label(self, repo, number, label):
         if label in self.prs[number].labels:
             self.prs[number].labels.remove(label)

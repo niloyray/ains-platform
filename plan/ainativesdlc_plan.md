@@ -307,7 +307,7 @@ Not part of Phase 1. Listed here only so the hand-off is explicit; these rows mo
 | 8.9 | **G4:** user approves `staging` environment | user | deployment | `[x]` |
 | 8.10 | **G5:** user approves `production` environment; observe Jira `Done` with PR and run links | user, then Claude (observe) | story `Done` | `[x]` |
 | 8.11 | Acceptance criterion: the only manual touches were the five gate actions (plus one deliberate `Rework`). Anything else means fix the platform directly (D13) and re-run with `AINSSB-2` | Claude | checklist | `[x]` |
-| 8.12 | Human-lane smoke test: a tiny PR opened by hand in `ains-sandbox` with label `ai-review` gets a review from the review agent and still needs G3 | user + Claude (observe) | review URL | `[ ]` |
+| 8.12 | Human-lane smoke test: a tiny PR opened by hand in `ains-sandbox` with label `ai-review` gets a review from the review agent and still needs G3 | user + Claude (observe) | review URL | `[x]` |
 | 8.13 | Generic-capability check: the whole of 8.1 to 8.12 used only `ains target add`, the shipped templates and the orchestrator; nothing in `ains-platform` names the sandbox except `targets.yaml` and the evidence log | Claude | `grep -r sandbox ains-platform` | `[ ]` |
 
 ### Step 9 — Record gaps and divergences

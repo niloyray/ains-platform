@@ -203,3 +203,11 @@ def test_workspace_is_marked_trusted(runner_factory, tmp_path: Path, monkeypatch
     assert data["projects"][str(work)]["hasTrustDialogAccepted"] is True
     r.run("spec", "AINSSB-1", work, {})  # idempotent, file still valid JSON
     assert json.loads((home / ".claude.json").read_text())["projects"][str(work)]["hasTrustDialogAccepted"] is True
+
+
+def test_render_prompt_appends_the_diff_section():
+    from ains_orchestrator.agent import render_prompt
+
+    out = render_prompt("Review {story_key}", "AINSSB-PR1", {"story_key": "AINSSB-1", "diff": "diff --git a b\n+x"})
+    assert out.startswith("Review AINSSB-1") and "## Diff of the pull request" in out and "+x" in out
+    assert "## Diff" not in render_prompt("x", "k", {})

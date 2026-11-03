@@ -8,6 +8,7 @@ session. It never merges and never approves.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,14 @@ class WatchReport:
 
 def pr_session_key(target_key: str, number: int) -> str:
     return f"{target_key}-PR{number}"
+
+
+def story_key_from_branch(head_ref: str, target_key: str) -> str:
+    """`AINSSB-1-ci-smoke` -> `AINSSB-1`; anything else -> a sentence saying there is no story."""
+    m = re.match(r"^([A-Z][A-Z0-9_]{1,9}-\d+)", head_ref or "")
+    if m and m.group(1).startswith(target_key + "-"):
+        return m.group(1)
+    return "none (a pull request opened by a person, not tied to a Jira story)"
 
 
 class PRWatcher:
@@ -93,6 +102,8 @@ class PRWatcher:
                 "repo": target.repo,
                 "summary": title,
                 "description": "",
+                "story_key": story_key_from_branch(head_ref, tkey),
+                "diff": self.gh.pr_diff(target.repo, number) if hasattr(self.gh, "pr_diff") else "",
             },
         )
         self.store.add_event(
