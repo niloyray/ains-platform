@@ -87,6 +87,29 @@ person moves the story to `Ready`. Full state map and transition table: `docs/us
 To check a story the user names: `ains session status <KEY> --json`, then read `stage`, the last `gate.*` and
 `agent.done` events, and the PR via `gh pr view <n> --repo <repo> --json statusCheckRollup,labels,reviews`.
 
+## Working from a project folder, and working locally
+
+The skill is also loaded when the current folder is an onboarded project (it has `.claude/settings.json`, `CLAUDE.md`
+and `.github/workflows/ci.yml` written by the platform). There, do not assume the platform folder:
+- read state through the global CLI and the portal: `ains targets list`, `ains target verify <repo> <KEY>`,
+  `curl -s http://localhost:8787/api/status` (same rows as `ains status --json`), `gh pr view`; `docker compose`
+  commands need the platform folder, so only use them when `ains-orchestrator/docker-compose.yml` is reachable;
+- the project key is the one whose repository matches `git remote get-url origin`; "what is waiting on me" then means
+  that project's stories only.
+
+Two ways a person works locally, both inside the flow (user guide section 6, "Working locally alongside the platform"):
+- **Human lane, no agents:** branch, commit, push, open a PR; CI and the platform guard run; the person merges after
+  the green check; `ai-review` label on the PR asks the review agent for an opinion (it never merges). A Jira key in
+  the branch and commit names lets the release callbacks move that story.
+- **Joining an agent's story:** check out the story branch `<KEY>-<slug>`, commit and push **only while the story
+  waits at a gate** (`wait_g1`, `wait_g2`, `wait_g3` in `ains status`); every agent stage starts from the remote tip,
+  so the commits are kept. Never push while a stage runs (`spec`, `plan`, `implement`, `review`). Prefer a Rework
+  comment or `g3-rework` to steer an agent; direct commits are for small fixes.
+When asked to help with a local change, first run `ains status` (or the portal API) and say which of the two cases
+applies and whether the story is at a gate right now. Never touch the platform-owned paths (`.github/`, `.claude/`,
+`.specify/`, `CLAUDE.md`) in a project; a PR that changes them fails the CI guard. Those files are refreshed with
+`ains target add`.
+
 ## Diagnosing
 
 Read `docs/developer-manual.html` section 16 for the known signatures. The usual order: `ains status` → the story's
