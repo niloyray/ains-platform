@@ -251,8 +251,11 @@ copy .env.example .env</code></pre>
 <div class="step"><div class="n">step<b>1</b></div><div>
   <h4>Run the onboarding command</h4>
   <div class="meta"><span class="who-h">platform engineer</span><span class="where">terminal, in ains-orchestrator</span></div>
-  <pre><code>uv run ains target add ains-poc AINSPOC "AINS PoC" --class small-poc --autonomy L3 --methodology spec-kit --approval-mode label</code></pre>
-  <p>Add <code>--dry-run</code> first to see what it would do without doing it. The command is safe to run again: it reports what already exists and re-applies the rest. The same form exists in the portal under <b>+ Add project</b>.</p>
+  <pre><code>ains target add</code></pre>
+  <p>With no arguments the command is a guided wizard: it asks for each value in turn, with numbered choices where there are options (repository name, Jira key and name, project class, autonomy level, methodology, G3 approval mode, gates), shows the full command your answers amount to, runs it as a dry run, and asks before running it for real. Afterwards it verifies the project and reminds you to commit the target entry. <code>ains</code> works from any folder once <code>ains.bat</code> is in a folder on your PATH (the platform engineer's copy is in <code>%USERPROFILE%\.local\bin</code>); a bare <code>ains</code> prints the quick start.</p>
+  <p>The one-line form does the same without questions, and is what the wizard prints at the end:</p>
+  <pre><code>ains target add ains-poc AINSPOC "AINS PoC" --class small-poc --autonomy L3 --methodology spec-kit --approval-mode label --dry-run</code></pre>
+  <p>Drop <code>--dry-run</code> to run it. The command is safe to run again: it reports what already exists and re-applies the rest. The same form exists in the portal under <b>+ Add project</b>.</p>
   <p><b>The profile.</b> Every project states what kind of work it is, in the words of the delivery framework: a <b>project class</b> (small projects and proofs of concept, enterprise greenfield, feature work on AI-native applications; legacy and modernization classes are listed but not supported yet), the <b>lifecycle phases</b> it runs (intent, specification, plan, develop, test, deploy; maintain is not supported yet), the <b>methodology</b> (Spec Kit; others listed, not yet) and the <b>autonomy level</b>. The autonomy level sets the gates: <b>L3 Agentic</b> keeps all five human gates; <b>L4 Harness-driven</b> keeps only G3 code and G5 production and auto-passes the rest. Each class has a ceiling (greenfield stops at L3). Unsupported choices are refused with the reason; the catalog is <code>ains-orchestrator/profiles.yaml</code>, so new options are added there as the platform grows.</p>
 </div></div>
 
@@ -873,9 +876,14 @@ docker compose exec orchestrator ains targets list  # which projects are onboard
 <pre><code># the short way: the control script at the repository root (double-click free; run in a terminal)
 ains-platform.cmd start | stop | restart | build | down | status | logs | doctor | verify &lt;repo&gt; &lt;KEY&gt; | portal | backup
 
+# from any folder (ains.bat on PATH)
+ains                                  # quick start
+ains target add                       # guided onboarding, one question at a time
+ains target verify &lt;repo&gt; &lt;KEY&gt;       # onboarding complete?
+ains targets list
+
 # what is waiting for me?
 docker compose exec orchestrator ains status
-uv run ains target verify &lt;repo&gt; &lt;KEY&gt;      # onboarding complete?
 
 # container
 docker compose up -d --build          # build (after code changes) and start both containers

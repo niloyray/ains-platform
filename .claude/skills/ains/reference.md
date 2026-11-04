@@ -14,7 +14,8 @@ docker compose exec -T orchestrator ains session dispatch <KEY>     # claim a Re
 docker compose exec -T orchestrator ains doctor
 docker compose exec -T orchestrator ains targets list
 
-# on the host (from ains-orchestrator/, uses .env)
+# on the host; `ains` works from any folder once ains.bat is on PATH (else: cd ains-orchestrator && uv run ains ...)
+ains target add                      # guided wizard: one question at a time, dry run, confirm, run, verify
 uv run ains target add <repo> <KEY> "<name>" [--class c] [--autonomy L3|L4] [--methodology spec-kit] [--gates ...] [--approval-mode label|review] [--dry-run]
 uv run ains target verify <repo> <KEY>
 uv run ains target remove <repo> [--delete-repo] [--dry-run]

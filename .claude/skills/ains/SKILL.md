@@ -69,7 +69,7 @@ one-question style for removal: confirm the key, offer dry run first, then ask f
 
 ## Projects
 
-- Onboard: portal "Add project" (dry run first) or
+- Onboard: `ains target add` with no arguments is itself a guided wizard in the terminal (use it when the user wants to type the answers); the portal "Add project" form; or the one-line form
   `uv run ains target add <repo> <KEY> "<name>" --class small-poc --autonomy L3 --methodology spec-kit [--dry-run]`.
   Supported choices live in `ains-orchestrator/profiles.yaml`; unsupported ones are refused with the reason. Gates default
   from the autonomy level (L3: all on; L4: G1, G2, G4 off). Then commit `targets.yaml` and `docs/targets.md`.

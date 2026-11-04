@@ -47,7 +47,16 @@ for _stream in (sys.stdout, sys.stderr):
 
 log = logging.getLogger("ains.cli")
 HELP = "AINS orchestrator: Jira stories to merged PRs through stage agents and gates."
-app = typer.Typer(no_args_is_help=True, help=HELP)
+EPILOG = (
+    "Quick start:\n"
+    "  ains target add                  guided onboarding, one question at a time\n"
+    "  ains target verify <repo> <KEY>  is a project onboarded correctly?\n"
+    "  ains targets list                onboarded projects and their gates\n"
+    "  ains doctor --no-live            tokens and tools\n"
+    "Stories and the platform: ains-platform.cmd status | start | stop\n"
+    "Portal: http://localhost:8787"
+)
+app = typer.Typer(no_args_is_help=True, help=HELP, epilog=EPILOG)
 agent_app = typer.Typer(no_args_is_help=True, help="Stage agent templates.")
 flow_app = typer.Typer(no_args_is_help=True, help="Flow definitions (stages and gates).")
 targets_app = typer.Typer(no_args_is_help=True, help="Onboarded projects (targets.yaml).")
@@ -478,11 +487,120 @@ def portal(
 
 
 # ----------------------------------------------------------------------------- onboarding (I16)
+# ----------------------------------------------------------------------------- guided onboarding (I16, one question a
+def _choose(title: str, options: list[tuple[str, str, bool]], default: int = 1) -> str:
+    """Numbered pick list. options: (id, text, selectable). Unsupported rows are shown but cannot be picked."""
+    typer.echo(f"\n{title}")
+    for n, (_id, text, ok) in enumerate(options, 1):
+        typer.secho(f"  {n}. {text}" + ("" if ok else "   (not available yet)"), fg=None if ok else "bright_black")
+    while True:
+        raw = typer.prompt("  choice", default=str(default)).strip()
+        if raw.isdigit() and 1 <= int(raw) <= len(options) and options[int(raw) - 1][2]:
+            return options[int(raw) - 1][0]
+        typer.secho("  pick one of the available numbers", fg="yellow")
+
+
+def _ask(title: str, default: str | None, validate: str, hint: str) -> str:
+    import re as _re
+
+    while True:
+        v = typer.prompt(title, default=default) if default else typer.prompt(title)
+        v = v.strip()
+        if _re.fullmatch(validate, v):
+            return v
+        typer.secho(f"  {hint}", fg="yellow")
+
+
+def onboarding_wizard(catalog: dict[str, Any]) -> dict[str, Any]:
+    """Ask for every onboarding value in turn; returns the same values the flags would carry."""
+    typer.secho("AINS: add a project. One question at a time; Enter accepts the default in [brackets].", bold=True)
+    repo = _ask(
+        "Repository name (lower case, digits, hyphens)",
+        None,
+        r"[a-z0-9][a-z0-9-]{1,80}",
+        "lower case letters, digits and hyphens only",
+    )
+    key_default = "".join(ch for ch in repo.upper() if ch.isalnum())[:10] or "PROJ"
+    if not key_default[0].isalpha():
+        key_default = "P" + key_default[:9]
+    key = _ask(
+        "Jira project key (2 to 10 capital letters/digits)",
+        key_default,
+        r"[A-Z][A-Z0-9_]{1,9}",
+        "start with a letter, 2 to 10 capitals",
+    )
+    name = _ask("Jira project name", repo.replace("-", " ").title(), r".{2,80}", "2 to 80 characters")
+    classes = [
+        (
+            e["id"],
+            f"{e['name']}: {e.get('note', '')} [ceiling {e.get('autonomy_ceiling', 'L3')}]",
+            bool(e.get("supported")),
+        )
+        for e in catalog["project_classes"]
+    ]
+    project_class = _choose("Project class (sets depth, gates and the autonomy ceiling)", classes)
+    ceiling = next(
+        (e.get("autonomy_ceiling", "L3") for e in catalog["project_classes"] if e["id"] == project_class), "L3"
+    )
+    order = [e["id"] for e in catalog["autonomy_levels"]]
+    levels = []
+    for e in catalog["autonomy_levels"]:
+        gates = gates_for_autonomy(catalog, e["id"])
+        within = e["id"] in order and ceiling in order and order.index(e["id"]) <= order.index(ceiling)
+        ok = bool(e.get("supported")) and within
+        why = "" if within else " [above the class ceiling]"
+        levels.append(
+            (
+                e["id"],
+                f"{e['name']}: {e.get('note', '')} gates " + " ".join(f"{g}={v}" for g, v in gates.items()) + why,
+                ok,
+            )
+        )
+    default_level = next(
+        (n for n, lv in enumerate(levels, 1) if lv[0] == "L3" and lv[2]),
+        next((n for n, lv in enumerate(levels, 1) if lv[2]), 1),
+    )
+    autonomy = _choose("Autonomy level (who leads each phase, where the gates sit)", levels, default=default_level)
+    methods = [
+        (e["id"], f"{e['name']}: {e.get('note', '')}", bool(e.get("supported"))) for e in catalog["methodologies"]
+    ]
+    methodology = _choose("Methodology (methods arrive as skills)", methods)
+    phases = [e["id"] for e in catalog["lifecycle_phases"] if e.get("supported")]
+    typer.echo(
+        f"\nLifecycle phases: {' -> '.join(phases)} (every supported phase runs in the story flow; no opt-out yet)"
+    )
+    approval = _choose(
+        "G3 approval mode",
+        [
+            ("label", "label: one GitHub account; approve with the g3-approved label (recommended)", True),
+            ("review", "review: separate orchestrator account; approve with a real PR review", True),
+        ],
+    )
+    gates = gates_for_autonomy(catalog, autonomy)
+    typer.echo("\nGates from the level: " + " ".join(f"{g}={v}" for g, v in gates.items()))
+    if not typer.confirm("Keep these gates?", default=True):
+        for g in gates:
+            gates[g] = "on" if typer.confirm(f"  {g} on?", default=gates[g] == "on") else "off"
+    return {
+        "repo_name": repo,
+        "jira_key": key,
+        "jira_name": name,
+        "project_class": project_class,
+        "autonomy": autonomy,
+        "methodology": methodology,
+        "phases": phases,
+        "approval_mode": approval,
+        "gates": gates,
+    }
+
+
 @target_app.command("add")
 def target_add(
-    repo_name: str = typer.Argument(..., help="Repository name under the owner, e.g. ains-sandbox"),
-    jira_key: str = typer.Argument(..., help="Jira project key, e.g. AINSSB"),
-    jira_name: str = typer.Argument(..., help="Jira project name"),
+    repo_name: str = typer.Argument(
+        None, help="Repository name under the owner, e.g. ains-sandbox; omit (or '.') for the guided wizard"
+    ),
+    jira_key: str = typer.Argument(None, help="Jira project key, e.g. AINSSB"),
+    jira_name: str = typer.Argument(None, help="Jira project name"),
     dry_run: bool = typer.Option(False, "--dry-run"),
     approval_mode: str = typer.Option("label", "--approval-mode", help="label | review"),
     gates: str = typer.Option("", "--gates", help="e.g. G1=on,G2=off,G3=on (default: from the autonomy level)"),
@@ -492,33 +610,74 @@ def target_add(
     autonomy: str = typer.Option("L3", "--autonomy", help="autonomy level id from profiles.yaml (L3 or L4 today)"),
     phases: str = typer.Option("", "--phases", help="comma-separated phase ids (default: every supported phase)"),
 ) -> None:
-    """Onboard a project: Jira project, GitHub repo, protection, environments, secrets, labels, templates."""
+    """Onboard a project: Jira project, GitHub repo, protection, environments, secrets, labels, templates.
+
+    Without arguments (or with '.') it asks for every value one at a time, shows a dry run, and asks before
+    the real run."""
     catalog = load_profiles(config_root())
-    phase_ids = [p.strip() for p in phases.split(",") if p.strip()] or [
-        e["id"] for e in catalog["lifecycle_phases"] if e.get("supported")
-    ]
+    guided = repo_name in (None, ".")
+    gate_map: dict[str, str] = {}
+    if guided:
+        w = onboarding_wizard(catalog)
+        repo_name, jira_key, jira_name = w["repo_name"], w["jira_key"], w["jira_name"]
+        project_class, autonomy, methodology = w["project_class"], w["autonomy"], w["methodology"]
+        approval_mode, gate_map, phase_ids = w["approval_mode"], w["gates"], w["phases"]
+    else:
+        if not (jira_key and jira_name):
+            typer.secho(
+                'usage: ains target add <repo> <KEY> "<name>" ...  or  ains target add  (guided)', fg="red", err=True
+            )
+            raise typer.Exit(2)
+        phase_ids = [p.strip() for p in phases.split(",") if p.strip()] or [
+            e["id"] for e in catalog["lifecycle_phases"] if e.get("supported")
+        ]
+        for part in filter(None, gates.split(",")):
+            g, _, v = part.partition("=")
+            gate_map[g.strip()] = v.strip() or "on"
     profile = Profile(project_class=project_class, methodology=methodology, autonomy=autonomy, phases=phase_ids)
     problems = validate_profile(catalog, profile)
     if problems:
         for p in problems:
             typer.secho(f"profile: {p}", fg="red", err=True)
         raise typer.Exit(2)
-    ob = _onboarder(dry_run, owner)
-    gate_map = {}
-    for part in filter(None, gates.split(",")):
-        g, _, v = part.partition("=")
-        gate_map[g.strip()] = v.strip() or "on"
     if not gate_map:
         gate_map = gates_for_autonomy(catalog, autonomy)
-    rep = ob.add(
-        repo_name,
-        jira_key.upper(),
-        jira_name,
-        gates=gate_map,
-        approval_mode=approval_mode,
-        profile=profile.model_dump(),
+    gates_txt = ",".join(f"{g}={v}" for g, v in gate_map.items())
+    command = (
+        f'ains target add {repo_name} {jira_key.upper()} "{jira_name}" --class {project_class} --autonomy {autonomy} '
+        f"--methodology {methodology} --approval-mode {approval_mode} --gates {gates_txt}"
     )
-    typer.echo(rep.text())
+
+    def run(dry: bool) -> Any:
+        rep = _onboarder(dry, owner).add(
+            repo_name,
+            jira_key.upper(),
+            jira_name,
+            gates=gate_map,
+            approval_mode=approval_mode,
+            profile=profile.model_dump(),
+        )
+        typer.echo(rep.text())
+        return rep
+
+    if guided:
+        typer.echo("\nThis is the command the answers amount to:\n  " + command)
+        if not typer.confirm("Run it as a dry run first (nothing is created)?", default=True):
+            raise typer.Exit(0)
+        rep = run(True)
+        if rep.failed or not typer.confirm("\nRun it for real now?", default=False):
+            typer.echo("Stopped after the dry run. Re-run the command above when ready.")
+            raise typer.Exit(1 if rep.failed else 0)
+        rep = run(False)
+        if not rep.failed:
+            typer.echo("\nVerifying ...")
+            try:
+                target_verify(repo_name, jira_key.upper(), owner)
+            except typer.Exit:
+                pass
+            typer.echo(f"\ntargets.yaml updated under {config_root()}; commit it with a line in docs/targets.md.")
+        raise typer.Exit(1 if rep.failed else 0)
+    rep = run(dry_run)
     if not dry_run and not rep.failed:
         typer.echo(f"\ntargets.yaml updated under {config_root()}; commit it in the platform repo.")
     raise typer.Exit(1 if rep.failed else 0)

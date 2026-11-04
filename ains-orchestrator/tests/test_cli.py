@@ -136,3 +136,47 @@ def test_T_I6_7_config_reloaded_between_cycles(env_root, monkeypatch):
     assert "NEWP" in rt.config.targets.targets and poller.config is rt.config and watcher.config is rt.config
     (env_root / "targets.yaml").write_text("targets:\n  BAD: [\n", encoding="utf-8")
     assert reload_config(rt, poller, watcher) is False and "NEWP" in rt.config.targets.targets  # kept the last good one
+
+
+def test_T_I16_10_guided_target_add_asks_one_value_at_a_time(env_root, monkeypatch):
+    import shutil
+    from pathlib import Path
+
+    from ains_orchestrator import cli as cli_mod
+    from ains_orchestrator.onboard import Report
+
+    shutil.copy(Path(__file__).resolve().parents[1] / "profiles.yaml", env_root / "profiles.yaml")
+    calls = []
+
+    class FakeOnboarder:
+        def __init__(self, dry):
+            self.dry = dry
+
+        def add(self, repo, key, name, *, gates, approval_mode, profile):
+            calls.append((self.dry, repo, key, name, gates, approval_mode, profile))
+            rep = Report()
+            rep.add("github repo", "planned" if self.dry else "done", repo)
+            return rep
+
+    monkeypatch.setattr(cli_mod, "_onboarder", lambda dry, owner: FakeOnboarder(dry))
+    monkeypatch.setattr(cli_mod, "target_verify", lambda *a, **k: None)
+    # repo, key (default), name (default), class 1, level (default L3), method 1, approval 1,
+    # keep gates, dry run, not real
+    answers = "\n".join(["ains-poc", "", "", "1", "", "1", "1", "y", "y", "n"]) + "\n"
+    r = runner.invoke(app, ["target", "add"], input=answers)
+    assert r.exit_code == 0, r.stdout
+    assert "Repository name" in r.stdout and "Project class" in r.stdout and "Autonomy level" in r.stdout
+    assert 'ains target add ains-poc AINSPOC "Ains Poc" --class small-poc --autonomy L3' in r.stdout
+    assert len(calls) == 1 and calls[0][0] is True  # only the dry run ran
+    assert calls[0][4] == {"G1": "on", "G2": "on", "G3": "on", "G4": "on", "G5": "on"}
+    # the same answers but "y" to the real run: dry run then real run, then verify
+    answers = "\n".join(["ains-poc", "", "", "1", "4", "1", "1", "y", "y", "y"]) + "\n"  # level 4 = L4
+    calls.clear()
+    r = runner.invoke(app, ["target", "add", "."], input=answers)
+    assert r.exit_code == 0, r.stdout
+    assert [c[0] for c in calls] == [True, False] and calls[1][6]["autonomy"] == "L4"
+    assert calls[1][4]["G1"] == "off" and calls[1][4]["G3"] == "on"
+    # unsupported pick is refused and asked again
+    answers = "\n".join(["ains-poc", "", "", "5", "1", "", "1", "1", "y", "y", "n"]) + "\n"
+    r = runner.invoke(app, ["target", "add"], input=answers)
+    assert "pick one of the available numbers" in r.stdout and r.exit_code == 0

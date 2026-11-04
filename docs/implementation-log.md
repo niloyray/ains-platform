@@ -490,3 +490,13 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | T-I16-8 (guard pieces), T-I16-9 (environment reviewers); 120 pass plus the expected D16 guard while AINSSB2 exists. Containers rebuilt |
 | docs | user guide section 6 "What a project may and may not change"; developer manual invariants; test plan rows |
 
+### Guided `ains target add` (wizard), quick-start help, global `ains`
+
+| Item | Detail |
+|------|--------|
+| wizard | `ains target add` with no arguments (or `.`) asks one value at a time: repository name, Jira key (default derived), Jira name (default derived), project class (numbered; unsupported rows shown as not available and not selectable), autonomy level (only levels within the class ceiling, each with its gate set), methodology, G3 approval mode, keep-or-edit gates. Then it prints the one-line command the answers amount to, runs the dry run, asks "run it for real?", runs, verifies, and reminds about the commit. The one-line form is unchanged |
+| help | a bare `ains` prints the command list with a quick-start epilog |
+| wrapper | `ains.bat` in the user's `.local/bin` (on PATH) runs the CLI from any folder |
+| tests | T-I16-10 drives the wizard through CliRunner input (dry run only, dry run then real run with L4, refused unsupported pick); 121 pass plus the D16 guard |
+| docs | user guide section 5 and the command sheet; developer manual module table; skill text and reference; README |
+
