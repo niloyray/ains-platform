@@ -535,6 +535,7 @@ docker compose logs -f orchestrator</code></pre>
   <li>Secrets live in <code>.env</code> (gitignored) and in target repo secrets; nothing in <code>docs/</code>, <code>plan/</code> or the log ever holds a token value. Rotate all three after the PoC.</li>
   <li>The container has no inbound network; every integration is a poll or a subprocess.</li>
   <li>One transition per session per cycle; every transition writes an event before it returns.</li>
+  <li>A project cannot change platform content except through Jira, GitHub and the portal API. Inside a project repository the platform-owned paths (<code>.github/</code>, <code>.claude/</code>, <code>.specify/</code>, <code>CLAUDE.md</code>) are protected three ways: deny rules in both agent permission files (<code>Edit</code>/<code>Write</code>/<code>MultiEdit</code> on those paths), the CI platform guard step in <code>reusable-ci-python.yml</code> (settings file must equal the template, thin workflows must call the platform, <code>CODEOWNERS</code> must exist), and <code>CODEOWNERS</code> with code-owner reviews required when the target's approval mode is <code>review</code>. <code>target verify</code> reports drift of the settings file. GitHub environment reviewers follow the gates: <code>staging</code> has one only when G4 is on, <code>production</code> only when G5 is on.</li>
 </ul>
 
 <h2 id="debug"><span class="num">16</span>Debugging</h2>

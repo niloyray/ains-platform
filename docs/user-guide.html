@@ -471,6 +471,15 @@ git push</code></pre>
 
 <div class="note good">A story that does not need all this: switch gates off for the project (section 7). An off gate is passed automatically and the platform leaves a comment saying so, so the trail never has a silent skip.</div>
 
+<h3>What a project may and may not change</h3>
+<p>A project influences the platform only through the doors it was given: Jira statuses and labels, GitHub labels and pull requests, and the portal. The platform's own state and configuration are out of reach. Inside the project's repository four things belong to the platform and must not be edited there: the <code>.github</code> folder (workflows and <code>CODEOWNERS</code>), the <code>.claude</code> folder (the agents' permissions and skills), the <code>.specify</code> folder and <code>CLAUDE.md</code>. Three guards enforce that:</p>
+<ul>
+  <li><b>Agents cannot edit them.</b> The permission file every agent runs with denies edits to those paths, whatever a story asks.</li>
+  <li><b>CI blocks drift.</b> Every pull request runs a platform guard that fails if <code>.claude/settings.json</code> differs from the platform template, if the thin workflows no longer call the platform's reusable workflows, or if <code>CODEOWNERS</code> is missing. A red check cannot be merged.</li>
+  <li><b>Code owners.</b> <code>CODEOWNERS</code> names the platform engineer for those paths. In <code>review</code> approval mode GitHub requires that review before a merge; on a single account the CI guard does the blocking.</li>
+</ul>
+<p>To change one of those files, change the platform (the template) and re-run <code>ains target add</code> for the project; it refreshes them in place.</p>
+
 <h3>A pull request a person wrote</h3>
 <p>Developers can keep working the ordinary way. Add the label <code>ai-review</code> to any PR in an onboarded repository and the review agent reviews it once per new commit. Merging it is still a human decision; nothing else changes.</p>
 
