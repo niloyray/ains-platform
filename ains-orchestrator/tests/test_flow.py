@@ -285,7 +285,7 @@ def test_T_I7_14_outages_never_block_a_waiting_story(world):
     assert st.get_session(STORY.key).attempts == 0  # outages are logged but not counted
 
 
-def test_T_I11_5_every_agent_stage_starts_from_the_remote_branch(world):
+def test_T_I11_7_every_agent_stage_starts_from_the_remote_branch(world):
     st, gh, jira = world["store"], world["gh"], world["jira"]
     e = world["make"]()
     e.claim(STORY)

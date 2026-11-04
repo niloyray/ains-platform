@@ -189,6 +189,7 @@ Columns: ID · level · test · expected result · evidence.
 | T-I11-4 | L1 | workspace deleted after `released` | directory gone; session row kept | pytest |
 | T-I11-5 | L1 | disk quota below threshold | refuses to clone; Jira comment; session `blocked` | pytest |
 | T-I11-6 | L4 | `AINS_LIVE=1`: clone `ains-sandbox`, push a branch, open a draft PR, close it, delete the branch | all steps succeed as niloyray | evidence log |
+| T-I11-7 | L1 | two agent stages in a row | every stage calls `sync` on the story branch before the agent runs, so a person's pushes at a gate are kept | pytest |
 | Exit | | all green; T-I11-6 run once | | |
 
 ### I12 CLI `ains`
@@ -246,6 +247,7 @@ Columns: ID · level · test · expected result · evidence.
 | T-I16-5 | L4 | Jira part in isolation (`ains target add --jira-only`) | project, statuses, field created, or the manual UI steps printed where REST cannot; statuses read back match section 2f of the plan | output, Jira |
 | T-I16-6 | L4 | `ains target remove ains-sandbox-2` | repo archived or deleted as configured, Jira project deleted or archived, rule removed, `targets.yaml` block gone, report of anything it could not undo | evidence log |
 | T-I16-7 | L4 | `ains target add ains-sandbox-2 AINSSB2 sandbox-2` | a second project onboarded with no code change; `ains targets list` shows two targets; the poller JQL covers both | evidence log |
+| T-I16-10 | L1 | `ains target add` with no arguments, scripted answers | asks repository, key, name, class, level, method, approval, gates one at a time; unsupported picks refused; prints the one-line command; dry run; real run only after yes; verify afterwards | pytest (CliRunner input) |
 | T-I16-8 | L0 | `grep -ri "ains-poc\|AINSPOC" ains-platform/ --exclude-dir=docs` | no match: the platform carries no project name except in docs and `targets.yaml` | output |
 | Exit | | all green | | |
 
