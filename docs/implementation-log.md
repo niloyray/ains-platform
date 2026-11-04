@@ -508,3 +508,10 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | `GitHubClient.sync_branch` (fetch, `checkout -B <branch> origin/<branch>`) called by `Workspace.ensure` before every stage; a branch not yet on the remote keeps the local one. Tests T-I4-10, T-I11-5; T-I11-1 updated; 124 pass plus the D16 guard |
 | docs | user guide section 6 "Working locally alongside the platform": human lane (own PRs, optional `ai-review`, merge yourself) and joining an agent's story (push while it waits at a gate; never while a stage runs; Rework comments are the cleaner steer) |
 
+### Gate-wait counter: gh connection wording is transient; a good cycle resets the count
+
+| Item | Detail |
+|------|--------|
+| observed | 2026-11-05 00:35 UTC, after a laptop wake-up: `gh pr view` failed with "error connecting to api.github.com", which was not in the transient list, so the cycle counted ("attempt 1/10, staying at wait_g3"); and `attempts` was never reset by a good cycle, so scattered drops over days would eventually have blocked a waiting story |
+| fix | transient markers extended with gh's and Go's wording (error connecting, connection refused/reset, dial tcp, could not resolve, name resolution, TLS handshake); after a successful wait cycle `attempts` is reset to 0, so only consecutive non-transient errors count. Test T-I7-15; 126 pass plus the D16 guard. Containers rebuilt |
+

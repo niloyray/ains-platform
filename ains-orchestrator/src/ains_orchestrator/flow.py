@@ -34,7 +34,22 @@ STAGE_OUTPUTS = {
 TERMINAL = {"released", "abandoned"}
 MAX_CI_REWORK_ROUNDS = 2
 MAX_WAIT_ERRORS = 10  # consecutive Jira/GitHub errors while waiting at a gate before the story is blocked
-TRANSIENT_MARKERS = ("network error", "ConnectError", "HTTP 502", "HTTP 503", "HTTP 504", "timed out", "Timeout")
+TRANSIENT_MARKERS = (
+    "network error",
+    "ConnectError",
+    "error connecting",
+    "connection refused",
+    "connection reset",
+    "dial tcp",
+    "could not resolve",
+    "Temporary failure in name resolution",
+    "HTTP 502",
+    "HTTP 503",
+    "HTTP 504",
+    "timed out",
+    "Timeout",
+    "TLS handshake",
+)
 
 
 def is_transient(error: str) -> bool:
@@ -118,7 +133,11 @@ class FlowEngine:
         if handler is None:
             raise AinsError(f"{session.key}: unknown stage {stage}")
         try:
-            return handler(session, story)
+            out = handler(session, story)
+            if stage.startswith("wait_") and out == stage and session.attempts:
+                # a good cycle while waiting: only consecutive errors count toward blocking
+                self.store.update_session(session.key, attempts=0, last_error=None)
+            return out
         except MergeRefused as e:  # not an error, just not yet
             self.store.add_event(session.key, "merge.waiting", {"reason": str(e)})
             return session.stage

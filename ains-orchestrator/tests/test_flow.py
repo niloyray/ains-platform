@@ -293,3 +293,26 @@ def test_T_I11_7_every_agent_stage_starts_from_the_remote_branch(world):
     jira.set_status(STORY.key, "Planning")
     run_until(e, st, STORY.key, "wait_g2")
     assert [c for c in gh.calls if c.startswith("sync ")].count("sync " + st.get_session(STORY.key).branch) >= 2
+
+
+def test_T_I7_15_gh_connection_wording_is_transient_and_good_cycles_reset_the_count(world):
+    from ains_orchestrator.errors import GitHubError
+    from ains_orchestrator.flow import is_transient
+
+    assert is_transient("gh pr list failed (exit 1): error connecting to api.github.com")
+    assert is_transient('Post "https://api.github.com/graphql": dial tcp 20.207.73.85:443: connect: connection refused')
+    assert not is_transient("gh pr view failed (exit 1): HTTP 404: Could not resolve to a PullRequest")
+    st, gh = world["store"], world["gh"]
+    e = _to_g3(world)
+    real = gh.pr_view
+
+    def gone(*a, **k):
+        raise GitHubError("gh pr view failed (exit 1): HTTP 404: Could not resolve to a PullRequest")
+
+    gh.pr_view = gone
+    for _ in range(3):
+        assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
+    assert st.get_session(STORY.key).attempts == 3
+    gh.pr_view = real
+    assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
+    assert st.get_session(STORY.key).attempts == 0  # one good cycle clears the count
