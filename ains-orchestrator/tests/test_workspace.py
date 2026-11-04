@@ -22,8 +22,8 @@ def test_T_I11_1_clone_and_branch(tmp_path: Path):
     p = ws.ensure("AINSSB-1", T, b)
     assert p == tmp_path / "work" / "AINSSB-1" and (p / ".git").exists()
     assert gh.calls == ["clone niloyray/ains-sandbox", f"branch {b}", f"sync {b}"]  # sync: start from the remote tip
-    ws.ensure("AINSSB-1", T, b)  # second call is a no-op
-    assert len(gh.calls) == 2
+    ws.ensure("AINSSB-1", T, b)  # second call only re-syncs the branch
+    assert len(gh.calls) == 4 and gh.calls[-1] == f"sync {b}"
 
 
 def test_slug_edge_cases():
