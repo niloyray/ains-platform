@@ -1,0 +1,8 @@
+# Platform-owned files in this repository. The AINS platform wrote them at onboarding and refreshes them with
+# `ains target add`; the project does not change them. Pull requests touching these paths need the platform
+# engineer's review (enforced by branch protection when the project's G3 approval mode is `review`; on a
+# single-account setup the CI platform guard blocks the merge instead).
+/.github/            @{{owner}}
+/.claude/            @{{owner}}
+/.specify/           @{{owner}}
+/CLAUDE.md           @{{owner}}

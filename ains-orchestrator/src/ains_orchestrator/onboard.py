@@ -57,8 +57,36 @@ TEMPLATE_FILES = {  # template name -> path in the target repo
     "claude-settings.json": ".claude/settings.json",
     "gitignore": ".gitignore",
     "README.md": "README.md",
+    "CODEOWNERS": ".github/CODEOWNERS",
 }
 JIRA_TEMPLATE = "com.pyxis.greenhopper.jira:gh-simplified-agility-kanban"
+
+
+PROTECTED_PATHS = ("/.github/", "/.claude/", "/.specify/", "/CLAUDE.md")  # platform-owned inside a project repo
+
+
+def environment_reviewers(gates: dict[str, str]) -> dict[str, bool]:
+    """staging needs a reviewer when G4 is on, production when G5 is on (default on)."""
+    return {"staging": gates.get("G4", "on") != "off", "production": gates.get("G5", "on") != "off"}
+
+
+def protection_body(approval_mode: str) -> dict[str, Any]:
+    """Branch protection for main. In `review` mode (a separate orchestrator account) PRs that touch
+    platform-owned paths need a code-owner review; in `label` mode (one account) GitHub would then refuse every
+    merge, so the CI platform guard blocks drift instead."""
+    reviews = (
+        {"require_code_owner_reviews": True, "required_approving_review_count": 1, "dismiss_stale_reviews": True}
+        if approval_mode == "review"
+        else None
+    )
+    return {
+        "required_status_checks": {"strict": False, "contexts": [REQUIRED_CHECK_CONTEXT]},
+        "enforce_admins": False,
+        "required_pull_request_reviews": reviews,
+        "restrictions": None,
+        "allow_force_pushes": False,
+        "allow_deletions": False,
+    }
 
 
 @dataclass
@@ -145,8 +173,8 @@ class Onboarder:
         self._github_templates(rep, repo, values)
         self._github_labels(rep, repo)
         self._github_secrets(rep, repo)
-        self._github_environments(rep, repo)
-        self._github_protection(rep, repo)
+        self._github_environments(rep, repo, gates)
+        self._github_protection(rep, repo, approval_mode)
         self._jira_project(rep, jira_key, jira_name, repo)
         self._targets_block(rep, jira_key, repo, gates, approval_mode, profile)
         return rep
@@ -297,35 +325,30 @@ class Onboarder:
         )
         rep.add("secrets", "done", "JIRA_EMAIL, JIRA_API_TOKEN, variable JIRA_BASE_URL")
 
-    def _github_environments(self, rep: Report, repo: str) -> None:
+    def _github_environments(self, rep: Report, repo: str, gates: dict[str, str] | None = None) -> None:
+        """G4 and G5 live in GitHub: an environment has a required reviewer exactly when its gate is on."""
+        wanted = environment_reviewers(gates or {})
+        plan = ", ".join(f"{env} ({'reviewer' if need else 'no reviewer'})" for env, need in wanted.items())
         if self.dry_run:
-            rep.add("environments", "planned", f"staging, production with required reviewer {self.reviewer}")
+            rep.add("environments", "planned", f"{plan}; reviewer {self.reviewer}")
             return
         try:
             uid = self.gh.exec(["gh", "api", f"users/{self.reviewer}", "--jq", ".id"], what="user id").strip()
-            body = json.dumps({"reviewers": [{"type": "User", "id": int(uid)}], "deployment_branch_policy": None})
-            for env in ("staging", "production"):
+            for env, need in wanted.items():
+                reviewers = [{"type": "User", "id": int(uid)}] if need else []
+                body = json.dumps({"reviewers": reviewers, "deployment_branch_policy": None})
                 self._gh(
                     ["gh", "api", "-X", "PUT", f"repos/{repo}/environments/{env}", "--input", "-"],
                     write=True,
                     what=f"environment {env}",
                     stdin=body,
                 )
-            rep.add("environments", "done", f"staging, production; reviewer {self.reviewer}")
+            rep.add("environments", "done", f"{plan}; reviewer {self.reviewer}")
         except (GitHubError, ValueError) as e:
             rep.add("environments", "failed", str(e)[:200])
 
-    def _github_protection(self, rep: Report, repo: str) -> None:
-        body = json.dumps(
-            {
-                "required_status_checks": {"strict": False, "contexts": [REQUIRED_CHECK_CONTEXT]},
-                "enforce_admins": False,
-                "required_pull_request_reviews": None,
-                "restrictions": None,
-                "allow_force_pushes": False,
-                "allow_deletions": False,
-            }
-        )
+    def _github_protection(self, rep: Report, repo: str, approval_mode: str = "label") -> None:
+        body = json.dumps(protection_body(approval_mode))
         if self.dry_run:
             rep.add("branch protection", "planned", f"main: require status check '{REQUIRED_CHECK_CONTEXT}'")
             return
@@ -525,7 +548,13 @@ class Check:
 
 
 def verify_target(
-    gh: GitHubClient, jira: JiraClient | None, *, repo: str, jira_key: str, targets: dict[str, Any]
+    gh: GitHubClient,
+    jira: JiraClient | None,
+    *,
+    repo: str,
+    jira_key: str,
+    targets: dict[str, Any],
+    templates_dir: Path | None = None,
 ) -> list[Check]:
     """Read-only check that everything `target add` creates is in place. Nothing is changed."""
     checks: list[Check] = []
@@ -548,6 +577,21 @@ def verify_target(
             add(f"file {path}", True)
         except GitHubError:
             add(f"file {path}", False, "missing")
+    if templates_dir is not None:
+        # platform-owned files that must not drift from the templates (gap 1); CLAUDE.md and the thin workflows
+        # carry rendered values, so only the placeholder-free settings file is compared byte for byte
+        import base64
+
+        tpl = templates_dir / "claude-settings.json"
+        try:
+            raw = gh.exec(
+                ["gh", "api", f"repos/{repo}/contents/.claude/settings.json", "--jq", ".content"], what="settings"
+            )
+            same = base64.b64decode(raw).decode("utf-8").strip() == tpl.read_text(encoding="utf-8").strip()
+            detail = "matches the template" if same else "differs from the template: re-run target add"
+            add("platform guard .claude/settings.json", same, detail)
+        except (GitHubError, ValueError, OSError) as e:
+            add("platform guard .claude/settings.json", False, str(e)[:120])
     try:
         names = gh.exec(["gh", "label", "list", "--repo", repo, "--json", "name", "--jq", ".[].name"], what="labels")
         missing = [lb for lb in LABELS if lb not in names.split()]
@@ -563,14 +607,13 @@ def verify_target(
     try:
         envs = json.loads(gh.exec(["gh", "api", f"repos/{repo}/environments", "--jq", ".environments"], what="envs"))
         by_name = {e.get("name"): e for e in envs or []}
-        for n in ("staging", "production"):
+        t_gates = getattr(targets.get(jira_key), "gates", None) or {}
+        for n, need in environment_reviewers(dict(t_gates)).items():
             e = by_name.get(n)
             has_reviewer = bool(e) and any(r.get("type") == "required_reviewers" for r in e.get("protection_rules", []))
-            add(
-                f"environment {n}",
-                has_reviewer,
-                "with required reviewer" if has_reviewer else ("exists, no required reviewer" if e else "missing"),
-            )
+            ok = bool(e) and has_reviewer == need
+            state = "missing" if not e else ("with required reviewer" if has_reviewer else "no required reviewer")
+            add(f"environment {n}", ok, f"{state}; gate {'on' if need else 'off'} wants {'one' if need else 'none'}")
     except (GitHubError, json.JSONDecodeError) as e:
         add("environments", False, str(e)[:120])
     try:

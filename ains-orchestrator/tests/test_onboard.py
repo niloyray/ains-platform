@@ -290,3 +290,35 @@ def test_T_I16_7_verify_target_reports_each_missing_piece():
     assert by["jira project"].ok and not by["jira statuses"].ok and "Blocked" in by["jira statuses"].detail
     assert by["targets.yaml"].ok
     assert not verify_target(_VerifyGh(answers), None, repo="o/ains-sandbox", jira_key="AINSSB", targets={})[-1].ok
+
+
+def test_T_I16_8_platform_guard_pieces():
+    import json
+    from pathlib import Path
+
+    from ains_orchestrator.onboard import PROTECTED_PATHS, TEMPLATE_FILES, protection_body
+
+    assert TEMPLATE_FILES["CODEOWNERS"] == ".github/CODEOWNERS"
+    plat = Path(__file__).resolve().parents[2]
+    owners = (plat / "bootstrap" / "templates" / "CODEOWNERS").read_text(encoding="utf-8")
+    assert all(p in owners for p in PROTECTED_PATHS) and "@{{owner}}" in owners
+    assert protection_body("label")["required_pull_request_reviews"] is None  # one account cannot approve itself
+    assert protection_body("review")["required_pull_request_reviews"]["require_code_owner_reviews"] is True
+    files = [
+        plat / "ains-orchestrator" / "claude-settings.json",
+        plat / "bootstrap" / "templates" / "claude-settings.json",
+    ]
+    for f in files:
+        deny = json.loads(f.read_text(encoding="utf-8"))["permissions"]["deny"]
+        for path in ("./.github/**", "./.claude/**", "./.specify/**", "./CLAUDE.md"):
+            assert f"Edit({path})" in deny and f"Write({path})" in deny
+    ci = (plat / ".github" / "workflows" / "reusable-ci-python.yml").read_text(encoding="utf-8")
+    assert "Platform guard" in ci and "CODEOWNERS" in ci
+
+
+def test_T_I16_9_environment_reviewers_follow_the_gates():
+    from ains_orchestrator.onboard import environment_reviewers
+
+    assert environment_reviewers({}) == {"staging": True, "production": True}
+    assert environment_reviewers({"G4": "off", "G5": "on"}) == {"staging": False, "production": True}
+    assert environment_reviewers({"G4": "off", "G5": "off"}) == {"staging": False, "production": False}

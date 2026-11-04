@@ -556,7 +556,12 @@ def target_verify(
         jira = JiraClient(os.environ["JIRA_BASE_URL"], os.environ["JIRA_EMAIL"], os.environ["JIRA_API_TOKEN"])
     cfg = load_config(root)
     checks = verify_target(
-        gh, jira, repo=f"{owner}/{repo_name}", jira_key=jira_key.upper(), targets=cfg.targets.targets
+        gh,
+        jira,
+        repo=f"{owner}/{repo_name}",
+        jira_key=jira_key.upper(),
+        targets=cfg.targets.targets,
+        templates_dir=default_templates_dir(root),
     )
     failed = False
     for c in checks:

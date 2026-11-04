@@ -15,7 +15,19 @@
       "Bash(gh pr merge*)",
       "Bash(gh pr review --approve*)",
       "Read(./.env)",
-      "Read(./**/.env)"
+      "Read(./**/.env)",
+      "Edit(./.github/**)",
+      "Write(./.github/**)",
+      "MultiEdit(./.github/**)",
+      "Edit(./.claude/**)",
+      "Write(./.claude/**)",
+      "MultiEdit(./.claude/**)",
+      "Edit(./.specify/**)",
+      "Write(./.specify/**)",
+      "MultiEdit(./.specify/**)",
+      "Edit(./CLAUDE.md)",
+      "Write(./CLAUDE.md)",
+      "MultiEdit(./CLAUDE.md)"
     ]
   }
 }

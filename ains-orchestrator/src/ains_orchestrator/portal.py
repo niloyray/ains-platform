@@ -354,7 +354,14 @@ def run_remove(portal: Portal, jid: str, repo: str, delete_repo: bool, dry: bool
 def run_verify(portal: Portal, jid: str, repo: str, key: str) -> None:
     try:
         cfg = portal.config()
-        checks = verify_target(portal.github(), portal.jira(), repo=repo, jira_key=key, targets=cfg.targets.targets)
+        checks = verify_target(
+            portal.github(),
+            portal.jira(),
+            repo=repo,
+            jira_key=key,
+            targets=cfg.targets.targets,
+            templates_dir=default_templates_dir(portal.root),
+        )
         _job_finish(
             jid, [f"[{'ok' if c.ok else 'FAIL'}] {c.name}: {c.detail}" for c in checks], any(not c.ok for c in checks)
         )
