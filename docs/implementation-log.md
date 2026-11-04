@@ -471,3 +471,10 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | at `wait_*` stages an error is recorded as a `wait.error` event, `attempts` counts consecutive failures, the stage is kept, and only `MAX_WAIT_ERRORS` (10) in a row block the story; a successful wait keeps the count where it is until the stage changes. Test T-I7-13; 117 pass. Container rebuilt |
 | resume | AINSSB2-1 reset to `wait_g3` with a `manual.reset` event; Jira moved back to Code Review with a comment. The block was the platform's fault, not the story's, which is the one case where state surgery is allowed |
 
+### Outages never count toward blocking a waiting story
+
+| Item | Detail |
+|------|--------|
+| observed | 01:46 UTC: four `network error: ConnectError` cycles (Jira unreachable from the laptop for a few minutes); both waiting stories kept their stages, but each outage cycle counted toward `MAX_WAIT_ERRORS`, so a longer outage would have blocked them |
+| fix | `is_transient()`: network errors, connect errors, HTTP 502/503/504 and timeouts are logged as `wait.error` but never counted; only other errors (a deleted PR, bad credentials) count up to 10. Tests T-I7-13 (counted path, now with a 404) and T-I7-14 (outage of 30 cycles, attempts stay 0); 118 pass plus the expected D16 guard failure while AINSSB2 exists. Container rebuilt |
+

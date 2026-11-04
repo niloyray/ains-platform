@@ -253,7 +253,7 @@ def test_T_I7_13_transient_github_error_at_a_gate_does_not_block(world):
     real = gh.pr_view
 
     def flaky(*a, **k):
-        raise GitHubError("gh pr view failed (exit 1): HTTP 503: No server is currently available")
+        raise GitHubError("gh pr view failed (exit 1): HTTP 404: Could not resolve to a PullRequest")
 
     gh.pr_view = flaky
     for n in range(1, MAX_WAIT_ERRORS):
@@ -267,3 +267,19 @@ def test_T_I7_13_transient_github_error_at_a_gate_does_not_block(world):
     for _ in range(MAX_WAIT_ERRORS):
         out = e.step(st.get_session(STORY.key), STORY)
     assert out == "blocked" and "consecutive errors" in st.get_session(STORY.key).last_error
+
+
+def test_T_I7_14_outages_never_block_a_waiting_story(world):
+    from ains_orchestrator.errors import GitHubError
+    from ains_orchestrator.flow import MAX_WAIT_ERRORS
+
+    st, gh = world["store"], world["gh"]
+    e = _to_g3(world)
+
+    def down(*a, **k):
+        raise GitHubError("gh pr view failed (exit 1): network error: ConnectError")
+
+    gh.pr_view = down
+    for _ in range(MAX_WAIT_ERRORS * 3):
+        assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
+    assert st.get_session(STORY.key).attempts == 0  # outages are logged but not counted

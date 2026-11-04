@@ -34,6 +34,14 @@ STAGE_OUTPUTS = {
 TERMINAL = {"released", "abandoned"}
 MAX_CI_REWORK_ROUNDS = 2
 MAX_WAIT_ERRORS = 10  # consecutive Jira/GitHub errors while waiting at a gate before the story is blocked
+TRANSIENT_MARKERS = ("network error", "ConnectError", "HTTP 502", "HTTP 503", "HTTP 504", "timed out", "Timeout")
+
+
+def is_transient(error: str) -> bool:
+    """An outage, not a fault in the story: never counts toward blocking."""
+    return any(m in error for m in TRANSIENT_MARKERS)
+
+
 AGENT_REVIEW_MARKER_TEXT = "[ains review agent]"
 
 
@@ -116,8 +124,9 @@ class FlowEngine:
             return session.stage
         except AinsError as e:
             if stage.startswith("wait_"):
-                # Waiting is idempotent: a transient Jira or GitHub error (503, timeout) must not block the story.
-                n = session.attempts + 1
+                # Waiting is idempotent: an outage must not block the story, however long it lasts; other errors
+                # (bad credentials, a deleted PR) get MAX_WAIT_ERRORS cycles before a human is asked.
+                n = session.attempts if is_transient(str(e)) else session.attempts + 1
                 self.store.add_event(session.key, "wait.error", {"stage": stage, "attempt": n, "error": str(e)[:300]})
                 if n < MAX_WAIT_ERRORS:
                     self.store.update_session(session.key, attempts=n, last_error=str(e))
