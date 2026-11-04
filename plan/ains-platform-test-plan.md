@@ -91,6 +91,7 @@ Columns: ID · level · test · expected result · evidence.
 | T-I4-7 | L1 | `pr view` whose check is named `ci / ci` (reusable workflow called from job `ci`) | `checks["ci"]` holds the conclusion; `ci_green` false on FAILURE | pytest |
 | T-I4-8 | L1 | `--log-failed` text with setup lines, the ruff output, `##[error]`, then service-container teardown | excerpt holds the ruff output and the error marker, not the teardown, no `job<TAB>step<TAB>` prefixes or timestamps | pytest |
 | T-I4-9 | L1 | `ci_failure_log` | `gh run list --workflow ci --branch <b> --limit 1` then `gh run view <id> --log-failed`; result starts with the run URL and conclusion | pytest |
+| T-I4-10 | L1 | `sync_branch` | fetch then `checkout -B <branch> origin/<branch>`; a branch not on the remote keeps the local one | pytest |
 | Exit | | T-I4-1 to T-I4-9 green | | |
 
 ### I5 Session store (SQLite on /work)
@@ -120,6 +121,7 @@ Columns: ID · level · test · expected result · evidence.
 
 | ID | L | Test | Expected | Evidence |
 |----|---|------|----------|----------|
+| T-I6-7 | L1 | `reload_config` with a changed, then a broken `targets.yaml` | new target visible to the poller and the watcher without a restart; a parse error keeps the last good config | pytest |
 | T-I7-1 | L1 | table-driven: every row of the state table in plan section 9.3 | each transition reaches the stated state with the stated side effects | pytest, parametrised |
 | T-I7-2 | L1 | gate G1 `on`, Jira status unchanged | stays in `wait_g1` across cycles, no re-spawn | pytest |
 | T-I7-3 | L1 | gate G1 `off` | passes with the comment "G1 auto-approved (gate off for this target)" | pytest |
@@ -132,6 +134,8 @@ Columns: ID · level · test · expected result · evidence.
 | T-I7-10 | L1 | `ci` check FAILURE at `wait_g3` | returns to `implement`; the failed-step log excerpt is in the agent input; `ci_rework_rounds` = 1; Jira comment "CI failed … round 1 of 2" | pytest |
 | T-I7-11 | L1 | third CI failure in a row | `blocked` with "a human must look at the branch" | pytest |
 | T-I7-12 | L1 | label mode: PR carries `g3-rework` and a human comment | label removed; returns to `implement` with the comment text | pytest |
+| T-I7-13 | L1 | a non-transient GitHub error (404) at `wait_g3` | stage kept, `wait.error` event, `attempts` counts; blocked after 10 in a row with "consecutive errors" | pytest |
+| T-I7-14 | L1 | an outage (ConnectError, 5xx, timeout) at a gate for 30 cycles | stage kept, `attempts` stays 0; never blocks | pytest |
 | Exit | | all green; T-I7-8 is the regression test for every later change | | |
 
 ### I8 Agent runner (Claude Code CLI stage agents)

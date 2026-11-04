@@ -864,7 +864,7 @@ docker compose exec orchestrator ains targets list  # which projects are onboard
 <p>The platform's own automated tests (about a hundred, run with <code>uv run pytest</code> in the orchestrator folder) cover the same paths offline with fake Jira and GitHub; the rows above are the live confirmation.</p>
 
 <h3>Where things stand</h3>
-<p>As of 3 November 2026, rows 1 to 4 and 8 have been run on the sandbox: story AINSSB-2 went Ready → Done through all five gates, including one automatic CI-failure rework. Row 10 is in progress on sandbox PR #1. Rows 5, 6, 7, 9, 11, 12 and 13 are still to be run. The live diary of what was run, what broke and what was fixed is <code>docs/implementation-log.md</code> in the platform repository; the plan's step table in <code>plan/ainativesdlc_plan.md</code> shows the remaining steps.</p>
+<p>As of 4 November 2026: rows 1 to 4, 8 and 10 are done on the sandbox (AINSSB-2 Ready → Done through all five gates with one automatic CI-failure rework; sandbox PR #1 reviewed through the <code>ai-review</code> label). Row 13 is half done: a second sandbox, <code>AINSSB2</code> at autonomy L4, was onboarded and verified; its removal waits until its story finishes. Row 11 is running on that second sandbox: story AINSSB2-1 had G1 and G2 auto-passed, one CI rework, and waits at G3. Rows 5, 6 and 7 wait on story AINSSB-3 at G1, prepared for the rework tests. Rows 9 and 12 are still to be run. The live diary of what was run, what broke and what was fixed is <code>docs/implementation-log.md</code> in the platform repository; the plan's step table in <code>plan/ainativesdlc_plan.md</code> shows the remaining steps.</p>
 
 <h2 id="trouble"><span class="num">12</span>When something goes wrong</h2>
 <div class="tablewrap">
