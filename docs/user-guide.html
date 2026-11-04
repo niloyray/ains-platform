@@ -483,6 +483,17 @@ git push</code></pre>
 </ul>
 <p>To change one of those files, change the platform (the template) and re-run <code>ains target add</code> for the project; it refreshes them in place.</p>
 
+<h3>Working locally alongside the platform</h3>
+<p>The sandbox and every onboarded project live on GitHub and in Jira; nothing of them is on your laptop until you clone them. Clone anywhere, for example next to the platform folder:</p>
+<pre><code>gh repo clone niloyray/ains-sandbox
+cd ains-sandbox</code></pre>
+<p>Two ways to work from that clone, both compatible with the flow:</p>
+<ul>
+  <li><b>Your own change, no agents (the human lane).</b> Branch, commit, push, open a pull request as usual. CI runs and the platform guard runs; branch protection requires the green check. Add the label <code>ai-review</code> if you want the review agent's opinion; it reviews once per commit and never merges. Merge it yourself. The release workflow then builds and waits at the environments exactly as for an agent story. Name the branch and commits after a Jira story (<code>AINSSB-7-...</code>, <code>AINSSB-7: ...</code>) if you want the release callbacks to move that story; without a key they move nothing.</li>
+  <li><b>Joining an agent's story.</b> The story's branch is on GitHub (<code>&lt;KEY&gt;-&lt;slug&gt;</code>, linked from the Jira comment and the PR). Check it out, commit, push. Do this while the story is <b>waiting at a gate</b>, which <code>ains status</code> shows as <code>wait_g1</code>, <code>wait_g2</code> or <code>wait_g3</code>: at G1 or G2 you can edit the spec or the plan before approving; at G3 a pushed commit makes the review agent review again and CI run again. Every agent stage starts from the branch's remote tip, so your commits are kept and built upon. Do not push while a stage is running (<code>spec</code>, <code>plan</code>, <code>implement</code>, <code>review</code>): the orchestrator would push on top of a branch that moved and the stage would fail and retry. The cleaner way to steer an agent is still a Rework comment or <code>g3-rework</code>; use direct commits for small fixes.</li>
+</ul>
+<p>Things that stay with the platform even when you work locally: the four platform-owned paths (section 6, a pull request touching them fails the guard), merging an agent's PR (the orchestrator does it after G3), and the Jira statuses the platform sets.</p>
+
 <h3>A pull request a person wrote</h3>
 <p>Developers can keep working the ordinary way. Add the label <code>ai-review</code> to any PR in an onboarded repository and the review agent reviews it once per new commit. Merging it is still a human decision; nothing else changes.</p>
 

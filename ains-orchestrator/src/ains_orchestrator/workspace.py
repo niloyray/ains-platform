@@ -51,6 +51,10 @@ class Workspace:
             self.root.mkdir(parents=True, exist_ok=True)
             self.github.clone(target.repo, p, target.default_branch)
             self.github.create_branch(p, branch)
+        # a person may have pushed to the story branch while the story waited at a gate: start from the remote tip
+        sync = getattr(self.github, "sync_branch", None)
+        if sync is not None:
+            sync(p, branch)
         return p
 
     def commit(self, key: str, stage: str, message: str) -> bool:

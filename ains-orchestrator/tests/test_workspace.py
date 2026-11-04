@@ -21,7 +21,7 @@ def test_T_I11_1_clone_and_branch(tmp_path: Path):
     assert len(b) <= len("AINSSB-1-") + 40
     p = ws.ensure("AINSSB-1", T, b)
     assert p == tmp_path / "work" / "AINSSB-1" and (p / ".git").exists()
-    assert gh.calls == ["clone niloyray/ains-sandbox", f"branch {b}"]
+    assert gh.calls == ["clone niloyray/ains-sandbox", f"branch {b}", f"sync {b}"]  # sync: start from the remote tip
     ws.ensure("AINSSB-1", T, b)  # second call is a no-op
     assert len(gh.calls) == 2
 

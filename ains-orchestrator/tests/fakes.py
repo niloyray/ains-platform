@@ -167,6 +167,10 @@ class FakeGitHub:
         self.prs[number].human_changes_requested = True
         self.prs[number].review_bodies = ["please rename the endpoint"]
 
+    def sync_branch(self, cwd, branch):
+        self.calls.append(f"sync {branch}")
+        return True
+
     def checkout(self, cwd, branch):
         self.calls.append(f"checkout {branch}")
 

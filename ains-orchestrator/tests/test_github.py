@@ -227,3 +227,13 @@ def test_pr_diff_uses_gh_pr_diff_and_truncates():
     out = GitHubClient(runner=r).pr_diff("niloyray/ains-sandbox", 2, max_chars=40)
     assert out.startswith("x" * 40) and "truncated" in out
     assert any(a[:3] == ["gh", "pr", "diff"] for a in r.calls)
+
+
+def test_T_I4_10_sync_branch_fetches_and_resets_to_the_remote_tip(tmp_path: Path):
+    r = FakeRunner()
+    c = GitHubClient(runner=r)
+    assert c.sync_branch(tmp_path, "AINSSB-3-x") is True
+    flat = [" ".join(a) for a in r.calls]
+    assert flat[-2] == "git fetch origin AINSSB-3-x" and flat[-1] == "git checkout -B AINSSB-3-x origin/AINSSB-3-x"
+    r.fail_once["git fetch origin AINSSB-9-new"] = "couldn't find remote ref"
+    assert c.sync_branch(tmp_path, "AINSSB-9-new") is False  # not pushed yet: keep the local branch

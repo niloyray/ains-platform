@@ -228,6 +228,18 @@ class GitHubClient:
             what=f"merge #{pr.number}",
         )
 
+    def sync_branch(self, cwd: Path, branch: str) -> bool:
+        """Bring the workspace to the remote tip of `branch` so a person's pushes are not overwritten.
+
+        Returns True when the remote branch exists and the workspace now matches it; False when the branch has
+        not been pushed yet (fresh story). The workspace is clean at this point (stages run after it)."""
+        try:
+            self._exec(["git", "fetch", "origin", branch], cwd, what=f"fetch {branch}")
+        except GitHubError:
+            return False  # not on the remote yet
+        self._exec(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd, what=f"sync {branch}")
+        return True
+
     def checkout(self, cwd: Path, branch: str) -> None:
         self._exec(["git", "fetch", "origin", branch], cwd, what=f"fetch {branch}")
         self._exec(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd, what=f"checkout {branch}")

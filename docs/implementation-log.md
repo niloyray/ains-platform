@@ -500,3 +500,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | T-I16-10 drives the wizard through CliRunner input (dry run only, dry run then real run with L4, refused unsupported pick); 121 pass plus the D16 guard |
 | docs | user guide section 5 and the command sheet; developer manual module table; skill text and reference; README |
 
+### Working locally alongside the flow: every agent stage starts from the remote branch tip
+
+| Item | Detail |
+|------|--------|
+| gap | the workspace clone was never refreshed after the first clone; a person pushing to a story branch while it waited at a gate would have made the orchestrator's next push a rejected non-fast-forward, failing the stage |
+| fix | `GitHubClient.sync_branch` (fetch, `checkout -B <branch> origin/<branch>`) called by `Workspace.ensure` before every stage; a branch not yet on the remote keeps the local one. Tests T-I4-10, T-I11-5; T-I11-1 updated; 124 pass plus the D16 guard |
+| docs | user guide section 6 "Working locally alongside the platform": human lane (own PRs, optional `ai-review`, merge yourself) and joining an agent's story (push while it waits at a gate; never while a stage runs; Rework comments are the cleaner steer) |
+

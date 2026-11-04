@@ -283,3 +283,13 @@ def test_T_I7_14_outages_never_block_a_waiting_story(world):
     for _ in range(MAX_WAIT_ERRORS * 3):
         assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
     assert st.get_session(STORY.key).attempts == 0  # outages are logged but not counted
+
+
+def test_T_I11_5_every_agent_stage_starts_from_the_remote_branch(world):
+    st, gh, jira = world["store"], world["gh"], world["jira"]
+    e = world["make"]()
+    e.claim(STORY)
+    run_until(e, st, STORY.key, "wait_g1")
+    jira.set_status(STORY.key, "Planning")
+    run_until(e, st, STORY.key, "wait_g2")
+    assert [c for c in gh.calls if c.startswith("sync ")].count("sync " + st.get_session(STORY.key).branch) >= 2
