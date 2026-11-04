@@ -478,3 +478,15 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | observed | 01:46 UTC: four `network error: ConnectError` cycles (Jira unreachable from the laptop for a few minutes); both waiting stories kept their stages, but each outage cycle counted toward `MAX_WAIT_ERRORS`, so a longer outage would have blocked them |
 | fix | `is_transient()`: network errors, connect errors, HTTP 502/503/504 and timeouts are logged as `wait.error` but never counted; only other errors (a deleted PR, bad credentials) count up to 10. Tests T-I7-13 (counted path, now with a 404) and T-I7-14 (outage of 30 cycles, attempts stay 0); 118 pass plus the expected D16 guard failure while AINSSB2 exists. Container rebuilt |
 
+### Project-to-platform boundary closed (user request); global `ains` wrapper; environment reviewers follow the gates
+
+| Item | Detail |
+|------|--------|
+| wrapper | `%USERPROFILE%/.local/bin/ains.bat` runs `uv run --directory <orchestrator> ains ...` from any folder (verified: `ains targets list` from the home folder); that folder is on PATH |
+| gap 2, agents | both agent permission files deny `Edit`, `Write` and `MultiEdit` on `./.github/**`, `./.claude/**`, `./.specify/**`, `./CLAUDE.md`; the prompt rule is now enforced |
+| gap 1, people | `bootstrap/templates/CODEOWNERS` names the owner for those paths; branch protection requires code-owner reviews when the target's approval mode is `review` (in `label` mode GitHub would refuse the orchestrator's own merges, so the CI guard blocks instead); CI platform guard step in `reusable-ci-python.yml`: a PR that changes platform-owned paths (diff against the base branch) fails, thin workflows must call the platform's reusable workflows, missing CODEOWNERS warns. The first version compared the settings file to the template, which would have failed every open PR after a template change; replaced by the diff rule. `target verify` reports settings-file drift against the template |
+| environments | `staging` has a required reviewer only when G4 is on, `production` only when G5 is on (`environment_reviewers`); `target verify` checks that against the target's gates. Before this, an L4 project still stalled at staging |
+| applied | `ains target add` re-run for both sandboxes: CODEOWNERS and the new settings pushed to main; sandbox 2 staging reviewer removed; stray release run from the push cancelled |
+| tests | T-I16-8 (guard pieces), T-I16-9 (environment reviewers); 120 pass plus the expected D16 guard while AINSSB2 exists. Containers rebuilt |
+| docs | user guide section 6 "What a project may and may not change"; developer manual invariants; test plan rows |
+

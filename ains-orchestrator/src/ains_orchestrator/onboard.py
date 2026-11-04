@@ -587,7 +587,11 @@ def verify_target(
             raw = gh.exec(
                 ["gh", "api", f"repos/{repo}/contents/.claude/settings.json", "--jq", ".content"], what="settings"
             )
-            same = base64.b64decode(raw).decode("utf-8").strip() == tpl.read_text(encoding="utf-8").strip()
+
+            def norm(text: str) -> str:
+                return text.replace("\r\n", "\n").strip()
+
+            same = norm(base64.b64decode(raw).decode("utf-8")) == norm(tpl.read_text(encoding="utf-8"))
             detail = "matches the template" if same else "differs from the template: re-run target add"
             add("platform guard .claude/settings.json", same, detail)
         except (GitHubError, ValueError, OSError) as e:
