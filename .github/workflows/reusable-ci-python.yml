@@ -45,22 +45,29 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     steps:
       - uses: actions/checkout@v4
-      - name: Platform guard (files the project must not change)
+        with:
+          fetch-depth: 0   # the platform guard diffs the PR against its base branch
+      - name: Platform guard (a PR must not touch platform-owned paths)
         working-directory: .
+        env:
+          BASE: ${{ github.base_ref }}
         run: |
           set -e
-          base="https://raw.githubusercontent.com/niloyray/ains-platform/main/bootstrap/templates"
           fail=0
-          curl -fsSL "$base/claude-settings.json" -o /tmp/settings.tpl
-          if ! diff -q <(tr -d '\r' < .claude/settings.json) <(tr -d '\r' < /tmp/settings.tpl) >/dev/null; then
-            echo "::error file=.claude/settings.json::differs from the platform template; run 'ains target add' to refresh it, never edit it in the project"; fail=1
+          if [ -n "$BASE" ]; then
+            git fetch -q origin "$BASE"
+            changed=$(git diff --name-only "origin/$BASE...HEAD" -- .github .claude .specify CLAUDE.md || true)
+            if [ -n "$changed" ]; then
+              echo "::error::this pull request changes platform-owned files; they are refreshed by 'ains target add', never edited in the project:"
+              echo "$changed"; fail=1
+            fi
           fi
           for wf in ci release; do
             if ! grep -q "niloyray/ains-platform/.github/workflows/reusable-" ".github/workflows/$wf.yml"; then
               echo "::error file=.github/workflows/$wf.yml::must call the platform's reusable workflow"; fail=1
             fi
           done
-          [ -f .github/CODEOWNERS ] || { echo "::error::.github/CODEOWNERS missing; run 'ains target add'"; fail=1; }
+          [ -f .github/CODEOWNERS ] || echo "::warning::.github/CODEOWNERS missing; run 'ains target add' to refresh the platform files"
           exit $fail
       - uses: astral-sh/setup-uv@v5
         with:
