@@ -245,8 +245,8 @@ class FlowEngine:
                 s,
                 "implement",
                 "CI",
-                f"CI failed on your last push. Fix the cause below, run the tests "
-                f"and `uvx ruff check .` yourself, then stop.\n\n{excerpt}",
+                f"CI failed on your last push. Fix the cause below, then run and pass `uv run pytest`, "
+                f"`uvx ruff check .` and `uvx ruff format .` yourself, then stop.\n\n{excerpt}",
             )
             gs = dict(self.store.get_session(s.key).gate_state)  # type: ignore[union-attr]
             gs["ci_rework_rounds"] = rounds + 1

@@ -589,3 +589,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | `SEED_FILES` = `init/README.md` (what the folder is for, the exact skill request) and `init/ideas.md` (skeleton in the shape the skill reads: Product, Rules, Features F1 with stories F1-S1, Priority, Needs first). `seed_files()` writes only absent paths, so a re-run keeps the project's backlog; dry run reports "seed 2 files (init/) if absent"; `target verify` checks `init`; project `CLAUDE.md` names the folder. T-I16-13 |
 | note | REPOPOC01 predates this; its `init/ideas.md` lives only in the local clone. Push it before any re-run of `target add`, otherwise the seed skeleton lands on main first and the next pull conflicts |
 
+### Every story lost a round to `ruff format --check`
+
+| Item | Detail |
+|------|--------|
+| observed | REPOPOC01-11 and REPOPOC01-12 both went red on the first CI run and green after one automatic rework; the agent's own reply: "`ruff format --check` flagged two unformatted files" |
+| cause | CI runs `uvx ruff check . && uvx ruff format --check .` but the project `CLAUDE.md` template and the implement prompt only named `ruff check` |
+| fix | implement prompt step 3, the CI rework message in `flow.py`, and the `CLAUDE.md` template now say: before stopping run and pass `uv run pytest`, `uvx ruff check .`, `uvx ruff format .`. Prompt and message apply at once; a project's `CLAUDE.md` picks up the new line on its next `ains target add` |
+
