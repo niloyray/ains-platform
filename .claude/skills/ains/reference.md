@@ -69,4 +69,4 @@ An `off` gate is auto-passed with the Jira comment "G<n> auto-approved (gate off
 | /app/targets.yaml | ains-orchestrator/targets.yaml | onboarded projects, gates, profile |
 | /app/profiles.yaml | ains-orchestrator/profiles.yaml | catalog of classes, phases, methods, autonomy levels |
 | /app/flows, /app/agents, /app/claude-settings.json | same names | flow, prompts, agent permissions |
-| ains-orchestrator/.env | host only | the three tokens; never committed |
+| ains-orchestrator/.env | host only | the three tokens, plus `AINS_BOT_LOGIN` / `AINS_BOT_GITHUB_TOKEN` for the orchestrator's own GitHub account (approval_mode `review`); never committed |

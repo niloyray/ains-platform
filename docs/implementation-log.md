@@ -515,3 +515,14 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | observed | 2026-11-05 00:35 UTC, after a laptop wake-up: `gh pr view` failed with "error connecting to api.github.com", which was not in the transient list, so the cycle counted ("attempt 1/10, staying at wait_g3"); and `attempts` was never reset by a good cycle, so scattered drops over days would eventually have blocked a waiting story |
 | fix | transient markers extended with gh's and Go's wording (error connecting, connection refused/reset, dial tcp, could not resolve, name resolution, TLS handshake); after a successful wait cycle `attempts` is reset to 0, so only consecutive non-transient errors count. Test T-I7-15; 126 pass plus the D16 guard. Containers rebuilt |
 
+### I23: orchestrator bot account (user created `envoyid01`)
+
+| Item | Detail |
+|------|--------|
+| design | the second account is the orchestrator's, not the reviewer's: the poll loop acts as the bot (`use_bot_identity()` exports `AINS_BOT_GITHUB_TOKEN` as `GH_TOKEN`), so the owner can approve its PRs with a real GitHub review (`approval_mode: review`); a reviewer never needs a token. Onboarding and verify keep the owner's token (repository creation needs the owner) |
+| onboarding | new step `bot collaborator`: invite `AINS_BOT_LOGIN` with write access and accept the invitation with the bot token; `target verify` checks the permission. Applied to both sandboxes: envoyid01 invited and accepted, permission `write` |
+| token | scope `repo` only (enough: the bot never touches workflow files); stored only in the gitignored `.env`; pasted in chat, so it is on the rotation list with the other three |
+| mode switch | both sandboxes stay in `label` mode while their current stories run (their PRs were opened by the owner's account and can only be approved by the label); `review` mode is for PRs opened after the switch |
+| tests | T-I23-1 (identity switch), T-I23-2 (invitation step, skipped without a bot, planned in a dry run); 126 pass plus the D16 guard. Containers rebuilt: the orchestrator now runs as envoyid01 |
+| docs | user guide gate section (the two modes and the second account), developer manual 14 (bot account), skill reference, `.env.example` |
+

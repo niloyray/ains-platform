@@ -409,6 +409,21 @@ def session_advance(key: str, dry_run: bool = typer.Option(False, "--dry-run")) 
 
 
 # ----------------------------------------------------------------------------- loop
+def use_bot_identity() -> str | None:
+    """When AINS_BOT_GITHUB_TOKEN is set, the orchestrator runtime (PRs, pushes, merges) acts as that account,
+    so a person on the owner account can approve its PRs with a real review (approval_mode `review`).
+    Onboarding and verification keep the owner's token: creating repositories needs the owner."""
+    load_dotenv(config_root())
+    bot = os.environ.get("AINS_BOT_GITHUB_TOKEN")
+    if not bot:
+        return None
+    os.environ["GH_TOKEN"] = bot
+    os.environ["GITHUB_TOKEN"] = bot
+    login = os.environ.get("AINS_BOT_LOGIN")
+    log.info("acting on GitHub as the bot account %s", login or "(login not set: set AINS_BOT_LOGIN)")
+    return login
+
+
 def write_heartbeat(work: Path, report: dict[str, Any]) -> None:
     """Last cycle report for the portal and for `ains status`; a missing or stale file means the poller is down."""
     try:
@@ -431,6 +446,7 @@ def poll(
     interval: int = typer.Option(0, "--interval", help="Seconds between cycles (default AINS_POLL_SECONDS or 60)"),
 ) -> None:
     """Poll Jira and the target repos; claim stories, advance sessions, review labelled PRs."""
+    use_bot_identity()
     rt = build_runtime(dry_run)
     poller = Poller(rt.config, rt.store, rt.jira, rt.engine_for)
     watcher = PRWatcher(rt.config, rt.store, rt.github, rt.workspace, rt.agents)

@@ -15,6 +15,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -175,6 +176,7 @@ class Onboarder:
         self._github_secrets(rep, repo)
         self._github_environments(rep, repo, gates)
         self._github_protection(rep, repo, approval_mode)
+        self._github_bot_collaborator(rep, repo)
         self._jira_project(rep, jira_key, jira_name, repo)
         self._targets_block(rep, jira_key, repo, gates, approval_mode, profile)
         return rep
@@ -346,6 +348,60 @@ class Onboarder:
             rep.add("environments", "done", f"{plan}; reviewer {self.reviewer}")
         except (GitHubError, ValueError) as e:
             rep.add("environments", "failed", str(e)[:200])
+
+    def _github_bot_collaborator(self, rep: Report, repo: str) -> None:
+        """The orchestrator's bot account (AINS_BOT_LOGIN) needs write access to every target; the invitation is
+        accepted at once with the bot's own token (AINS_BOT_GITHUB_TOKEN) so no one has to click an e-mail."""
+        bot = os.environ.get("AINS_BOT_LOGIN")
+        if not bot:
+            status = "planned" if self.dry_run else "skipped"
+            rep.add("bot collaborator", status, "no AINS_BOT_LOGIN: the owner's account runs the orchestrator")
+            return
+        if self.dry_run:
+            rep.add("bot collaborator", "planned", f"invite {bot} with write access and accept the invitation")
+            return
+        try:
+            out = self.gh.exec(
+                ["gh", "api", "-X", "PUT", f"repos/{repo}/collaborators/{bot}", "-f", "permission=push"],
+                write=True,
+                what=f"invite {bot}",
+            )
+            accepted = self._accept_invitation(repo, bot)
+            state = "already a collaborator" if not out.strip() else ("invited and accepted" if accepted else "invited")
+            rep.add("bot collaborator", "done", f"{bot}: {state} (write)")
+        except GitHubError as e:
+            rep.add("bot collaborator", "failed", str(e)[:200])
+
+    def _accept_invitation(self, repo: str, bot: str) -> bool:
+        token = os.environ.get("AINS_BOT_GITHUB_TOKEN")
+        if not token:
+            return False
+        env = {**os.environ, "GH_TOKEN": token, "GITHUB_TOKEN": token}
+        try:
+            out = subprocess.run(
+                [
+                    "gh",
+                    "api",
+                    "user/repository_invitations",
+                    "--jq",
+                    f'.[] | select(.repository.full_name == "{repo}") | .id',
+                ],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+            ).stdout.split()
+            for inv in out:
+                subprocess.run(
+                    ["gh", "api", "-X", "PATCH", f"user/repository_invitations/{inv}"],
+                    capture_output=True,
+                    text=True,
+                    env=env,
+                    check=False,
+                )
+            return bool(out)
+        except OSError:
+            return False
 
     def _github_protection(self, rep: Report, repo: str, approval_mode: str = "label") -> None:
         body = json.dumps(protection_body(approval_mode))
@@ -643,6 +699,17 @@ def verify_target(
                 add("jira statuses", not missing, "all present" if not missing else "missing " + ", ".join(missing))
         except JiraError as e:
             add("jira", False, str(e)[:120])
+    bot = os.environ.get("AINS_BOT_LOGIN")
+    if bot:
+        try:
+            perm = gh.exec(
+                ["gh", "api", f"repos/{repo}/collaborators/{bot}/permission", "--jq", ".permission"],
+                what="bot permission",
+            ).strip()
+            ok = perm in ("write", "admin", "maintain")
+            add(f"bot collaborator {bot}", ok, f"permission {perm or 'none'}" + ("" if ok else ": run target add"))
+        except GitHubError as e:
+            add(f"bot collaborator {bot}", False, str(e)[:120])
     t = targets.get(jira_key)
     t_repo = getattr(t, "repo", None) if t is not None else None
     add("targets.yaml", t_repo == repo, f"{jira_key} -> {t_repo}" if t is not None else f"no block for {jira_key}")

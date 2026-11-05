@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -180,3 +181,15 @@ def test_T_I16_10_guided_target_add_asks_one_value_at_a_time(env_root, monkeypat
     answers = "\n".join(["ains-poc", "", "", "5", "1", "", "1", "1", "y", "y", "n"]) + "\n"
     r = runner.invoke(app, ["target", "add"], input=answers)
     assert "pick one of the available numbers" in r.stdout and r.exit_code == 0
+
+
+def test_T_I23_1_bot_token_switches_the_runtime_identity(env_root, monkeypatch):
+    from ains_orchestrator.cli import use_bot_identity
+
+    monkeypatch.delenv("AINS_BOT_GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("GH_TOKEN", "owner-token")
+    assert use_bot_identity() is None and os.environ["GH_TOKEN"] == "owner-token"
+    monkeypatch.setenv("AINS_BOT_GITHUB_TOKEN", "bot-token")
+    monkeypatch.setenv("AINS_BOT_LOGIN", "envoyid01")
+    assert use_bot_identity() == "envoyid01"
+    assert os.environ["GH_TOKEN"] == "bot-token" and os.environ["GITHUB_TOKEN"] == "bot-token"

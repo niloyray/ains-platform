@@ -322,3 +322,16 @@ def test_T_I16_9_environment_reviewers_follow_the_gates():
     assert environment_reviewers({}) == {"staging": True, "production": True}
     assert environment_reviewers({"G4": "off", "G5": "on"}) == {"staging": False, "production": True}
     assert environment_reviewers({"G4": "off", "G5": "off"}) == {"staging": False, "production": False}
+
+
+def test_T_I23_2_onboarding_invites_the_bot_when_configured(world, monkeypatch):
+    monkeypatch.delenv("AINS_BOT_LOGIN", raising=False)
+    rep = world["make"](jira=FakeJira()).add("ains-sandbox-3", "AINSSB3", "sandbox 3")
+    assert next(s for s in rep.steps if s.name == "bot collaborator").status == "skipped"
+    monkeypatch.setenv("AINS_BOT_LOGIN", "envoyid01")
+    monkeypatch.delenv("AINS_BOT_GITHUB_TOKEN", raising=False)
+    rep = world["make"](jira=FakeJira()).add("ains-sandbox-4", "AINSSB4", "sandbox 4")
+    step = next(s for s in rep.steps if s.name == "bot collaborator")
+    assert step.status == "done" and "envoyid01" in step.detail
+    flat = [" ".join(c) for c in world["runner"].calls]
+    assert any("collaborators/envoyid01" in c and "permission=push" in c for c in flat)
