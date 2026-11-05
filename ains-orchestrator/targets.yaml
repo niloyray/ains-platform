@@ -9,6 +9,14 @@
 #     gates: {G1: on, G2: on, G3: on, G4: on, G5: on}
 #     review_label: ai-review
 targets:
+  REPOPOC01:
+    repo: niloyray/repo-poc01
+    default_branch: main
+    flow: story
+    gates: {G1: on, G2: on, G3: on, G4: on, G5: on}
+    review_label: ai-review
+    approval_mode: review
+    profile: {project_class: small-poc, methodology: spec-kit, autonomy: L3, phases: [intent, spec, plan, develop, test, deploy]}
   AINSSB2:
     repo: niloyray/ains-sandbox-2
     default_branch: main

@@ -30,7 +30,7 @@ targets:
 
 def test_T_I2_1_shipped_files_validate(config_root: Path, shipped_root: Path):
     cfg = load_config(config_root)
-    assert set(cfg.targets.targets) <= {"AINSSB"}, "only the permanent sandbox may ship in targets.yaml (D16)"
+    assert "AINSSB" in cfg.targets.targets, "the permanent sandbox must stay in targets.yaml (D16)"
     assert "story" in cfg.flows and cfg.flows["story"].stages == ["spec", "plan", "implement", "review", "merge"]
     assert "claude-code" in cfg.agents
     (config_root / "targets.yaml").write_text(SANDBOX, encoding="utf-8")

@@ -6,6 +6,7 @@ One row per project served by this platform. The source of truth is `ains-orches
 |----------|-------------|-----------|---------|-------|---------|---------|--------|
 | AINSSB | niloyray/ains-sandbox | 2026-11-02 by `ains target add ains-sandbox AINSSB sandbox` | permanent sandbox: Phase 1 acceptance (plan step 8) and regression target for later platform changes (D16) | all five on | label | small-poc · spec-kit · L3 · intent→deploy | active; Jira statuses added manually, Automation rule manual |
 | AINSSB2 | niloyray/ains-sandbox-2 | 2026-11-03 by `ains target add ains-sandbox-2 AINSSB2 "Sandbox 2" --class small-poc --autonomy L4` | second onboarding (plan 6a.2) and the gates-off run at L4; removed after both to prove `target remove` | G1 off, G2 off, G3 on, G4 off, G5 on | label | small-poc · spec-kit · L4 · intent→deploy | temporary |
+| REPOPOC01 | niloyray/repo-poc01 | 2026-11-05 by the guided `ains target add` (user) | first real project in `review` approval mode with the orchestrator account envoyid01 | all five on | review | small-poc · spec-kit · L3 · intent→deploy | active |
 
 Phase 2 will add `AINSPOC` → `niloyray/ains-poc` with the same command on its first day. The platform repository itself is never a target (D13).
 
