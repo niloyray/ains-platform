@@ -48,6 +48,7 @@ services:
       - ./agents:/app/agents:ro
       - ./claude-settings.json:/app/claude-settings.json:ro
       - ../bootstrap/templates:/app/bootstrap/templates:ro
+      - ../.claude/skills:/app/skills:ro          # the /ains skill shipped into every project
       - ../docs:/app/docs:ro
     depends_on:
       - orchestrator

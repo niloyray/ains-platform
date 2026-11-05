@@ -264,7 +264,7 @@ copy .env.example .env</code></pre>
 <table>
   <tr><th>Artifact</th><th>Where</th><th>Why it exists</th></tr>
   <tr><td>Repository</td><td>GitHub, <code>niloyray/&lt;repo&gt;</code></td><td>The project's files and history</td></tr>
-  <tr><td>Starter files</td><td>repository, first commit</td><td><code>README.md</code>, <code>CLAUDE.md</code> (house rules the agents read first), <code>.claude/settings.json</code> (what the agents may run), <code>.github/workflows/ci.yml</code> and <code>release.yml</code> (thin workflows that call the platform's shared ones), <code>.specify/</code> and <code>.claude/skills/speckit-*</code> (Spec Kit)</td></tr>
+  <tr><td>Starter files</td><td>repository, first commit</td><td><code>README.md</code>, <code>CLAUDE.md</code> (house rules the agents read first), <code>.claude/settings.json</code> (what the agents may run), <code>.github/workflows/ci.yml</code> and <code>release.yml</code> (thin workflows that call the platform's shared ones), <code>.specify/</code> and <code>.claude/skills/speckit-*</code> (Spec Kit), and <code>.claude/skills/ains/</code>: the <code>/ains</code> skill, so anyone who clones the project has it in Claude Code. Re-running <code>ains target add</code> refreshes all of them</td></tr>
   <tr><td>Labels</td><td>repository</td><td><code>g3-approved</code>, <code>g3-rework</code> for the code gate; <code>ai-review</code> to ask for an agent review on a PR a person wrote</td></tr>
   <tr><td>Secrets</td><td>repository settings</td><td>The Jira e-mail and token, so the workflows can move the story when CI runs and when releases are approved</td></tr>
   <tr><td>Environments</td><td>repository settings</td><td><code>staging</code> and <code>production</code>, each with you as required reviewer. These are gates G4 and G5</td></tr>
@@ -779,7 +779,7 @@ cd ains-sandbox</code></pre>
 <p>Onboarding, removal and verify run as background jobs; the job page refreshes until the report is complete. The portal is only reachable from the laptop itself.</p>
 
 <h3>Asking Claude Code instead: the <code>/ains</code> skill</h3>
-<p>If you work in a Claude Code terminal opened in the platform repository (or in the PoC folder above it), a skill called <code>ains</code> is loaded. It is not a command with fixed subcommands: you write a request in plain words and Claude turns it into the right platform command, reads the result and answers in your words. Type the slash form to make it explicit, or just ask; both use the same instructions.</p>
+<p>If you work in a Claude Code terminal opened in the platform repository, in the PoC folder above it, or in any onboarded project (onboarding ships the skill into <code>.claude/skills/ains/</code> of every project), a skill called <code>ains</code> is loaded. It is not a command with fixed subcommands: you write a request in plain words and Claude turns it into the right platform command, reads the result and answers in your words. Type the slash form to make it explicit, or just ask; both use the same instructions.</p>
 <pre><code>/ains status
 /ains what is waiting for me
 /ains why is AINSSB-3 blocked

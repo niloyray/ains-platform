@@ -61,6 +61,22 @@ TEMPLATE_FILES = {  # template name -> path in the target repo
     "CODEOWNERS": ".github/CODEOWNERS",
 }
 JIRA_TEMPLATE = "com.pyxis.greenhopper.jira:gh-simplified-agility-kanban"
+SKILL_FILES = {  # the /ains skill ships into every project so a clone brings it into Claude Code
+    "SKILL.md": ".claude/skills/ains/SKILL.md",
+    "reference.md": ".claude/skills/ains/reference.md",
+}
+
+
+def default_skill_dir(config_root: Path) -> Path | None:
+    """The platform repository's own copy of the /ains skill (host checkout or the container mount)."""
+    for cand in (
+        config_root.parent / ".claude" / "skills" / "ains",
+        config_root / ".claude" / "skills" / "ains",
+        Path("/app/skills/ains"),
+    ):
+        if (cand / "SKILL.md").exists():
+            return cand
+    return None
 
 
 PROTECTED_PATHS = ("/.github/", "/.claude/", "/.specify/", "/CLAUDE.md")  # platform-owned inside a project repo
@@ -137,11 +153,13 @@ class Onboarder:
         platform_repo: str = "niloyray/ains-platform",
         platform_ref: str = "main",
         reviewer_login: str | None = None,
+        skill_dir: Path | None = None,
     ) -> None:
         self.root, self.templates, self.gh, self.jira = Path(config_root), Path(templates_dir), github, jira
         self.owner, self.dry_run = owner, dry_run
         self.platform_repo, self.platform_ref = platform_repo, platform_ref
         self.reviewer = reviewer_login or owner
+        self.skill_dir = skill_dir or default_skill_dir(config_root)
 
     # ================================================================== add
     def add(
@@ -214,6 +232,13 @@ class Onboarder:
             for name, dest in TEMPLATE_FILES.items()
             if (self.templates / name).exists()
         }
+        if self.skill_dir is not None:
+            for name, dest in SKILL_FILES.items():
+                if (self.skill_dir / name).exists():
+                    files[dest] = (self.skill_dir / name).read_text(encoding="utf-8")
+        else:
+            status = "planned" if self.dry_run else "skipped"
+            rep.add("ains skill", status, "platform skill folder not found; the project will not carry /ains")
         if self.dry_run:
             rep.add("templates", "planned", f"push {len(files)} files + Spec Kit init to {repo}@main")
             return
@@ -624,7 +649,7 @@ def verify_target(
     except (GitHubError, json.JSONDecodeError) as e:
         add("github repo", False, str(e)[:120])
         return checks
-    for path in list(TEMPLATE_FILES.values()) + [".specify", ".claude/skills"]:
+    for path in list(TEMPLATE_FILES.values()) + list(SKILL_FILES.values()) + [".specify", ".claude/skills"]:
         try:
             gh.exec(
                 ["gh", "api", f"repos/{repo}/contents/{path}", "--jq", 'if type == "array" then length else .path end'],

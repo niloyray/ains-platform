@@ -547,3 +547,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | T-I24-1..5; 133 pass. Containers rebuilt |
 | docs | user guide step 0 "Let the platform draft the story with you", agents table row, command sheet; developer manual 12c storyboarding; plan rows I23, I24; test plan section I24 |
 
+### Onboarding ships the /ains skill into every project (user request)
+
+| Item | Detail |
+|------|--------|
+| change | `SKILL_FILES` added to the files `ains target add` pushes: `.claude/skills/ains/SKILL.md` and `reference.md`, read from the platform's own copy (`default_skill_dir`: host checkout or the portal's `/app/skills` mount; `Onboarder(skill_dir=...)` for tests); `target verify` checks both files; the CI guard already protects `.claude/**`, so projects cannot change them and a re-run of `target add` refreshes them |
+| applied | re-run for `ains-sandbox`, `ains-sandbox-2`, `repo-poc01`: the two files pushed to each main; stray release runs from those pushes cancelled |
+| tests | T-I16-11; 134 pass. Portal container rebuilt with the skills mount |
+| docs | user guide onboarding table and the skill section; developer manual 12c |
+

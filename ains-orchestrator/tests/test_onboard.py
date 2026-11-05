@@ -111,6 +111,7 @@ def world(tmp_path: Path, monkeypatch):
             owner="niloyray",
             dry_run=dry_run,
             reviewer_login="niloyray",
+            skill_dir=Path(__file__).resolve().parents[2] / ".claude" / "skills" / "ains",
         )
 
     return {"root": root, "runner": runner, "make": make}
@@ -335,3 +336,15 @@ def test_T_I23_2_onboarding_invites_the_bot_when_configured(world, monkeypatch):
     assert step.status == "done" and "envoyid01" in step.detail
     flat = [" ".join(c) for c in world["runner"].calls]
     assert any("collaborators/envoyid01" in c and "permission=push" in c for c in flat)
+
+
+def test_T_I16_11_onboarding_ships_the_ains_skill(world):
+    from pathlib import Path
+
+    from ains_orchestrator.onboard import SKILL_FILES, default_skill_dir
+
+    plat = Path(__file__).resolve().parents[2]
+    assert default_skill_dir(plat / "ains-orchestrator") == plat / ".claude" / "skills" / "ains"
+    rep = world["make"](dry_run=True, jira=FakeJira()).add("ains-sandbox", "AINSSB", "sandbox")
+    templates = next(s for s in rep.steps if s.name == "templates")
+    assert f"push {7 + len(SKILL_FILES)} files" in templates.detail  # 7 templates + the two skill files
