@@ -492,11 +492,7 @@ class Onboarder:
                     f"automatic workflow update failed ({str(e)[:120]})."
                 )
             rep.add("jira lane", "exists", "stories carry the label 'ai-native' (no custom field needed)")
-            rep.manual.append(
-                f"Jira > project {key} > Board > ... > Configure board > Columns: order them "
-                f"{' > '.join(BOARD_COLUMN_ORDER)}, then Rework and Blocked at the right; delete the default "
-                "In Progress and In Review columns (unused). Team-managed boards have no API for this."
-            )
+            self._order_board_columns(key, rep)
             rep.manual.append(
                 f"Jira > project {key} > Project settings > Automation > Create rule 'AI-native intake ack': "
                 f"WHEN issue transitioned to Ready, IF labels contains ai-native, THEN Send web request "
@@ -508,6 +504,33 @@ class Onboarder:
             rep.add("jira automation", "manual", "rule checklist printed")
         except JiraError as e:
             rep.add("jira project", "failed", str(e)[:300])
+
+    def _order_board_columns(self, key: str, rep: Report) -> None:
+        """Columns left to right in flow order, Rework and Blocked after Done; the Jira defaults last."""
+        wanted = BOARD_COLUMN_ORDER + ["Rework", "Blocked"]
+        manual = (
+            f"Jira > project {key} > Board > ... > Configure board > Columns: order them "
+            f"{' > '.join(wanted)}; delete the default In Progress and In Review columns (unused)."
+        )
+        try:
+            bid = self.jira.board_id(key)
+            if bid is None:
+                rep.add("board columns", "manual", "board not found")
+                rep.manual.append(manual)
+                return
+            before = self.jira.board_columns(bid)
+            if before[: len(wanted)] == wanted:
+                rep.add("board columns", "exists", " > ".join(before))
+                return
+            after = self.jira.reorder_board_columns(bid, wanted)
+            if self.dry_run or after[: len(wanted)] == wanted:
+                rep.add("board columns", "planned" if self.dry_run else "done", " > ".join(after))
+            else:
+                rep.add("board columns", "manual", f"reorder did not take: {' > '.join(after)}")
+                rep.manual.append(manual)
+        except JiraError as e:
+            rep.add("board columns", "manual", str(e)[:200])
+            rep.manual.append(manual)
 
     # ---------------------------------------------------------------- targets.yaml
     def _targets_block(

@@ -65,6 +65,33 @@ class FakeJira:
         self.created = []
         self.deleted = []
         self.fail_ensure = False
+        self.board_columns_state = [  # Jira's creation order, the defaults first
+            "To Do",
+            "In Progress",
+            "In Review",
+            "Done",
+            "Planning",
+            "Blocked",
+            "Plan Review",
+            "Implementing",
+            "Specifying",
+            "Spec Review",
+            "Code Review",
+            "Ready",
+            "Staging",
+            "Rework",
+        ]
+
+    def board_id(self, key):
+        return 4
+
+    def board_columns(self, board_id):
+        return list(self.board_columns_state)
+
+    def reorder_board_columns(self, board_id, order):
+        rest = [c for c in self.board_columns_state if c not in order]
+        self.board_columns_state = [c for c in order if c in self.board_columns_state] + rest
+        return list(self.board_columns_state)
 
     def project_exists(self, key):
         return key in self.projects
@@ -348,3 +375,17 @@ def test_T_I16_11_onboarding_ships_the_ains_skill(world):
     rep = world["make"](dry_run=True, jira=FakeJira()).add("ains-sandbox", "AINSSB", "sandbox")
     templates = next(s for s in rep.steps if s.name == "templates")
     assert f"push {7 + len(SKILL_FILES)} files" in templates.detail  # 7 templates + the two skill files
+
+
+def test_T_I16_12_onboarding_orders_the_board_columns(world):
+    from ains_orchestrator.onboard import BOARD_COLUMN_ORDER
+
+    jira = FakeJira()
+    rep = world["make"](dry_run=False, jira=jira).add("ains-sandbox", "AINSSB", "sandbox")
+    step = next(s for s in rep.steps if s.name == "board columns")
+    assert step.status == "done"
+    assert jira.board_columns(4)[:12] == BOARD_COLUMN_ORDER + ["Rework", "Blocked"]
+    assert not any("Configure board" in m for m in rep.manual)
+    # second run: nothing to do
+    rep2 = world["make"](dry_run=False, jira=jira).add("ains-sandbox", "AINSSB", "sandbox")
+    assert next(s for s in rep2.steps if s.name == "board columns").status == "exists"

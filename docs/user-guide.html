@@ -285,11 +285,11 @@ git push</code></pre>
 </div></div>
 
 <div class="step"><div class="n">step<b>3</b></div><div>
-  <h4>Order the board columns</h4>
+  <h4>Check the board columns</h4>
   <div class="meta"><span class="who-h">you</span><span class="where">Jira, the project's board</span></div>
-  <p>Jira creates one column per status in the order the statuses were added, which is not the order of the flow. Jira has no API for this on team-managed boards, so do it once by hand: on the board open the <b>&hellip;</b> menu, <b>Configure board</b>, <b>Columns</b>, and drag the columns into this order:</p>
-  <p><code>To Do</code> &rarr; <code>Ready</code> &rarr; <code>Specifying</code> &rarr; <code>Spec Review</code> &rarr; <code>Planning</code> &rarr; <code>Plan Review</code> &rarr; <code>Implementing</code> &rarr; <code>Code Review</code> &rarr; <code>Staging</code> &rarr; <code>Done</code>, with <code>Rework</code> and <code>Blocked</code> at the far right.</p>
-  <p>Delete the default <code>In Progress</code> and <code>In Review</code> columns; the platform never uses those statuses. <code>ains target add</code> prints this as a manual step at the end of its report. A story then moves left to right through the gates, and anything in the two right-hand columns needs you.</p>
+  <p>Jira creates one column per status in the order the statuses were added, which is not the order of the flow. Onboarding puts them in flow order for you (step <code>board columns</code> in its report), so a story moves left to right through the gates:</p>
+  <p><code>To Do</code> &rarr; <code>Ready</code> &rarr; <code>Specifying</code> &rarr; <code>Spec Review</code> &rarr; <code>Planning</code> &rarr; <code>Plan Review</code> &rarr; <code>Implementing</code> &rarr; <code>Code Review</code> &rarr; <code>Staging</code> &rarr; <code>Done</code>, then <code>Rework</code> and <code>Blocked</code>; anything in those two needs you.</p>
+  <p>Jira has no documented API for this, so the platform uses the call the board settings page makes and reads the result back. If the report says <b>manual</b> for this step, do it once by hand: on the board open the <b>&hellip;</b> menu, <b>Configure board</b>, <b>Columns</b>, and drag. Either way you can delete the default <code>In Progress</code> and <code>In Review</code> columns, which the platform never uses.</p>
 </div></div>
 
 <div class="step"><div class="n">step<b>3</b></div><div>

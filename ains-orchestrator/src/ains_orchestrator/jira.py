@@ -184,6 +184,48 @@ class JiraClient:
         return str(r.json()["key"])
 
     # ------------------------------------------------------------------ projects (onboarding)
+    def board_columns(self, board_id: int) -> list[str]:
+        """Column names left to right (public agile API)."""
+        r = self._request("GET", f"/rest/agile/1.0/board/{board_id}/configuration")
+        self._check(r, f"board configuration {board_id}")
+        return [c["name"] for c in r.json().get("columnConfig", {}).get("columns", [])]
+
+    def reorder_board_columns(self, board_id: int, order: list[str]) -> list[str]:
+        """Put the named columns first, in that order, the rest after them unchanged.
+
+        Jira has no public API for this on team-managed boards; this uses the endpoint the board settings page
+        calls. It answers 500 yet applies the change (observed 2026-11-05), so the result is read back and
+        returned; the caller compares it with what was wanted.
+        """
+        r = self._request("GET", "/rest/greenhopper/1.0/rapidviewconfig/editmodel", params={"rapidViewId": board_id})
+        self._check(r, f"board edit model {board_id}")
+        cfg = r.json().get("rapidListConfig", {})
+        cols = {c["name"]: c for c in cfg.get("mappedColumns", [])}
+        ordered = [cols[n] for n in order if n in cols] + [c for n, c in cols.items() if n not in order]
+        payload = {
+            "currentStatisticsField": cfg.get("currentStatisticsField", {"id": "none_"}),
+            "rapidViewId": board_id,
+            "mappedColumns": [
+                {
+                    "id": c["id"],
+                    "name": c["name"],
+                    "mappedStatuses": [{"id": s["id"]} for s in c.get("mappedStatuses", [])],
+                    "min": c.get("min", ""),
+                    "max": c.get("max", ""),
+                    "isKanPlanColumn": c.get("isKanPlanColumn", False),
+                }
+                for c in ordered
+            ],
+        }
+        if self.dry_run:
+            self._dry(f"reorder board {board_id} columns -> {' > '.join(c['name'] for c in ordered)}")
+            return [c["name"] for c in ordered]
+        try:
+            self._request("PUT", "/rest/greenhopper/1.0/rapidviewconfig/columns", json=payload)
+        except JiraError:
+            pass  # status is not trustworthy here; the read-back below is
+        return self.board_columns(board_id)
+
     def board_id(self, key: str) -> int | None:
         """The project's first board (team-managed projects have exactly one); None when there is none or on error."""
         try:

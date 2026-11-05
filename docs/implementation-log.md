@@ -573,3 +573,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | fix | callback condition gains `github.event.pull_request.draft == false` (spec and plan PRs are drafts; implement marks the PR ready). Belt and braces: `_wait_jira_gate` restores the review status (`Spec Review` / `Plan Review`) when the story is in any status that is not approve, Rework or Blocked, and records `jira.restored`. T-I7-16 |
 | also | the PR body now carries "How this PR moves" with the exact G1/G2/G3 actions (T-I7-17): G1 and G2 have no GitHub labels, which confused the first reader. Onboarding prints the board column order as a manual step (`BOARD_COLUMN_ORDER`); team-managed boards have no column API. User guide: onboarding step 3 and a note under the gate table |
 
+### Board columns in flow order
+
+| Item | Detail |
+|------|--------|
+| observed | REPOPOC01 board showed one column per status in creation order (To Do, In Progress, In Review, Done, Planning, Blocked, ...). No public API: `GET /rest/agile/1.0/board/{id}/configuration` is read-only, JRACLOUD-94779 open |
+| finding | the board settings page calls `GET /rest/greenhopper/1.0/rapidviewconfig/editmodel?rapidViewId=` and `PUT /rest/greenhopper/1.0/rapidviewconfig/columns`; on this team-managed board the PUT answers **500** (`ServiceOutcome.isValid() ... result is null`) yet the new order is applied and read back |
+| fix | `JiraClient.board_columns()` / `reorder_board_columns()` (ignores the PUT status, returns the read-back); onboarding step `board columns` orders `BOARD_COLUMN_ORDER + [Rework, Blocked]`, idempotent, manual fallback only when the read-back disagrees. REPOPOC01 board 4 reordered live; sandbox boards 2 and 3 left as they were. T-I16-12 |
+
