@@ -163,17 +163,19 @@ class JiraClient:
         description: str,
         labels: list[str] | None = None,
         issue_type: str = "Story",
+        parent: str | None = None,
     ) -> str:
-        """Create a story and return its key (used by the acceptance run and the live tests)."""
-        payload = {
-            "fields": {
-                "project": {"key": project_key},
-                "summary": summary,
-                "description": _adf(description),
-                "issuetype": {"name": issue_type},
-                "labels": labels or [],
-            }
+        """Create an issue and return its key. `parent` links a story to its epic (team-managed projects)."""
+        fields: dict[str, Any] = {
+            "project": {"key": project_key},
+            "summary": summary,
+            "description": _adf(description),
+            "issuetype": {"name": issue_type},
+            "labels": labels or [],
         }
+        if parent:
+            fields["parent"] = {"key": parent}
+        payload = {"fields": fields}
         if self.dry_run:
             self._dry(f"create issue in {project_key}: {summary!r}")
             return f"{project_key}-0"

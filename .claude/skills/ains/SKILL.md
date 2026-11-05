@@ -94,7 +94,14 @@ Stories are the only way work enters the platform, so help write them well, one 
 4. Ask whether to create it in To Do or straight in Ready, then run
    `ains story create <KEY> --summary "..." --description-file <tmp.md> --ac "..." --ac "..." --out "..." [--ready]`
    (write the description to a temp file; never pass long text on the command line). Report the key and the Jira link.
-5. For an existing story: `ains story show KEY`, ask what should change, then `ains story edit KEY ...` (or
+5. **From an ideas file** ("read ideas.md and push the features and stories"): read the file, propose the cut first
+   (features as Jira epics, stories under them, each story one pull request's worth) and wait for the person to confirm
+   the list before drafting anything. Then draft each story (step 2, with `--idea` = the story's text plus its
+   feature's context), show the whole set, and only on an explicit yes write it: `ains story epic <KEY> --summary ...
+   --description-file ...` per feature, then `ains story create <KEY> ... --epic <EPIC-KEY>` per story. Default to
+   **To Do**, never `--ready`, for a batch: the person releases stories one at a time by moving them to Ready, and the
+   platform starts on each within a minute. Report the keys as a tree.
+6. For an existing story: `ains story show KEY`, ask what should change, then `ains story edit KEY ...` (or
    `ains story update KEY --change "..."` to let the agent rewrite it). Never edit a story that is past Ready
    without saying so: the platform may already be working on it; a Rework comment is the way to steer a running story.
 

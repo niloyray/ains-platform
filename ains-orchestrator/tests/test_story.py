@@ -40,3 +40,15 @@ def test_T_I24_3_write_and_update_through_jira():
     assert back.summary == d.summary and back.acceptance_criteria == d.acceptance_criteria
     update_story(jira, key, StoryDraft(summary="Changed", description="New text"))
     assert read_story(jira, key).summary == "Changed"
+
+
+def test_T_I24_7_epic_and_story_under_it():
+    from ains_orchestrator.story import write_epic
+
+    jira = FakeJira()
+    epic = write_epic(jira, "AINSSB", "Version tooling", "Everything about versions.")
+    assert jira.issues[epic]["fields"]["issuetype"]["name"] == "Epic" and jira.issues[epic]["fields"]["labels"] == []
+    key = write_story(jira, "AINSSB", StoryDraft("Add a version command", "Print it."), epic=epic)
+    assert jira.issues[key]["fields"]["parent"] == {"key": epic} and jira.issues[key]["fields"]["labels"] == [
+        "ai-native"
+    ]

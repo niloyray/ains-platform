@@ -138,12 +138,19 @@ def draft_story(
     return parse_draft(res.text or "")
 
 
-def write_story(jira: JiraClient, project_key: str, draft: StoryDraft, *, ready: bool = False) -> str:
-    """Create the story in Jira with the lane label; move it to Ready when asked. Returns the key."""
-    key = jira.create_issue(project_key, draft.summary, draft.jira_description(), labels=[LANE_LABEL])
+def write_story(
+    jira: JiraClient, project_key: str, draft: StoryDraft, *, ready: bool = False, epic: str | None = None
+) -> str:
+    """Create the story in Jira with the lane label, under `epic` when given; move it to Ready when asked."""
+    key = jira.create_issue(project_key, draft.summary, draft.jira_description(), labels=[LANE_LABEL], parent=epic)
     if ready:
         jira.transition(key, "Ready")
     return key
+
+
+def write_epic(jira: JiraClient, project_key: str, summary: str, description: str) -> str:
+    """An epic groups stories; the platform never acts on it (no lane label), people do."""
+    return jira.create_issue(project_key, summary.strip()[:120], description.strip(), issue_type="Epic")
 
 
 def update_story(jira: JiraClient, key: str, draft: StoryDraft, *, ready: bool = False) -> None:

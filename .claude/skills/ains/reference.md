@@ -21,6 +21,12 @@ uv run ains target verify <repo> <KEY>
 uv run ains target remove <repo> [--delete-repo] [--dry-run]
 uv run pytest -q && uv run ruff check .
 
+# stories
+ains story new <KEY> | update <KEY> | show <KEY> | draft <KEY> --idea "..." --json
+ains story epic <KEY> --summary "..." --description-file f.md          # a feature; never claimed by the platform
+ains story create <KEY> --summary "..." --description-file f.md --ac "..." [--epic EPIC-KEY] [--ready]
+ains story edit <KEY> [--summary ...] [--description-file ...] [--ac ...] [--ready]
+
 # portal
 http://localhost:8787            dashboard · /projects/<KEY> · /stories/<KEY> · /add · /platform · /api/status
 ```

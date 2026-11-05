@@ -34,7 +34,7 @@ from ains_orchestrator.jira import JiraClient
 from ains_orchestrator.onboard import Onboarder, default_templates_dir, verify_target
 from ains_orchestrator.poller import Poller
 from ains_orchestrator.store import Session, Store
-from ains_orchestrator.story import StoryDraft, draft_story, read_story, update_story, write_story
+from ains_orchestrator.story import StoryDraft, draft_story, read_story, update_story, write_epic, write_story
 from ains_orchestrator.watcher import PRWatcher
 from ains_orchestrator.workspace import Workspace
 
@@ -885,6 +885,7 @@ def story_create(
     ac: list[str] | None = typer.Option(None, "--ac", help="acceptance criterion (repeatable)"),
     out: list[str] | None = typer.Option(None, "--out", help="out of scope item (repeatable)"),
     ready: bool = typer.Option(False, "--ready"),
+    epic: str = typer.Option("", "--epic", help="epic key to put the story under, e.g. REPOPOC01-4"),
 ) -> None:
     """Create a story in Jira from given fields, without the agent (the /ains skill calls this after drafting)."""
     rt = build_runtime(need_jira=True)
@@ -899,8 +900,25 @@ def story_create(
         acceptance_criteria=list(ac or []),
         out_of_scope=list(out or []),
     )
-    key = write_story(rt.jira, tkey, draft, ready=ready)
-    typer.echo(f"created {key} ({'Ready' if ready else 'To Do'}): {jira_url(key)}")
+    key = write_story(rt.jira, tkey, draft, ready=ready, epic=epic.strip().upper() or None)
+    typer.echo(
+        f"created {key} ({'Ready' if ready else 'To Do'}{f', under {epic.upper()}' if epic else ''}): {jira_url(key)}"
+    )
+
+
+@story_app.command("epic")
+def story_epic(
+    project: str = typer.Argument(...),
+    summary: str = typer.Option(..., "--summary"),
+    description: str = typer.Option("", "--description"),
+    description_file: Path = typer.Option(None, "--description-file"),
+) -> None:
+    """Create an epic (a feature that groups stories); the platform never acts on epics, only on stories."""
+    rt = build_runtime(need_jira=True)
+    tkey = _pick_project(rt.config, project)
+    text = description_file.read_text(encoding="utf-8") if description_file else description
+    key = write_epic(rt.jira, tkey, summary, text)
+    typer.echo(f"created epic {key}: {jira_url(key)}")
 
 
 @story_app.command("edit")

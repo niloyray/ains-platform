@@ -392,6 +392,17 @@ git push</code></pre>
     <li><b>Claude Code:</b> <code>/ains story a command that prints the package version</code>. Claude asks the draft's questions one at a time in the chat, redrafts, and creates the story when you accept.</li>
   </ul>
   <p>The draft is a proposal: nothing reaches Jira until you accept it. A first story on an empty repository usually becomes the scaffold; the agent notices that and sizes the story accordingly.</p>
+  <h4 style="margin-top:14px">From an ideas file to a backlog</h4>
+  <p>For more than one story, write the ideas down first and push them in one go. The pattern that works:</p>
+  <ol>
+    <li><b>Brainstorm in Claude Code, into a file.</b> In the project's clone, open Claude Code and talk through what you want: "help me write <code>ideas.md</code> for this project: features, and under each the stories, one pull request each". Ordinary Claude Code is the right tool here, since this is thinking, not platform work. Edit the file until the cut feels right. A useful shape is a heading per feature with a sentence of context, then a bullet per story with what it changes and how you would know it is done.</li>
+    <li><b>Push it with the skill, after a discussion.</b> Then say:
+      <pre><code>/ains story read ideas.md, propose features as epics and the stories under them, show me the plan, and push to To Do only after I confirm</code></pre>
+      The skill first shows the cut and waits. On your yes it drafts each story through the story agent, so every story fits the repository, shows the set, and on a second yes writes it to Jira: one <b>epic</b> per feature, the stories under it with the <code>ai-native</code> label, all in <b>To Do</b>. It reports the keys as a tree.</li>
+    <li><b>Release one story at a time.</b> Move a story to Ready when you want the platform to start on it; the epic itself is never touched by the agents, it only groups. A story that waits in To Do costs nothing.</li>
+  </ol>
+  <p>Why To Do and not Ready for a batch: everything in Ready is claimed within a minute, and the agents would start on all of them at once, each in its own branch, competing for your attention at the gates. Releasing them in the order you want keeps the review load even and lets later stories build on merged earlier ones.</p>
+  <p>In the terminal the same pieces are <code>ains story epic &lt;KEY&gt; --summary ...</code> and <code>ains story create &lt;KEY&gt; ... --epic &lt;EPIC-KEY&gt;</code>; <code>ains story new</code> stays the way to do one story interactively.</p>
 </div></div>
 
 <div class="step"><div class="n">step<b>1</b></div><div>

@@ -556,3 +556,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | T-I16-11; 134 pass. Portal container rebuilt with the skills mount |
 | docs | user guide onboarding table and the skill section; developer manual 12c |
 
+### Epics and the ideas-file backlog flow
+
+| Item | Detail |
+|------|--------|
+| platform | `JiraClient.create_issue(parent=...)`; `write_epic()` (type Epic, no lane label, so never claimed) and `write_story(epic=...)`; CLI `ains story epic` and `ains story create --epic`. Test T-I24-7; 135 pass |
+| skill | step 5 of storyboarding: from an ideas file propose the cut (features → epics, stories under them), confirm, draft each story through the agent, confirm again, write everything to **To Do**; report the keys as a tree |
+| user guide | step 0 gains "From an ideas file to a backlog": brainstorm `ideas.md` with ordinary Claude Code in the project clone, push with `/ains story read ideas.md ...` after discussion, release stories one at a time; why To Do and not Ready for a batch |
+

@@ -56,11 +56,14 @@ class FakeJira:
         self.transitions_done.append((key, name))
         self.set_status(key, name)
 
-    def create_issue(self, project_key, summary, description, labels=None, issue_type="Story"):
+    def create_issue(self, project_key, summary, description, labels=None, issue_type="Story", parent=None):
         n = len([k for k in self.issues if k.startswith(project_key + "-")]) + 1
         key = f"{project_key}-{n}"
         self.add_issue(key, summary, status="To Do", description=description)
         self.issues[key]["fields"]["labels"] = list(labels or [])
+        self.issues[key]["fields"]["issuetype"] = {"name": issue_type}
+        if parent:
+            self.issues[key]["fields"]["parent"] = {"key": parent}
         return key
 
     def update_issue(self, key, *, summary=None, description=None):
