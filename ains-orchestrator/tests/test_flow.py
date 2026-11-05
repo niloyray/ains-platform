@@ -316,3 +316,24 @@ def test_T_I7_15_gh_connection_wording_is_transient_and_good_cycles_reset_the_co
     gh.pr_view = real
     assert e.step(st.get_session(STORY.key), STORY) == "wait_g3"
     assert st.get_session(STORY.key).attempts == 0  # one good cycle clears the count
+
+
+def test_T_I7_16_wait_g1_restores_spec_review_after_the_ci_callback(world):
+    e, st, jira = world["make"](), world["store"], world["jira"]
+    e.claim(STORY)
+    run_until(e, st, STORY.key, "wait_g1")
+    assert jira.status_of(STORY.key) == "Spec Review"
+    jira.set_status(STORY.key, "Code Review")  # what the CI callback did on a green draft PR
+    assert e.step(st.get_session(STORY.key), STORY) == "wait_g1"
+    assert jira.status_of(STORY.key) == "Spec Review"
+    assert any(ev.kind == "jira.restored" for ev in st.events(STORY.key))
+    jira.set_status(STORY.key, "Planning")  # the human approval still wins
+    assert e.step(st.get_session(STORY.key), STORY) == "plan"
+
+
+def test_T_I7_17_pr_body_tells_the_person_how_each_gate_is_passed(world):
+    e, st, gh = world["make"](), world["store"], world["gh"]
+    e.claim(STORY)
+    run_until(e, st, STORY.key, "wait_g1")
+    body = next(iter(gh.bodies.values()))
+    assert "G1 (spec): in Jira move" in body and "Planning" in body and "G3 (code" in body

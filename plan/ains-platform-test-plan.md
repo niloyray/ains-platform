@@ -137,6 +137,9 @@ Columns: ID · level · test · expected result · evidence.
 | T-I7-13 | L1 | a non-transient GitHub error (404) at `wait_g3` | stage kept, `wait.error` event, `attempts` counts; blocked after 10 in a row with "consecutive errors" | pytest |
 | T-I7-14 | L1 | an outage (ConnectError, 5xx, timeout) at a gate for 30 cycles | stage kept, `attempts` stays 0; never blocks | pytest |
 | Exit | | all green; T-I7-8 is the regression test for every later change | | |
+| T-I7-16 | wait_g1 with the Jira status changed to Code Review by the CI callback | status restored to Spec Review, `jira.restored` event, stage stays wait_g1; Planning still passes | unit | pass (2026-11-05) |
+| T-I7-17 | PR body of a platform PR | contains the G1, G2 and G3 instructions | unit | pass (2026-11-05) |
+| T-I7-18 | spec PR (draft) goes green on a live target | job `jira callback (Code Review)` is skipped; Jira stays Spec Review | live | pending: next REPOPOC01 story |
 
 ### I8 Agent runner (Claude Code CLI stage agents)
 

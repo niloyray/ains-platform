@@ -31,6 +31,18 @@ REQUIRED_CHECK_CONTEXT = "ci / ci"
 
 log = logging.getLogger("ains.onboard")
 
+BOARD_COLUMN_ORDER = [  # the flow left to right; shown to the person as a manual step after onboarding
+    "To Do",
+    "Ready",
+    "Specifying",
+    "Spec Review",
+    "Planning",
+    "Plan Review",
+    "Implementing",
+    "Code Review",
+    "Staging",
+    "Done",
+]
 REQUIRED_STATUSES = [
     "To Do",
     "Ready",
@@ -480,6 +492,11 @@ class Onboarder:
                     f"automatic workflow update failed ({str(e)[:120]})."
                 )
             rep.add("jira lane", "exists", "stories carry the label 'ai-native' (no custom field needed)")
+            rep.manual.append(
+                f"Jira > project {key} > Board > ... > Configure board > Columns: order them "
+                f"{' > '.join(BOARD_COLUMN_ORDER)}, then Rework and Blocked at the right; delete the default "
+                "In Progress and In Review columns (unused). Team-managed boards have no API for this."
+            )
             rep.manual.append(
                 f"Jira > project {key} > Project settings > Automation > Create rule 'AI-native intake ack': "
                 f"WHEN issue transitioned to Ready, IF labels contains ai-native, THEN Send web request "

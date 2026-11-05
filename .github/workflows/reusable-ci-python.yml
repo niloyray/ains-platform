@@ -90,7 +90,8 @@ jobs:
   jira:
     name: jira callback (Code Review)
     needs: ci
-    if: ${{ always() && github.event_name == 'pull_request' && needs.ci.result == 'success' }}
+    # Draft PRs carry a spec or a plan that is waiting at G1/G2; only a PR marked ready for review is code.
+    if: ${{ always() && github.event_name == 'pull_request' && needs.ci.result == 'success' && github.event.pull_request.draft == false }}
     uses: niloyray/ains-platform/.github/workflows/reusable-jira-callback.yml@main
     with:
       issue-key: ${{ inputs.jira-issue-key }}

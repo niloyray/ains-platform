@@ -85,6 +85,7 @@ class FakeGitHub:
 
     def __init__(self) -> None:
         self.prs: dict[int, PullRequest] = {}
+        self.bodies: dict[int, str] = {}
         self.reviews: list[tuple[int, str, str]] = []
         self.merged: list[int] = []
         self.calls: list[str] = []
@@ -111,6 +112,7 @@ class FakeGitHub:
 
     def pr_create(self, repo, head, base, title, body, draft=True):
         n = self.next_number
+        self.bodies[n] = body
         self.next_number += 1
         self.prs[n] = PullRequest(
             n,

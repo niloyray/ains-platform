@@ -111,7 +111,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
 <h2 id="repo"><span class="num">2</span>Repository map</h2>
 <pre><code>ains-platform/
 ├── .github/workflows/
-│   ├── reusable-ci-python.yml      # called by every target's ci.yml; lint + tests, then Jira callback
+│   ├── reusable-ci-python.yml      # called by every target's ci.yml; lint + tests, then Jira callback (not on draft PRs)
 │   ├── reusable-release.yml        # called by every target's release.yml; build → GHCR → staging (G4) → production (G5)
 │   ├── reusable-jira-callback.yml  # transition + comment + remote link on an issue
 │   └── intake-ack.yml              # repository_dispatch audit trace (optional)
@@ -334,9 +334,9 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
 <table>
   <tr><th>Stage</th><th>Handler</th><th>Does</th><th>Next</th></tr>
   <tr><td><code>spec</code></td><td><code>_run_stage_and_gate</code></td><td>ensure workspace and branch; spec agent; commit; draft PR; Jira <code>Spec Review</code> + comment</td><td><code>wait_g1</code></td></tr>
-  <tr><td><code>wait_g1</code></td><td><code>_wait_jira_gate</code></td><td>Jira status <code>Planning</code> → pass; <code>Rework</code> → rework spec with latest comment; <code>Blocked</code> → block</td><td><code>plan</code> / <code>spec</code></td></tr>
+  <tr><td><code>wait_g1</code></td><td><code>_wait_jira_gate</code></td><td>Jira status <code>Planning</code> → pass; <code>Rework</code> → rework spec with latest comment; <code>Blocked</code> → block; any other status → transition back to <code>Spec Review</code> and record <code>jira.restored</code></td><td><code>plan</code> / <code>spec</code></td></tr>
   <tr><td><code>plan</code></td><td><code>_run_stage_and_gate</code></td><td>plan agent; commit; Jira <code>Plan Review</code></td><td><code>wait_g2</code></td></tr>
-  <tr><td><code>wait_g2</code></td><td><code>_wait_jira_gate</code></td><td><code>Implementing</code> → pass; <code>Rework</code> → rework plan</td><td><code>implement</code> / <code>plan</code></td></tr>
+  <tr><td><code>wait_g2</code></td><td><code>_wait_jira_gate</code></td><td><code>Implementing</code> → pass; <code>Rework</code> → rework plan; other → back to <code>Plan Review</code> (<code>jira.restored</code>)</td><td><code>implement</code> / <code>plan</code></td></tr>
   <tr><td><code>implement</code></td><td><code>_do_implement</code></td><td>implement agent; commit; push; PR ready; Jira <code>Code Review</code>; record <code>head_sha</code></td><td><code>review</code></td></tr>
   <tr><td><code>review</code></td><td><code>_do_review</code></td><td>skip if <code>reviewed_sha == head</code>; review agent (read-only); post PR review COMMENT or REQUEST_CHANGES; restore <code>Code Review</code></td><td><code>wait_g3</code></td></tr>
   <tr><td><code>wait_g3</code></td><td><code>_do_wait_g3</code></td><td>new commits → <code>review</code>; CI failed → rework implement with log excerpt (rounds in <code>gate_state.ci_rework_rounds</code>); <code>g3-rework</code> label or human changes requested → rework implement with the comment; human approved (label or review) and CI green → <code>merge</code>; gate off → merge on green</td><td><code>merge</code> / <code>implement</code> / <code>review</code></td></tr>

@@ -213,10 +213,10 @@ class FlowEngine:
         return "wait_g3"
 
     def _do_wait_g1(self, s: Session, story: Story) -> str:
-        return self._wait_jira_gate(s, "G1", prev_stage="spec", next_stage="plan")
+        return self._wait_jira_gate(s, "G1", prev_stage="spec", next_stage="plan", review_status="spec_review")
 
     def _do_wait_g2(self, s: Session, story: Story) -> str:
-        return self._wait_jira_gate(s, "G2", prev_stage="plan", next_stage="implement")
+        return self._wait_jira_gate(s, "G2", prev_stage="plan", next_stage="implement", review_status="plan_review")
 
     def _do_wait_g3(self, s: Session, story: Story) -> str:
         pr = self.gh.pr_view(
@@ -331,7 +331,7 @@ class FlowEngine:
         self.store.add_event(s.key, "gate.passed", {"gate": gate, "mode": "off"})
         return next_stage
 
-    def _wait_jira_gate(self, s: Session, gate: str, *, prev_stage: str, next_stage: str) -> str:
+    def _wait_jira_gate(self, s: Session, gate: str, *, prev_stage: str, next_stage: str, review_status: str) -> str:
         status = self.jira.status_of(s.key)
         if status == self._approve_status(gate):
             self.store.update_session(s.key, stage=next_stage)
@@ -346,6 +346,10 @@ class FlowEngine:
         if status == self.st["blocked"]:
             self.store.update_session(s.key, stage="blocked", last_error="blocked by a human in Jira")
             return "blocked"
+        if status != self.st[review_status]:
+            # something else (the CI callback, a stray drag on the board) moved the story; the gate is still open
+            self.jira.transition(s.key, self.st[review_status])
+            self.store.add_event(s.key, "jira.restored", {"gate": gate, "from": status, "to": self.st[review_status]})
         return s.stage
 
     def _rework(self, s: Session, stage: str, gate: str, comment: str) -> None:
@@ -420,9 +424,18 @@ class FlowEngine:
                 approval_label=self.target.approval_label,
             )
         title = f"{s.key}: {story.summary}"[:120]
+        g3 = (
+            "approve the PR, or request changes with a comment"
+            if self.target.approval_mode == "review"
+            else f"add the label `{self.target.approval_label}`, or comment and add the label `g3-rework`"
+        )
         body = (
-            f"Jira: {s.key}\n\n{story.description[:2000]}\n\n---\nOpened by ains-orchestrator "
-            f"(flow {self.flow.name}). Gates: {self._gates_text()}."
+            f"Jira: {s.key}\n\n{story.description[:2000]}\n\n---\n"
+            f"**How this PR moves.** G1 (spec): in Jira move {s.key} to **Planning**, or to **Rework** with a comment. "
+            f"G2 (plan): in Jira move {s.key} to **Implementing**, or to **Rework** with a comment. "
+            f"G3 (code, once the PR is ready for review and CI is green): {g3}. "
+            f"G1 and G2 have no GitHub labels; the platform reads the Jira status.\n\n"
+            f"Opened by ains-orchestrator (flow {self.flow.name}). Gates: {self._gates_text()}."
         )
         number = self.gh.pr_create(
             self.target.repo, s.branch or "", self.target.default_branch, title, body, draft=draft

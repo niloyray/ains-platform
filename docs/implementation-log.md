@@ -564,3 +564,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | skill | step 5 of storyboarding: from an ideas file propose the cut (features → epics, stories under them), confirm, draft each story through the agent, confirm again, write everything to **To Do**; report the keys as a tree |
 | user guide | step 0 gains "From an ideas file to a backlog": brainstorm `ideas.md` with ordinary Claude Code in the project clone, push with `/ains story read ideas.md ...` after discussion, release stories one at a time; why To Do and not Ready for a batch |
 
+### Spec Review to Code Review on the first REPOPOC01 story
+
+| Item | Detail |
+|------|--------|
+| observed | REPOPOC01-10: orchestrator set **Spec Review** at 07:13:02Z, 37 s later the status was **Code Review** while the store said `wait_g1`. Same on AINSSB-2 (Spec Review and Plan Review both became Code Review within a minute) and AINSSB-3; unnoticed because the gate (move to Planning) works from any status |
+| cause | `reusable-ci-python.yml` job `jira callback (Code Review)` runs after every green CI on a pull request; the spec PR (a draft, one markdown file) is green trivially. The callback was written for the implement stage only |
+| fix | callback condition gains `github.event.pull_request.draft == false` (spec and plan PRs are drafts; implement marks the PR ready). Belt and braces: `_wait_jira_gate` restores the review status (`Spec Review` / `Plan Review`) when the story is in any status that is not approve, Rework or Blocked, and records `jira.restored`. T-I7-16 |
+| also | the PR body now carries "How this PR moves" with the exact G1/G2/G3 actions (T-I7-17): G1 and G2 have no GitHub labels, which confused the first reader. Onboarding prints the board column order as a manual step (`BOARD_COLUMN_ORDER`); team-managed boards have no column API. User guide: onboarding step 3 and a note under the gate table |
+

@@ -62,7 +62,9 @@ and skip a question when the user already gave the answer:
    Lifecycle phases and methodology are not asked while only one supported option exists for each; state them.
 8. Show the summary as the exact command, run it with `--dry-run`, show the planned steps, and ask **"run it for real?"**
    Only after a yes: run without `--dry-run`, then `ains target verify`, then remind the user to commit
-   `ains-orchestrator/targets.yaml` and add a line to `docs/targets.md`.
+   `ains-orchestrator/targets.yaml`, add a line to `docs/targets.md`, and order the board columns by hand (Board >
+   ... > Configure board > Columns: To Do, Ready, Specifying, Spec Review, Planning, Plan Review, Implementing, Code
+   Review, Staging, Done, then Rework and Blocked); Jira has no API for that on team-managed boards.
 
 Read the catalog file before asking questions 4 and 5 so the options are always the current ones. Use the same
 one-question style for removal: confirm the key, offer dry run first, then ask for the real run.

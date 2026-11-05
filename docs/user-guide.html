@@ -285,6 +285,14 @@ git push</code></pre>
 </div></div>
 
 <div class="step"><div class="n">step<b>3</b></div><div>
+  <h4>Order the board columns</h4>
+  <div class="meta"><span class="who-h">you</span><span class="where">Jira, the project's board</span></div>
+  <p>Jira creates one column per status in the order the statuses were added, which is not the order of the flow. Jira has no API for this on team-managed boards, so do it once by hand: on the board open the <b>&hellip;</b> menu, <b>Configure board</b>, <b>Columns</b>, and drag the columns into this order:</p>
+  <p><code>To Do</code> &rarr; <code>Ready</code> &rarr; <code>Specifying</code> &rarr; <code>Spec Review</code> &rarr; <code>Planning</code> &rarr; <code>Plan Review</code> &rarr; <code>Implementing</code> &rarr; <code>Code Review</code> &rarr; <code>Staging</code> &rarr; <code>Done</code>, with <code>Rework</code> and <code>Blocked</code> at the far right.</p>
+  <p>Delete the default <code>In Progress</code> and <code>In Review</code> columns; the platform never uses those statuses. <code>ains target add</code> prints this as a manual step at the end of its report. A story then moves left to right through the gates, and anything in the two right-hand columns needs you.</p>
+</div></div>
+
+<div class="step"><div class="n">step<b>3</b></div><div>
   <h4>Optional: the Jira automation rule</h4>
   <div class="meta"><span class="who-h">platform engineer</span><span class="where">Jira, Project settings → Automation</span></div>
   <p>The command prints a short checklist for a rule that comments on a story when it enters <code>Ready</code>. It is an audit convenience only; the platform works without it.</p>
@@ -533,6 +541,7 @@ cd ains-sandbox</code></pre>
   <tr><td>G5 production</td><td>staging approved</td><td>same run</td><td>Review deployments → production → Approve</td><td>Reject</td></tr>
 </table>
 </div>
+<p>There are <b>no GitHub labels for G1 and G2</b>. Those two gates are Jira moves, and the PR only carries the spec and the plan as a draft. The labels <code>g3-approved</code> and <code>g3-rework</code> exist for G3 alone. Every PR the platform opens says this in its description, under "How this PR moves". While a story waits at G1 or G2 the platform keeps its Jira status at <code>Spec Review</code> or <code>Plan Review</code>; if something else moves it, for example a drag on the board, the next poll cycle moves it back and records a <code>jira.restored</code> event.</p>
 <p>Gates are set per project in <code>targets.yaml</code>, for example <code>gates: {G1: on, G2: off, G3: on, G4: off, G5: on}</code>, or at onboarding with <code>--gates</code>. Changing the file is enough; the container reads it on the next poll. Which gates a project runs with is itself something the research can vary.</p>
 
 <h3 id="statemap">The state map: every status and every move</h3>
