@@ -11,11 +11,6 @@ from ains_orchestrator.github import PullRequest
 
 
 class FakeJira:
-    def reorder_board_columns(self, board_id, order):
-        rest = [c for c in self.board_columns_state if c not in order]
-        self.board_columns_state = [c for c in order if c in self.board_columns_state] + rest
-        return list(self.board_columns_state)
-
     def __init__(self) -> None:
         self.issues: dict[str, dict[str, Any]] = {}
         self.comments: dict[str, list[str]] = {}
