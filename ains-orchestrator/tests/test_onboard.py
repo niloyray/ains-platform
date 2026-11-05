@@ -389,3 +389,17 @@ def test_T_I16_12_onboarding_orders_the_board_columns(world):
     # second run: nothing to do
     rep2 = world["make"](dry_run=False, jira=jira).add("ains-sandbox", "AINSSB", "sandbox")
     assert next(s for s in rep2.steps if s.name == "board columns").status == "exists"
+
+
+def test_T_I16_13_init_folder_is_seeded_once(tmp_path):
+    from ains_orchestrator.onboard import SEED_FILES, seed_files
+
+    plat = Path(__file__).resolve().parents[2]
+    seeds = {
+        dest: (plat / "bootstrap" / "templates" / name).read_text(encoding="utf-8") for name, dest in SEED_FILES.items()
+    }
+    assert set(seeds) == {"init/README.md", "init/ideas.md"}
+    assert seed_files(tmp_path, seeds) == 2
+    (tmp_path / "init" / "ideas.md").write_text("my real backlog", encoding="utf-8")
+    assert seed_files(tmp_path, seeds) == 0  # a second onboarding never overwrites the project's files
+    assert (tmp_path / "init" / "ideas.md").read_text(encoding="utf-8") == "my real backlog"

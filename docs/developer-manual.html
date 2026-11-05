@@ -459,6 +459,7 @@ a:focus-visible { outline: 2px solid var(--human); outline-offset: 2px; }
 <ol class="proc">
   <li><b>github repo:</b> <code>gh repo create</code> private, or reuse.</li>
   <li><b>templates:</b> clone to a temp dir, render <code>bootstrap/templates/</code> (placeholders <code>{{platform_repo}}</code>, <code>{{platform_ref}}</code>, <code>{{jira_base_url}}</code>, <code>{{image_name}}</code>), run <code>specify init --here --force --non-interactive --integration claude --ignore-agent-tools</code>, commit if dirty, push.</li>
+  <li><b>seeds:</b> <code>SEED_FILES</code> (<code>bootstrap/templates/init/README.md</code>, <code>init/ideas.md</code>) are rendered and written by <code>seed_files()</code> only where the path is absent; a re-run never overwrites them, so the project owns <code>init/</code> from the first push. <code>target verify</code> checks that <code>init</code> exists.</li>
   <li><b>labels:</b> <code>ai-review</code>, <code>g3-approved</code>, <code>g3-rework</code>, <code>ai-native</code>.</li>
   <li><b>secrets:</b> <code>JIRA_EMAIL</code>, <code>JIRA_API_TOKEN</code> via <code>gh secret set</code>.</li>
   <li><b>environments:</b> <code>staging</code>, <code>production</code> with the PAT owner as required reviewer (REST).</li>

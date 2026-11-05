@@ -97,7 +97,8 @@ Stories are the only way work enters the platform, so help write them well, one 
 4. Ask whether to create it in To Do or straight in Ready, then run
    `ains story create <KEY> --summary "..." --description-file <tmp.md> --ac "..." --ac "..." --out "..." [--ready]`
    (write the description to a temp file; never pass long text on the command line). Report the key and the Jira link.
-5. **From an ideas file** ("read ideas.md and push the features and stories"): read the file, propose the cut first
+5. **From an ideas file** ("read ideas.md and push the features and stories"; the default place is `init/ideas.md`,
+   seeded by onboarding): read the file, propose the cut first
    (features as Jira epics, stories under them, each story one pull request's worth) and wait for the person to confirm
    the list before drafting anything. Then draft each story (step 2, with `--idea` = the story's text plus its
    feature's context), show the whole set, and only on an explicit yes write it: `ains story epic <KEY> --summary ...

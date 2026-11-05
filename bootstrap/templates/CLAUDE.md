@@ -6,6 +6,7 @@ The same rules apply to the AINS stage agents (spec, plan, implement, review) an
 ## Traceability
 - Every branch is `<JIRA-KEY>-<slug>`, every commit message starts with `<JIRA-KEY>:`, every PR title starts with `<JIRA-KEY>:`.
 - Specs for a story live in `specs/<JIRA-KEY>/` (`spec.md`, `plan.md`, `tasks.md`), produced with Spec Kit.
+- `init/` holds the idea backlog (`init/ideas.md`) and anything that precedes the first story; it is the project's, not the platform's, and is never code.
 
 ## Boundaries
 - Never edit `.github/`, `.specify/`, `.claude/` or this file from a story; those belong to the platform.

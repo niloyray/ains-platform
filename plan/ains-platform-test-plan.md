@@ -252,6 +252,7 @@ Columns: ID · level · test · expected result · evidence.
 | T-I16-7 | L4 | `ains target add ains-sandbox-2 AINSSB2 sandbox-2` | a second project onboarded with no code change; `ains targets list` shows two targets; the poller JQL covers both | evidence log |
 | T-I16-10 | L1 | `ains target add` with no arguments, scripted answers | asks repository, key, name, class, level, method, approval, gates one at a time; unsupported picks refused; prints the one-line command; dry run; real run only after yes; verify afterwards | pytest (CliRunner input) |
 | T-I16-12 | L1 | onboarding against a board whose columns are in creation order | step `board columns` done, order = flow order + Rework, Blocked; second run `exists`; no manual line | pytest (FakeJira) |
+| T-I16-13 | L1 | seed files on an empty dir, then with `init/ideas.md` edited | first run writes 2, second writes 0 and keeps the edit | pytest |
 | T-I16-8 | L0 | `grep -ri "ains-poc\|AINSPOC" ains-platform/ --exclude-dir=docs` | no match: the platform carries no project name except in docs and `targets.yaml` | output |
 | Exit | | all green | | |
 

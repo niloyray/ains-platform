@@ -581,3 +581,11 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | finding | the board settings page calls `GET /rest/greenhopper/1.0/rapidviewconfig/editmodel?rapidViewId=` and `PUT /rest/greenhopper/1.0/rapidviewconfig/columns`; on this team-managed board the PUT answers **500** (`ServiceOutcome.isValid() ... result is null`) yet the new order is applied and read back |
 | fix | `JiraClient.board_columns()` / `reorder_board_columns()` (ignores the PUT status, returns the read-back); onboarding step `board columns` orders `BOARD_COLUMN_ORDER + [Rework, Blocked]`, idempotent, manual fallback only when the read-back disagrees. REPOPOC01 board 4 reordered live; sandbox boards 2 and 3 left as they were. T-I16-12 |
 
+### `init/` folder seeded by onboarding
+
+| Item | Detail |
+|------|--------|
+| ask | `ains target add` creates an `init/` folder in the project root, the place for the idea backlog that `/ains story read init/ideas.md ...` turns into epics and stories |
+| fix | `SEED_FILES` = `init/README.md` (what the folder is for, the exact skill request) and `init/ideas.md` (skeleton in the shape the skill reads: Product, Rules, Features F1 with stories F1-S1, Priority, Needs first). `seed_files()` writes only absent paths, so a re-run keeps the project's backlog; dry run reports "seed 2 files (init/) if absent"; `target verify` checks `init`; project `CLAUDE.md` names the folder. T-I16-13 |
+| note | REPOPOC01 predates this; its `init/ideas.md` lives only in the local clone. Push it before any re-run of `target add`, otherwise the seed skeleton lands on main first and the next pull conflicts |
+

@@ -72,6 +72,10 @@ TEMPLATE_FILES = {  # template name -> path in the target repo
     "README.md": "README.md",
     "CODEOWNERS": ".github/CODEOWNERS",
 }
+SEED_FILES = {  # template name -> path; written only when the path is absent, the project owns them afterwards
+    "init/README.md": "init/README.md",
+    "init/ideas.md": "init/ideas.md",
+}
 JIRA_TEMPLATE = "com.pyxis.greenhopper.jira:gh-simplified-agility-kanban"
 SKILL_FILES = {  # the /ains skill ships into every project so a clone brings it into Claude Code
     "SKILL.md": ".claude/skills/ains/SKILL.md",
@@ -143,6 +147,19 @@ class Report:
         if self.manual:
             lines += ["", "Manual steps still required:"] + [f"  - {m}" for m in self.manual]
         return "\n".join(lines)
+
+
+def seed_files(dest: Path, seeds: dict[str, str]) -> int:
+    """Write each seed only when its path does not exist yet; returns how many were written."""
+    written = 0
+    for rel, content in seeds.items():
+        p = dest / rel
+        if p.exists():
+            continue
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content, encoding="utf-8")
+        written += 1
+    return written
 
 
 def render(template: str, values: dict[str, str]) -> str:
@@ -251,8 +268,17 @@ class Onboarder:
         else:
             status = "planned" if self.dry_run else "skipped"
             rep.add("ains skill", status, "platform skill folder not found; the project will not carry /ains")
+        seeds = {
+            dest: render((self.templates / name).read_text(encoding="utf-8"), values)
+            for name, dest in SEED_FILES.items()
+            if (self.templates / name).exists()
+        }
         if self.dry_run:
-            rep.add("templates", "planned", f"push {len(files)} files + Spec Kit init to {repo}@main")
+            rep.add(
+                "templates",
+                "planned",
+                f"push {len(files)} files + Spec Kit init to {repo}@main; seed {len(seeds)} files (init/) if absent",
+            )
             return
         tmp = Path(tempfile.mkdtemp(prefix="ains-onboard-"))
         try:
@@ -272,6 +298,7 @@ class Onboarder:
                 if not p.exists() or p.read_text(encoding="utf-8") != content:
                     p.write_text(content, encoding="utf-8")
                     changed += 1
+            changed += seed_files(dest, seeds)
             speckit = self._speckit_init(dest)
             dirty = self.gh.exec(["git", "status", "--porcelain"], cwd=dest, what="git status").strip()
             if dirty:
@@ -689,7 +716,7 @@ def verify_target(
     except (GitHubError, json.JSONDecodeError) as e:
         add("github repo", False, str(e)[:120])
         return checks
-    for path in list(TEMPLATE_FILES.values()) + list(SKILL_FILES.values()) + [".specify", ".claude/skills"]:
+    for path in list(TEMPLATE_FILES.values()) + list(SKILL_FILES.values()) + [".specify", ".claude/skills", "init"]:
         try:
             gh.exec(
                 ["gh", "api", f"repos/{repo}/contents/{path}", "--jq", 'if type == "array" then length else .path end'],
