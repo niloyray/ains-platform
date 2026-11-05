@@ -133,3 +133,31 @@ def test_T_I23_3_portal_shows_the_orchestrator_account(client, monkeypatch):
     assert "envoyid01" in client.get("/platform").text
     monkeypatch.delenv("AINS_BOT_LOGIN")
     assert "only <b>label</b> mode" in client.get("/add").text
+
+
+def test_T_I24_5_portal_story_draft_job_and_create(client, monkeypatch):
+    from ains_orchestrator import portal as portal_mod
+    from ains_orchestrator.story import StoryDraft
+    from tests.fakes import FakeJira
+
+    draft = StoryDraft("Add a version command", "Print it.", ["exits 0"], [], ["Prefix with v?"])
+    monkeypatch.setattr(portal_mod, "draft_story", lambda *a, **k: draft)
+    assert "Draft with the story agent" in client.get("/projects/AINSSB/stories/new").text
+    r = client.post("/projects/AINSSB/stories/draft", data={"idea": "a version command"}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/jobs/")
+    html = client.get(r.headers["location"]).text
+    assert "Review the draft" in html and "Prefix with v?" in html and 'value="Add a version command"' in html
+    fake = FakeJira()
+    monkeypatch.setattr(Portal, "jira", lambda self: fake)
+    r = client.post(
+        "/projects/AINSSB/stories/create",
+        data={
+            "summary": "Add a version command",
+            "description": "Print it.",
+            "acceptance": "exits 0\nprints",
+            "ready": "1",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303 and "created=AINSSB-1" in r.headers["location"]
+    assert fake.status_of("AINSSB-1") == "Ready" and "exits 0" in fake.issues["AINSSB-1"]["fields"]["description"]

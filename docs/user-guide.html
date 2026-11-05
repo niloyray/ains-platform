@@ -382,6 +382,18 @@ git push</code></pre>
 <figcaption>One story, left to right. The platform row is where agents run; the person row is where you decide. The status row shows what the Jira card says at that moment.</figcaption>
 </figure>
 
+<div class="step"><div class="n">step<b>0</b></div><div>
+  <h4>Let the platform draft the story with you (optional)</h4>
+  <div class="meta"><span class="who-h">product owner</span><span class="who-m">story agent</span><span class="where">terminal, portal or Claude Code</span></div>
+  <p>Writing a story the agents can act on is a skill; the <b>story agent</b> does the first draft. It reads the project first (<code>CLAUDE.md</code>, the README, existing specs) so the story fits what exists, then returns a summary, a description with the constraints, three to six testable acceptance criteria, what is out of scope, and the questions only you can answer. You refine it, then it is written to Jira with the <code>ai-native</code> label. Three ways in, same engine:</p>
+  <ul>
+    <li><b>Terminal:</b> <code>ains story new REPOPOC01</code>. It asks for the idea, shows the draft, then offers accept, answer the questions and redraft, edit a field by hand, or cancel; finally it asks whether to create the story in To Do or straight in Ready. <code>ains story update KEY</code> rewrites an existing story from your feedback the same way; <code>ains story show KEY</code> prints one.</li>
+    <li><b>Portal:</b> the project page has <b>Draft a story</b>. Type the idea, the agent runs as a job, you edit the draft in a form and click Create in Jira.</li>
+    <li><b>Claude Code:</b> <code>/ains story a command that prints the package version</code>. Claude asks the draft's questions one at a time in the chat, redrafts, and creates the story when you accept.</li>
+  </ul>
+  <p>The draft is a proposal: nothing reaches Jira until you accept it. A first story on an empty repository usually becomes the scaffold; the agent notices that and sizes the story accordingly.</p>
+</div></div>
+
 <div class="step"><div class="n">step<b>1</b></div><div>
   <h4>Write the story</h4>
   <div class="meta"><span class="who-h">product owner</span><span class="where">Jira, the project board</span></div>
@@ -697,6 +709,7 @@ cd ains-sandbox</code></pre>
   <tr><td>plan</td><td><code>spec.md</code></td><td><code>plan.md</code>, <code>tasks.md</code> via <code>/speckit-plan</code>, <code>/speckit-tasks</code></td><td>edit files (max 30 turns)</td><td>commit, push, browse the web</td></tr>
   <tr><td>implement</td><td><code>tasks.md</code>, the repository</td><td>code and tests, ticked tasks</td><td>edit files, run tests and the linter (max 80 turns)</td><td>commit, push, edit workflows or settings, add secrets</td></tr>
   <tr><td>review</td><td>the diff, CI result, spec and plan</td><td>a PR review with a verdict line: comment or request changes</td><td>read, run tests (max 25 turns)</td><td>edit, approve, merge</td></tr>
+  <tr><td>story</td><td>your idea, <code>CLAUDE.md</code>, README, existing specs</td><td>a story draft: summary, description, acceptance criteria, out of scope, questions; written to Jira only when you accept</td><td>read (max 12 turns)</td><td>edit files, write to Jira itself</td></tr>
 </table>
 </div>
 <p>The prompts live in <code>ains-orchestrator/agents/stages/</code> and the limits in <code>agents/claude-code.yaml</code>. Rework hands the agent the human's comment under a heading "Rework requested by the reviewer"; a CI failure hands the implement agent the failing step's output.</p>
@@ -910,6 +923,11 @@ docker compose exec orchestrator ains doctor
 uv run ains targets list
 uv run ains target add &lt;repo&gt; &lt;KEY&gt; "&lt;Jira name&gt;" [--gates ...] [--approval-mode label|review] [--dry-run]
 uv run ains target remove &lt;repo&gt; [--delete-repo]
+
+# stories (from any folder)
+ains story new &lt;PROJECT&gt;              # draft with the story agent, refine, create in Jira
+ains story update &lt;KEY&gt;               # rewrite an existing story from your feedback
+ains story show &lt;KEY&gt;                 # print a story as the platform reads it
 
 # one story
 docker compose exec orchestrator ains session status &lt;KEY&gt;    # stage, PR, every event

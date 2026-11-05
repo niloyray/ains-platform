@@ -100,6 +100,20 @@ class JiraClient:
             body["nextPageToken"] = token
         return issues
 
+    def update_issue(self, key: str, *, summary: str | None = None, description: str | None = None) -> None:
+        fields: dict[str, Any] = {}
+        if summary is not None:
+            fields["summary"] = summary
+        if description is not None:
+            fields["description"] = _adf(description)
+        if not fields:
+            return
+        if self.dry_run:
+            self._dry(f"update {key}: {sorted(fields)}")
+            return
+        r = self._request("PUT", f"/rest/api/3/issue/{key}", json={"fields": fields})
+        self._check(r, f"update {key}")
+
     def get_issue(self, key: str, fields: list[str] | None = None) -> dict[str, Any]:
         params = {"fields": ",".join(fields)} if fields else None
         r = self._request("GET", f"/rest/api/3/issue/{key}", params=params)

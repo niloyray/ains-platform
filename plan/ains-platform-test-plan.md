@@ -317,6 +317,18 @@ Columns: ID · level · test · expected result · evidence.
 | T-I22-2 | L4 | live: rebuild after the split | `/data` holds the store and `logs/orchestrator.log`; both containers healthy; portal sees the same stories | evidence log |
 | Exit | | T-I22-1 green; T-I22-2 once | | |
 
+### I24 Storyboarding (story agent)
+
+| Id | Level | Input | Expected | Evidence |
+|----|-------|-------|----------|----------|
+| T-I24-1 | L1 | agent replies with a fenced JSON story, or bare JSON | parsed into summary, description, lists; missing lists empty | pytest |
+| T-I24-2 | L1 | `jira_description()` then `split_description()` | prose, acceptance criteria and out-of-scope round-trip | pytest |
+| T-I24-3 | L1 | `write_story` / `read_story` / `update_story` on the fake Jira | key returned, label `ai-native`, Ready when asked, update applied | pytest |
+| T-I24-4 | L1 | `ains story create ... --description-file --ac --ready`, then `show --json`, then `edit --summary` | created in Ready with the link printed; shown with status; summary changed | pytest (CliRunner, fake Jira) |
+| T-I24-5 | L1 | portal: new-story form, draft job, create form | job page shows the draft and its questions; create writes the story and redirects with `created=KEY` | pytest (TestClient) |
+| T-I24-6 | L4 | live: `ains story draft REPOPOC01 --idea "..." --json` on the host | a grounded draft (the agent read the repository) in about a minute | evidence log |
+| Exit | | T-I24-1 to T-I24-5 green; T-I24-6 once | | |
+
 ## 3. Credential and billing checks (L6)
 
 These answer the question "is the Claude Max subscription used, and never the Anthropic API?" with evidence rather than reasoning.
@@ -347,6 +359,7 @@ These answer the question "is the Claude Max subscription used, and never the An
 | 7 Onboarding `ains-poc` | deferred to Phase 2 | — | — |
 | 8 Acceptance on the sandbox | I19 | T-I19-* | all green |
 | Portal, profiles, data (added 2026-11-03) | I20, I21, I22 | T-I20-*, T-I21-*, T-I22-* | all green |
+| Bot account, storyboarding (added 2026-11-05) | I23, I24 | T-I23-*, T-I24-* | all green |
 | 9 Docs and divergence | I17 | T-I17-* | — |
 | cross-cutting | I18, L6 | T-I18-*, T-L6-* | before declaring Phase 1 done |
 

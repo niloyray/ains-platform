@@ -7,6 +7,21 @@
 {% if job.status == 'running' %}<p class="small">Running inside the container; this page refreshes every three seconds.</p>{% endif %}
 <pre>{% for line in job.lines %}{{ line }}
 {% else %}(no output yet){% endfor %}</pre>
+{% if job.kind == 'story' and job.status == 'done' and job.draft %}
+<h2>Review the draft, then write it to Jira</h2>
+<form method="post" action="/projects/{{ job.project }}/stories/create" class="card" style="max-width:760px">
+  <label for="summary">Summary</label><input type="text" id="summary" name="summary" value="{{ job.draft.summary }}" required maxlength="120">
+  <label for="description">Description</label>
+  <textarea id="description" name="description" rows="8" required style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg)">{{ job.draft.description }}</textarea>
+  <label for="acceptance">Acceptance criteria (one per line)</label>
+  <textarea id="acceptance" name="acceptance" rows="5" style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg)">{{ job.draft.acceptance_criteria|join('\n') }}</textarea>
+  <label for="out_of_scope">Out of scope (one per line)</label>
+  <textarea id="out_of_scope" name="out_of_scope" rows="3" style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg)">{{ job.draft.out_of_scope|join('\n') }}</textarea>
+  {% if job.draft.questions %}<div class="note"><b>Questions only you can answer</b> (settle them in the description before creating, or answer them in a terminal with <code>ains story new</code>):<ul style="margin:4px 0 0 18px">{% for q in job.draft.questions %}<li>{{ q }}</li>{% endfor %}</ul></div>{% endif %}
+  <label><input type="checkbox" name="ready" value="1"> move it to Ready at once (the platform claims it within a minute or two)</label>
+  <p><button class="primary">Create in Jira</button> <a class="btn" href="/projects/{{ job.project }}/stories/new">Start over</a></p>
+</form>
+{% endif %}
 {% if job.kind == 'add' and job.status == 'done' %}<div class="note good">Onboarded. Commit <code>ains-orchestrator/targets.yaml</code> in the platform repository, then open the project from the left bar.</div>{% endif %}
 {% if job.project %}<p><a href="/projects/{{ job.project }}">Back to {{ job.project }}</a> · <a href="/">Dashboard</a></p>{% else %}<p><a href="/">Dashboard</a></p>{% endif %}
 {% endblock %}

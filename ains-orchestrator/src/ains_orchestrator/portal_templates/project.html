@@ -4,6 +4,8 @@
 <h1>{{ key }} <span class="small mono">{{ target.repo }}</span></h1>
 <p class="lead">Flow <code>{{ target.flow }}</code> · G3 approval by <code>{{ target.approval_mode }}</code>{% if target.approval_mode == 'label' %} (<code>{{ target.approval_label }}</code> / <code>{{ target.rework_label }}</code>){% else %} (a real PR review by a person; needs the orchestrator's own account){% endif %} · human-lane review label <code>{{ target.review_label }}</code> · orchestrator acts on GitHub as <b>{{ bot_login or 'the owner account' }}</b>{% if bot_login %} (invited as a write collaborator by onboarding; "Run verify" checks it){% endif %}</p>
 {% if request.query_params.get('error') == 'confirm' %}<div class="note bad">Removal not started: type the project key exactly to confirm.</div>{% endif %}
+{% if request.query_params.get('created') %}<div class="note good">Story <b>{{ request.query_params.get('created') }}</b> created in Jira{% if jira_base %} (<a href="{{ jira_base }}/browse/{{ request.query_params.get('created') }}" target="_blank">open it</a>){% endif %}. If you left it in To Do, move it to Ready when you want work to start.</div>{% endif %}
+{% if request.query_params.get('error') and request.query_params.get('error') != 'confirm' %}<div class="note bad">{{ request.query_params.get('error') }}</div>{% endif %}
 
 <div class="cards">
   {% for g, v in target.gates.items() %}
@@ -54,6 +56,9 @@
 
 <h2>Project operations</h2>
 <div class="grid2">
+  <div class="card"><h3 style="margin-top:0">New story</h3>
+    <p class="small">Describe an idea; the story agent reads the project and drafts a story you edit before it is written to Jira with the <code>ai-native</code> label.</p>
+    <a class="btn" href="/projects/{{ key }}/stories/new">Draft a story</a></div>
   <div class="card"><h3 style="margin-top:0">Verify onboarding</h3>
     <p class="small">Read-only check of the repository files, labels, secrets, environments, branch protection, Jira project and statuses, and the target entry. Takes about ten seconds.</p>
     <form method="post" action="/projects/{{ key }}/verify"><button class="primary">Run verify</button></form></div>

@@ -193,3 +193,36 @@ def test_T_I23_1_bot_token_switches_the_runtime_identity(env_root, monkeypatch):
     monkeypatch.setenv("AINS_BOT_LOGIN", "envoyid01")
     assert use_bot_identity() == "envoyid01"
     assert os.environ["GH_TOKEN"] == "bot-token" and os.environ["GITHUB_TOKEN"] == "bot-token"
+
+
+def test_T_I24_4_story_create_and_show_without_the_agent(env_root, monkeypatch, tmp_path: Path):
+    from ains_orchestrator import cli as cli_mod
+    from tests.fakes import FakeJira
+
+    fake = FakeJira()
+    monkeypatch.setattr(cli_mod, "JiraClient", lambda *a, **k: fake)
+    for v in ("JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"):
+        monkeypatch.setenv(v, "x" if v != "JIRA_BASE_URL" else "https://x.atlassian.net")
+    f = tmp_path / "d.md"
+    f.write_text("Print the version.", encoding="utf-8")
+    r = runner.invoke(
+        app,
+        [
+            "story",
+            "create",
+            "AINSSB",
+            "--summary",
+            "Add a version command",
+            "--description-file",
+            str(f),
+            "--ac",
+            "exits 0",
+            "--ready",
+        ],
+    )
+    assert r.exit_code == 0, r.stdout
+    assert "created AINSSB-1 (Ready)" in r.stdout and "browse/AINSSB-1" in r.stdout
+    r = runner.invoke(app, ["story", "show", "AINSSB-1", "--json"])
+    assert r.exit_code == 0 and '"exits 0"' in r.stdout and '"status": "Ready"' in r.stdout
+    r = runner.invoke(app, ["story", "edit", "AINSSB-1", "--summary", "Renamed"])
+    assert r.exit_code == 0 and fake.issues["AINSSB-1"]["fields"]["summary"] == "Renamed"

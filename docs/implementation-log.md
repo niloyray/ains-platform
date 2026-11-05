@@ -535,3 +535,15 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | skill, docs | `/ains` projects section: the bot invitation step and the mode rule; user guide onboarding table row "Orchestrator account" and the branch-protection row |
 | tests | T-I23-3; 127 pass plus the D16 guard. Containers rebuilt |
 
+### I24: storyboarding agent (user request)
+
+| Item | Detail |
+|------|--------|
+| agent | fifth stage `story` (read-only, 12 turns, `agents/stages/story.md`): reads CLAUDE.md, README and specs in a clone of the default branch, returns one fenced JSON story (summary, description, acceptance criteria, out of scope, questions only the person can answer) |
+| module | `story.py`: `StoryDraft`, `parse_draft`, `jira_description`/`split_description`, `draft_story`, `write_story`, `update_story`, `read_story`; `JiraClient.update_issue` added |
+| front ends | CLI `ains story new` (guided: idea, draft, accept / answer the questions and redraft / edit / cancel, To Do or Ready), `update KEY`, `draft --json`, `create`, `edit`, `show`; portal "Draft a story" on the project page (job stores the draft, form on the job page creates it); `/ains story <idea>` procedure in the skill (questions one per turn, then `ains story create`) |
+| runner fixes | executable resolved with `shutil.which` (Windows `claude.cmd`); `--settings` falls back to the config root's file when the container path is absent, so agents run on the host too; prompt JSON braces doubled for `format_map` |
+| live | `ains story draft REPOPOC01 --idea "...version command..." --json` on the host: 52 s, a grounded draft that noticed the repository has no pyproject yet and sized the story as the scaffold plus the command, six acceptance criteria, no questions (T-I24-6) |
+| tests | T-I24-1..5; 133 pass. Containers rebuilt |
+| docs | user guide step 0 "Let the platform draft the story with you", agents table row, command sheet; developer manual 12c storyboarding; plan rows I23, I24; test plan section I24 |
+

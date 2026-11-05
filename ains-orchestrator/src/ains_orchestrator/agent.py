@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -59,8 +60,9 @@ def subprocess_proc_runner(
     argv: list[str], cwd: Path, env: dict[str, str], timeout_s: float, stdin: str = ""
 ) -> ProcResult:
     try:
+        exe = shutil.which(argv[0]) or argv[0]  # on Windows `claude` is claude.cmd; subprocess needs the real path
         p = subprocess.run(
-            argv,
+            [exe, *argv[1:]],
             cwd=cwd,
             env=env,
             capture_output=True,
@@ -192,6 +194,13 @@ class ClaudeCodeRunner:
     def argv_for(self, stage: str, prompt: str) -> list[str]:
         sc = self.t.stages[stage]
         argv = list(self.t.command)
+        for i in range(
+            1, len(argv)
+        ):  # the template names the container's settings path; on a host use the config root's copy
+            if argv[i - 1] == "--settings" and not Path(argv[i]).exists():
+                local = self.root / Path(argv[i]).name
+                if local.exists():
+                    argv[i] = str(local)
         argv += ["--permission-mode", sc.permission_mode, "--max-turns", str(sc.max_turns)]
         if sc.read_only:
             argv += ["--disallowedTools", "Edit,Write,MultiEdit,NotebookEdit,WebFetch,WebSearch"]

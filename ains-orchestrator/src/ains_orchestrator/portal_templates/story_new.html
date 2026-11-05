@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}AINS portal · new story for {{ key }}{% endblock %}
+{% block content %}
+<h1>New story for {{ key }}</h1>
+<p class="lead">Describe the idea in your own words. The story agent reads the project first (CLAUDE.md, README, existing specs), then drafts a story the other agents can act on: summary, description, testable acceptance criteria, out of scope, and the questions only you can answer. You edit the draft before it is written to Jira.</p>
+<form method="post" action="/projects/{{ key }}/stories/draft" class="card" style="max-width:720px">
+  <label for="idea">The idea</label>
+  <textarea id="idea" name="idea" rows="6" required style="width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg)" placeholder="e.g. a command that prints the package version, with a test, so releases can be checked"></textarea>
+  <p><button class="primary">Draft with the story agent</button> <a class="btn" href="/projects/{{ key }}">Cancel</a></p>
+</form>
+<p class="small">Takes about half a minute. From a terminal the same thing is <code>ains story new {{ key }}</code>, which also lets you answer the agent's questions and redraft.</p>
+{% endblock %}

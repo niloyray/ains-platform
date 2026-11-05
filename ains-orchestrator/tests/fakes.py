@@ -56,6 +56,19 @@ class FakeJira:
         self.transitions_done.append((key, name))
         self.set_status(key, name)
 
+    def create_issue(self, project_key, summary, description, labels=None, issue_type="Story"):
+        n = len([k for k in self.issues if k.startswith(project_key + "-")]) + 1
+        key = f"{project_key}-{n}"
+        self.add_issue(key, summary, status="To Do", description=description)
+        self.issues[key]["fields"]["labels"] = list(labels or [])
+        return key
+
+    def update_issue(self, key, *, summary=None, description=None):
+        if summary is not None:
+            self.issues[key]["fields"]["summary"] = summary
+        if description is not None:
+            self.issues[key]["fields"]["description"] = description
+
     def add_comment(self, key: str, text: str):
         self.comments.setdefault(key, []).append(text)
         return str(len(self.comments[key]))

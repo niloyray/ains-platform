@@ -35,6 +35,8 @@ from ains_orchestrator.github import GitHubClient
 from ains_orchestrator.jira import JiraClient
 from ains_orchestrator.onboard import LABELS, REQUIRED_STATUSES, Onboarder, default_templates_dir, verify_target
 from ains_orchestrator.store import Session, Store
+from ains_orchestrator.story import StoryDraft, draft_story, write_story
+from ains_orchestrator.workspace import Workspace
 
 TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "portal_templates"))
 WAITING = {
@@ -292,6 +294,15 @@ class Portal:
             "head": pr.head_sha,
         }
 
+    def agents(self) -> Any:
+        from ains_orchestrator.agent import ClaudeCodeRunner
+
+        cfg = self.config()
+        return ClaudeCodeRunner(next(iter(cfg.agents.values())), self.root)
+
+    def workspace(self) -> Workspace:
+        return Workspace(self.work, self.github())
+
     def onboarder(self, dry_run: bool = False) -> Onboarder:
         gh = self.github()
         owner = (
@@ -365,6 +376,18 @@ def run_verify(portal: Portal, jid: str, repo: str, key: str) -> None:
         _job_finish(
             jid, [f"[{'ok' if c.ok else 'FAIL'}] {c.name}: {c.detail}" for c in checks], any(not c.ok for c in checks)
         )
+    except Exception as e:  # noqa: BLE001
+        _job_finish(jid, [f"failed: {e}"], True)
+
+
+def run_story_draft(portal: Portal, jid: str, key: str, idea: str) -> None:
+    try:
+        cfg = portal.config()
+        t = cfg.targets.targets[key]
+        draft = draft_story(portal.agents(), portal.workspace(), key, t, idea)
+        with _JOBS_LOCK:
+            JOBS[jid]["draft"] = draft.to_dict()
+        _job_finish(jid, draft.text().splitlines(), False)
     except Exception as e:  # noqa: BLE001
         _job_finish(jid, [f"failed: {e}"], True)
 
@@ -544,6 +567,53 @@ def create_app(root: Path | None = None) -> FastAPI:
         mode = f.get("approval_mode", "label")
         background.add_task(run_add, portal, jid, repo_name, key, jira_name, gates, mode, dry, profile.model_dump())
         return RedirectResponse(f"/jobs/{jid}", status_code=303)
+
+    @app.get("/projects/{key}/stories/new", response_class=HTMLResponse)
+    def story_form(request: Request, key: str) -> Any:
+        cfg = portal.config()
+        if key.upper() not in cfg.targets.targets:
+            return RedirectResponse("/", status_code=303)
+        ctx = base_ctx(request, cfg, f"project:{key.upper()}")
+        ctx.update(key=key.upper())
+        return TEMPLATES.TemplateResponse(request, "story_new.html", ctx)
+
+    @app.post("/projects/{key}/stories/draft")
+    def story_draft(key: str, background: BackgroundTasks, idea: str = Form("")) -> Any:
+        cfg = portal.config()
+        if key.upper() not in cfg.targets.targets or not idea.strip():
+            return RedirectResponse(f"/projects/{key.upper()}/stories/new", status_code=303)
+        jid = _job_start("story", f"draft a story for {key.upper()}")
+        JOBS[jid]["project"] = key.upper()
+        JOBS[jid]["idea"] = idea.strip()
+        background.add_task(run_story_draft, portal, jid, key.upper(), idea.strip())
+        return RedirectResponse(f"/jobs/{jid}", status_code=303)
+
+    @app.post("/projects/{key}/stories/create")
+    def story_create(
+        key: str,
+        summary: str = Form(...),
+        description: str = Form(...),
+        acceptance: str = Form(""),
+        out_of_scope: str = Form(""),
+        ready: str = Form(""),
+    ) -> Any:
+        cfg = portal.config()
+        if key.upper() not in cfg.targets.targets:
+            return RedirectResponse("/", status_code=303)
+        jira = portal.jira()
+        if jira is None:
+            return RedirectResponse(f"/projects/{key.upper()}?error=jira", status_code=303)
+        draft = StoryDraft(
+            summary=summary.strip()[:120],
+            description=description.strip(),
+            acceptance_criteria=[x.strip() for x in acceptance.splitlines() if x.strip()],
+            out_of_scope=[x.strip() for x in out_of_scope.splitlines() if x.strip()],
+        )
+        try:
+            new_key = write_story(jira, key.upper(), draft, ready=bool(ready))
+        except AinsError as e:
+            return RedirectResponse(f"/projects/{key.upper()}?error={e}", status_code=303)
+        return RedirectResponse(f"/projects/{key.upper()}?created={new_key}", status_code=303)
 
     @app.get("/jobs/{jid}", response_class=HTMLResponse)
     def job(request: Request, jid: str) -> Any:

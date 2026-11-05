@@ -34,6 +34,7 @@ from ains_orchestrator.jira import JiraClient
 from ains_orchestrator.onboard import Onboarder, default_templates_dir, verify_target
 from ains_orchestrator.poller import Poller
 from ains_orchestrator.store import Session, Store
+from ains_orchestrator.story import StoryDraft, draft_story, read_story, update_story, write_story
 from ains_orchestrator.watcher import PRWatcher
 from ains_orchestrator.workspace import Workspace
 
@@ -62,12 +63,16 @@ flow_app = typer.Typer(no_args_is_help=True, help="Flow definitions (stages and 
 targets_app = typer.Typer(no_args_is_help=True, help="Onboarded projects (targets.yaml).")
 session_app = typer.Typer(no_args_is_help=True, help="Story sessions.")
 target_app = typer.Typer(no_args_is_help=True, help="Project onboarding: add or remove a target.")
+story_app = typer.Typer(
+    no_args_is_help=True, help="Storyboarding: draft, create and update Jira stories with the story agent."
+)
 for name, sub in (
     ("agent", agent_app),
     ("flow", flow_app),
     ("targets", targets_app),
     ("session", session_app),
     ("target", target_app),
+    ("story", story_app),
 ):
     app.add_typer(sub, name=name)
 
@@ -758,6 +763,179 @@ def _onboarder(dry_run: bool, owner: str) -> Onboarder:
         )
     return Onboarder(
         config_root=root, templates_dir=default_templates_dir(root), github=gh, jira=jira, owner=owner, dry_run=dry_run
+    )
+
+
+# ----------------------------------------------------------------------------- storyboarding (I24)
+def jira_url(key: str) -> str:
+    return f"{os.environ.get('JIRA_BASE_URL', '').rstrip('/')}/browse/{key}"
+
+
+def _pick_project(cfg: Config, key: str | None) -> str:
+    keys = sorted(cfg.targets.targets)
+    if key:
+        if key.upper() in cfg.targets.targets:
+            return key.upper()
+        typer.secho(f"{key} is not an onboarded project (known: {', '.join(keys)})", fg="red", err=True)
+        raise typer.Exit(2)
+    if not keys:
+        typer.secho("no projects onboarded yet: run `ains target add` first", fg="red", err=True)
+        raise typer.Exit(2)
+    if len(keys) == 1:
+        return keys[0]
+    return _choose("Project", [(k, f"{k}: {cfg.targets.targets[k].repo}", True) for k in keys])
+
+
+def _refine_loop(rt: Runtime, tkey: str, idea: str, draft: StoryDraft) -> StoryDraft | None:
+    """Show the draft; let the person accept, answer the agent's questions, or edit by hand."""
+    target = rt.config.targets.targets[tkey]
+    while True:
+        typer.echo("\n" + draft.text() + "\n")
+        choice = _choose(
+            "What next?",
+            [
+                ("accept", "accept this story", True),
+                ("refine", "answer the questions or give feedback, and let the agent redraft", True),
+                ("summary", "edit the summary by hand", True),
+                ("description", "edit the description by hand", True),
+                ("cancel", "cancel, write nothing", True),
+            ],
+        )
+        if choice == "accept":
+            return draft
+        if choice == "cancel":
+            return None
+        if choice == "summary":
+            draft.summary = typer.prompt("Summary", default=draft.summary).strip()[:120]
+        elif choice == "description":
+            draft.description = typer.prompt("Description", default=draft.description).strip()
+        else:
+            fb = typer.prompt("Your answers or feedback")
+            typer.echo("redrafting with the story agent ...")
+            draft = draft_story(rt.agents, rt.workspace, tkey, target, idea, existing=draft, feedback=fb)
+
+
+@story_app.command("new")
+def story_new(
+    project: str = typer.Argument(None, help="Jira project key; asked when omitted and more than one is onboarded"),
+    idea: str = typer.Option("", "--idea", help="The idea in your words; asked when omitted"),
+    ready: bool = typer.Option(False, "--ready", help="Move the story to Ready at once"),
+) -> None:
+    """Draft a story with the story agent, refine it, and create it in Jira (guided)."""
+    rt = build_runtime(need_jira=True)
+    tkey = _pick_project(rt.config, project)
+    target = rt.config.targets.targets[tkey]
+    idea = idea.strip() or typer.prompt("The idea, in your words")
+    typer.echo("drafting with the story agent (it reads the project first) ...")
+    draft = draft_story(rt.agents, rt.workspace, tkey, target, idea)
+    final = _refine_loop(rt, tkey, idea, draft)
+    if final is None:
+        typer.echo("cancelled; nothing was written to Jira")
+        raise typer.Exit(0)
+    go = ready or typer.confirm("Move it to Ready now? (the platform claims it within a minute or two)", default=False)
+    key = write_story(rt.jira, tkey, final, ready=go)
+    typer.echo(f"created {key} ({'Ready' if go else 'To Do'}): {jira_url(key)}")
+
+
+@story_app.command("update")
+def story_update(
+    key: str = typer.Argument(..., help="Story key, e.g. REPOPOC01-3"),
+    change: str = typer.Option("", "--change", help="What should change; asked when omitted"),
+    ready: bool = typer.Option(False, "--ready"),
+) -> None:
+    """Rewrite an existing Jira story with the story agent from your feedback (guided)."""
+    rt = build_runtime(need_jira=True)
+    tkey = _pick_project(rt.config, key.split("-")[0])
+    target = rt.config.targets.targets[tkey]
+    existing = read_story(rt.jira, key)
+    typer.echo("\ncurrent story:\n" + existing.text() + "\n")
+    fb = change.strip() or typer.prompt("What should change?")
+    typer.echo("redrafting with the story agent ...")
+    draft = draft_story(rt.agents, rt.workspace, tkey, target, existing.summary, existing=existing, feedback=fb)
+    final = _refine_loop(rt, tkey, existing.summary, draft)
+    if final is None:
+        typer.echo("cancelled; the story is unchanged")
+        raise typer.Exit(0)
+    update_story(rt.jira, key, final, ready=ready)
+    typer.echo(f"updated {key}: {jira_url(key)}")
+
+
+@story_app.command("draft")
+def story_draft(
+    project: str = typer.Argument(...),
+    idea: str = typer.Option(..., "--idea"),
+    feedback: str = typer.Option("", "--feedback"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Run the story agent once and print the draft (for scripts, the portal and the /ains skill)."""
+    rt = build_runtime(need_jira=False)
+    tkey = _pick_project(rt.config, project)
+    draft = draft_story(rt.agents, rt.workspace, tkey, rt.config.targets.targets[tkey], idea, feedback=feedback or None)
+    typer.echo(json.dumps(draft.to_dict(), indent=2) if as_json else draft.text())
+
+
+@story_app.command("create")
+def story_create(
+    project: str = typer.Argument(...),
+    summary: str = typer.Option(..., "--summary"),
+    description: str = typer.Option("", "--description"),
+    description_file: Path = typer.Option(
+        None, "--description-file", help="Markdown/plain text file with the description"
+    ),
+    ac: list[str] | None = typer.Option(None, "--ac", help="acceptance criterion (repeatable)"),
+    out: list[str] | None = typer.Option(None, "--out", help="out of scope item (repeatable)"),
+    ready: bool = typer.Option(False, "--ready"),
+) -> None:
+    """Create a story in Jira from given fields, without the agent (the /ains skill calls this after drafting)."""
+    rt = build_runtime(need_jira=True)
+    tkey = _pick_project(rt.config, project)
+    text = description_file.read_text(encoding="utf-8") if description_file else description
+    if not text.strip():
+        typer.secho("a description is required (--description or --description-file)", fg="red", err=True)
+        raise typer.Exit(2)
+    draft = StoryDraft(
+        summary=summary.strip()[:120],
+        description=text.strip(),
+        acceptance_criteria=list(ac or []),
+        out_of_scope=list(out or []),
+    )
+    key = write_story(rt.jira, tkey, draft, ready=ready)
+    typer.echo(f"created {key} ({'Ready' if ready else 'To Do'}): {jira_url(key)}")
+
+
+@story_app.command("edit")
+def story_edit(
+    key: str = typer.Argument(...),
+    summary: str = typer.Option("", "--summary"),
+    description: str = typer.Option("", "--description"),
+    description_file: Path = typer.Option(None, "--description-file"),
+    ac: list[str] | None = typer.Option(None, "--ac"),
+    out: list[str] | None = typer.Option(None, "--out"),
+    ready: bool = typer.Option(False, "--ready"),
+) -> None:
+    """Update fields of an existing story without the agent; fields not given stay as they are."""
+    rt = build_runtime(need_jira=True)
+    current = read_story(rt.jira, key)
+    text = description_file.read_text(encoding="utf-8") if description_file else description
+    if text.strip():
+        current.description = text.strip()
+    if summary.strip():
+        current.summary = summary.strip()[:120]
+    if ac:
+        current.acceptance_criteria = list(ac)
+    if out:
+        current.out_of_scope = list(out)
+    update_story(rt.jira, key, current, ready=ready)
+    typer.echo(f"updated {key}: {jira_url(key)}")
+
+
+@story_app.command("show")
+def story_show(key: str = typer.Argument(...), as_json: bool = typer.Option(False, "--json")) -> None:
+    """Print a story as the platform reads it."""
+    rt = build_runtime(need_jira=True)
+    d = read_story(rt.jira, key)
+    typer.echo(
+        json.dumps({**d.to_dict(), "key": key, "status": rt.jira.status_of(key)}, indent=2) if as_json else d.text()
     )
 
 

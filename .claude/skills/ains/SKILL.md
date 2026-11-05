@@ -81,6 +81,23 @@ one-question style for removal: confirm the key, offer dry run first, then ask f
 - Remove: portal (typed confirmation, dry run first) or `uv run ains target remove <repo> [--delete-repo]`.
 - The sandbox `niloyray/ains-sandbox` / `AINSSB` stays as the permanent regression target; never remove it.
 
+## Storyboarding: `/ains story <idea>` (or "draft a story for ...", "update story KEY ...")
+
+Stories are the only way work enters the platform, so help write them well, one question at a time:
+1. Pick the project (ask with options from `ains targets list` unless the request names it or only one exists).
+2. Get a grounded first draft: `ains story draft <KEY> --idea "<the idea>" --json` (the story agent reads the project's
+   CLAUDE.md, README and specs). If that fails (no `claude` on this machine), draft yourself using the same shape:
+   summary (<= 80 chars, imperative), description (context, change, constraints), 3 to 6 testable acceptance
+   criteria, out of scope, and at most 3 questions only the person can answer.
+3. Show the draft. Ask the draft's questions one per turn with the question tool, then redraft
+   (`--feedback "<answers>"`). Repeat until the person accepts; let them edit any field by hand.
+4. Ask whether to create it in To Do or straight in Ready, then run
+   `ains story create <KEY> --summary "..." --description-file <tmp.md> --ac "..." --ac "..." --out "..." [--ready]`
+   (write the description to a temp file; never pass long text on the command line). Report the key and the Jira link.
+5. For an existing story: `ains story show KEY`, ask what should change, then `ains story edit KEY ...` (or
+   `ains story update KEY --change "..."` to let the agent rewrite it). Never edit a story that is past Ready
+   without saying so: the platform may already be working on it; a Rework comment is the way to steer a running story.
+
 ## Stories
 
 A story runs: Jira `Ready` → claim → spec agent → **G1** → plan agent → **G2** → implement agent → CI → review agent →
