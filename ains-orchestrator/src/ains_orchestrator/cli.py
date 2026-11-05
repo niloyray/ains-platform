@@ -304,7 +304,12 @@ def next_action(s: Session, target: Target | None, jira_status: str | None = Non
     return {
         "wait_g1": f"G1: in Jira move {s.key} to Planning (approve) or to Rework with a comment (send back)",
         "wait_g2": f"G2: in Jira move {s.key} to Implementing (approve) or to Rework with a comment (send back)",
-        "wait_g3": f"G3: on {pr} check that ci / ci is green, read the review, then {approve} (or {rework})",
+        "wait_g3": f"G3: on {pr} check that ci / ci is green, read the review, then {approve} (or {rework})"
+        + (
+            "; the review agent's verdict is REQUEST CHANGES, read its findings first"
+            if (s.gate_state or {}).get("review_verdict") == "request_changes"
+            else ""
+        ),
         "released": f"G4/G5: in GitHub Actions open the release run for {pr}, Review deployments, approve staging "
         "then production; Jira then shows Staging and Done. Nothing else is left on the platform side",
         "blocked": f"Blocked: {s.last_error or 'see the Jira comment'}. Fix the cause, then move {s.key} to Ready",

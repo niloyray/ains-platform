@@ -604,3 +604,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | ask | document that a person may pull the story branch, edit spec/plan/code and push while the story waits at G1/G2/G3, then make the gate move |
 | change | section 6: third bullet "Edit it yourself" at G1, G2, G3; new "Editing at a gate, step by step" block with the five commands and four rules (push only while waiting, one gate at a time, key in front and platform paths untouched, when Rework is better); flow diagram gains an italic line under each gate and G3 reads "approve or label"; section 7 note; state map gains dashed self-loops on Spec Review, Plan Review, Code Review with a legend entry. No platform change: `sync_branch` before every stage already makes the behaviour true |
 
+### POC02-5 blocked: the review agent's "request changes" cannot be submitted
+
+| Item | Detail |
+|------|--------|
+| observed | review agent verdict `request_changes` (a likely SVG `.hidden` bug); orchestrator ran `gh pr review --request-changes` and GitHub answered `Review Can not request changes on your own pull request`; the story went to **Blocked** |
+| cause | the orchestrator's account opens every story PR (the bot in review mode, the person's token in label mode), so a REQUEST_CHANGES review from it is refused in both modes; the path had never been exercised live |
+| fix | `_do_review` always posts the review as a COMMENT; a `request_changes` verdict gets the headline "Review verdict: REQUEST CHANGES" with what to do at G3, is stored in `gate_state.review_verdict` and in the `review.posted` event, and the G3 status line adds "the review agent's verdict is REQUEST CHANGES, read its findings first". T-I7-18. The human-lane `pr-review` flow (person-authored PRs) is unchanged |
+| resume | after the rebuild, moving POC02-5 from Blocked to Ready re-runs the review stage and posts the comment |
+

@@ -337,3 +337,22 @@ def test_T_I7_17_pr_body_tells_the_person_how_each_gate_is_passed(world):
     run_until(e, st, STORY.key, "wait_g1")
     body = next(iter(gh.bodies.values()))
     assert "G1 (spec): in Jira move" in body and "Planning" in body and "G3 (code" in body
+
+
+def test_T_I7_18_request_changes_verdict_is_posted_as_a_comment_and_flagged(world):
+    e, st, gh, agents = world["make"](), world["store"], world["gh"], world["agents"]
+    agents.review_verdict = "request_changes"
+    e.claim(STORY)
+    run_until(e, st, STORY.key, "wait_g1")
+    world["jira"].set_status(STORY.key, "Planning")
+    run_until(e, st, STORY.key, "wait_g2")
+    world["jira"].set_status(STORY.key, "Implementing")
+    stage = run_until(e, st, STORY.key, "wait_g3")
+    assert stage == "wait_g3"  # not blocked
+    number, event, body = gh.reviews[-1]
+    assert event == "COMMENT" and body.startswith("## Review verdict: REQUEST CHANGES")
+    s = st.get_session(STORY.key)
+    assert s.gate_state["review_verdict"] == "request_changes"
+    from ains_orchestrator.cli import next_action
+
+    assert "REQUEST CHANGES" in next_action(s, None)

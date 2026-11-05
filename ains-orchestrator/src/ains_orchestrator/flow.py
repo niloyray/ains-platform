@@ -203,11 +203,21 @@ class FlowEngine:
         if not res.ok:
             return self._retry_or_block(s, "review", res.error)
         verdict = str(res.extra.get("verdict", "comment")).upper()
-        event = "REQUEST_CHANGES" if verdict == "REQUEST_CHANGES" else "COMMENT"
-        self.gh.pr_review(self.target.repo, pr.number, res.text or "(no findings)", event)
+        # GitHub refuses "request changes" on a PR the same account opened, and the orchestrator opens every
+        # story PR, so the verdict is always posted as a comment; the headline makes it impossible to miss.
+        body = res.text or "(no findings)"
+        if verdict == "REQUEST_CHANGES":
+            body = (
+                "## Review verdict: REQUEST CHANGES\n\n"
+                "The review agent found at least one blocker or major issue (see below). At G3, send the story back "
+                "with request changes / `g3-rework` and a comment, or approve if you disagree.\n\n" + body
+            )
+        self.gh.pr_review(self.target.repo, pr.number, body, "COMMENT")
         self._jira_status(s.key, "code_review")  # idempotent; restores the status after a resume
-        self.store.update_session(s.key, stage="wait_g3", reviewed_sha=pr.head_sha, attempts=0)
-        self.store.add_event(s.key, "review.posted", {"sha": pr.head_sha, "event": event})
+        gs = dict(s.gate_state)
+        gs["review_verdict"] = verdict.lower()
+        self.store.update_session(s.key, stage="wait_g3", reviewed_sha=pr.head_sha, attempts=0, gate_state=gs)
+        self.store.add_event(s.key, "review.posted", {"sha": pr.head_sha, "event": "COMMENT", "verdict": verdict})
         if self.target.gates["G3"] == "off":
             self.jira.add_comment(s.key, "G3 auto-approved (gate off for this target)")
         return "wait_g3"
