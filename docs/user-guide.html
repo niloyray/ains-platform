@@ -268,7 +268,8 @@ copy .env.example .env</code></pre>
   <tr><td>Labels</td><td>repository</td><td><code>g3-approved</code>, <code>g3-rework</code> for the code gate; <code>ai-review</code> to ask for an agent review on a PR a person wrote</td></tr>
   <tr><td>Secrets</td><td>repository settings</td><td>The Jira e-mail and token, so the workflows can move the story when CI runs and when releases are approved</td></tr>
   <tr><td>Environments</td><td>repository settings</td><td><code>staging</code> and <code>production</code>, each with you as required reviewer. These are gates G4 and G5</td></tr>
-  <tr><td>Branch protection</td><td>repository settings, <code>main</code></td><td>Nothing reaches main except through a PR whose <code>ci / ci</code> check is green</td></tr>
+  <tr><td>Branch protection</td><td>repository settings, <code>main</code></td><td>Nothing reaches main except through a PR whose <code>ci / ci</code> check is green; in <code>review</code> approval mode a code-owner review is required too</td></tr>
+  <tr><td>Orchestrator account</td><td>repository collaborators</td><td>When the platform has its own GitHub account (<code>AINS_BOT_LOGIN</code>), it is invited with write access and the invitation is accepted automatically, so the orchestrator can push and merge there and people can approve its PRs with a real review</td></tr>
   <tr><td>Jira project</td><td>Jira, key <code>&lt;KEY&gt;</code></td><td>A Kanban board with the statuses the platform uses (section 9) and the label <code>ai-native</code> as the marker for platform stories</td></tr>
   <tr><td>Target entry</td><td><code>ains-orchestrator/targets.yaml</code></td><td>Tells the orchestrator which Jira project maps to which repository, which gates are on, and how G3 is approved</td></tr>
 </table>

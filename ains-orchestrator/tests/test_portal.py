@@ -124,3 +124,12 @@ def test_T_I20_7_board_link_uses_the_board_id(client, monkeypatch):
     Portal._board_ids.clear()
     html = client.get("/projects/AINSSB").text
     assert "https://x.atlassian.net/jira/software/projects/AINSSB/boards/2" in html
+
+
+def test_T_I23_3_portal_shows_the_orchestrator_account(client, monkeypatch):
+    monkeypatch.setenv("AINS_BOT_LOGIN", "envoyid01")
+    assert "envoyid01" in client.get("/projects/AINSSB").text
+    assert "envoyid01" in client.get("/add").text and "review" in client.get("/add").text
+    assert "envoyid01" in client.get("/platform").text
+    monkeypatch.delenv("AINS_BOT_LOGIN")
+    assert "only <b>label</b> mode" in client.get("/add").text

@@ -8,6 +8,7 @@
   <div class="card"><div class="k">Data volume</div><div class="v mono" style="font-size:14px">{{ data }}</div><div class="d">sessions.sqlite, heartbeat.json, logs/ (durable; back up with ains-platform.cmd backup)</div></div>
   <div class="card"><div class="k">Work volume</div><div class="v mono" style="font-size:14px">{{ work }}</div><div class="d">story clones under &lt;KEY&gt;/ (throwaway)</div></div>
   <div class="card"><div class="k">Credentials present</div><div class="d">{% for k, ok in env.items() %}{{ '✓' if ok else '✗' }} {{ k }}<br>{% endfor %}</div></div>
+  <div class="card"><div class="k">Orchestrator GitHub account</div><div class="v" style="font-size:16px">{{ bot_login or 'owner account' }}</div><div class="d">{% if bot_login %}PRs, pushes and merges are made by this account; people approve with real reviews (approval mode review) or the label{% else %}set AINS_BOT_LOGIN and AINS_BOT_GITHUB_TOKEN in .env to use a separate account{% endif %}; last cycle acted as <b>{{ heartbeat.github_login or '?' }}</b></div></div>
   <div class="card"><div class="k">Last poll cycle</div><div class="d">{% if heartbeat.present %}{{ heartbeat.at }}<br>claimed {{ heartbeat.claimed }} · stepped {{ heartbeat.stepped }} · reviewed {{ heartbeat.reviewed }}<br>errors {{ heartbeat.errors }}{% else %}none yet{% endif %}</div></div>
 </div>
 

@@ -526,3 +526,12 @@ The user ran `claude setup-token` (Max subscription) and pasted the `sk-ant-oat0
 | tests | T-I23-1 (identity switch), T-I23-2 (invitation step, skipped without a bot, planned in a dry run); 126 pass plus the D16 guard. Containers rebuilt: the orchestrator now runs as envoyid01 |
 | docs | user guide gate section (the two modes and the second account), developer manual 14 (bot account), skill reference, `.env.example` |
 
+### Bot identity verified; portal, skill and docs show the orchestrator account
+
+| Item | Detail |
+|------|--------|
+| verified | after moving `use_bot_identity()` behind logging setup: log line "acting on GitHub as the bot account envoyid01"; `gh api user` inside the poll process returns envoyid01; the heartbeat carries `github_login` and the portal's platform page shows "last cycle acted as envoyid01" |
+| portal | project page states which account the orchestrator acts as and what the approval mode needs; the add form explains why `review` needs the bot account; platform page card for the orchestrator account; credentials list shows the optional bot token |
+| skill, docs | `/ains` projects section: the bot invitation step and the mode rule; user guide onboarding table row "Orchestrator account" and the branch-protection row |
+| tests | T-I23-3; 127 pass plus the D16 guard. Containers rebuilt |
+

@@ -2,7 +2,7 @@
 {% block title %}AINS portal · {{ key }}{% endblock %}
 {% block content %}
 <h1>{{ key }} <span class="small mono">{{ target.repo }}</span></h1>
-<p class="lead">Flow <code>{{ target.flow }}</code> · G3 approval by <code>{{ target.approval_mode }}</code>{% if target.approval_mode == 'label' %} (<code>{{ target.approval_label }}</code> / <code>{{ target.rework_label }}</code>){% endif %} · human-lane review label <code>{{ target.review_label }}</code></p>
+<p class="lead">Flow <code>{{ target.flow }}</code> · G3 approval by <code>{{ target.approval_mode }}</code>{% if target.approval_mode == 'label' %} (<code>{{ target.approval_label }}</code> / <code>{{ target.rework_label }}</code>){% else %} (a real PR review by a person; needs the orchestrator's own account){% endif %} · human-lane review label <code>{{ target.review_label }}</code> · orchestrator acts on GitHub as <b>{{ bot_login or 'the owner account' }}</b>{% if bot_login %} (invited as a write collaborator by onboarding; "Run verify" checks it){% endif %}</p>
 {% if request.query_params.get('error') == 'confirm' %}<div class="note bad">Removal not started: type the project key exactly to confirm.</div>{% endif %}
 
 <div class="cards">

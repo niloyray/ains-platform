@@ -383,6 +383,7 @@ def create_app(root: Path | None = None) -> FastAPI:
             "heartbeat": portal.heartbeat(),
             "docs_available": portal.docs_dir is not None,
             "jira_base": portal.jira_base(),
+            "bot_login": os.environ.get("AINS_BOT_LOGIN") or "",
         }
 
     @app.get("/", response_class=HTMLResponse)
@@ -400,6 +401,7 @@ def create_app(root: Path | None = None) -> FastAPI:
             v: bool(os.environ.get(v))
             for v in ("CLAUDE_CODE_OAUTH_TOKEN", "GH_TOKEN", "JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN")
         }
+        env["AINS_BOT_GITHUB_TOKEN (optional)"] = bool(os.environ.get("AINS_BOT_GITHUB_TOKEN"))
         bad = [k for k in os.environ if k.startswith("ANTHROPIC_")]
         ctx = base_ctx(request, cfg, "dashboard")
         ctx.update(

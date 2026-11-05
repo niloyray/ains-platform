@@ -73,6 +73,10 @@ one-question style for removal: confirm the key, offer dry run first, then ask f
   `uv run ains target add <repo> <KEY> "<name>" --class small-poc --autonomy L3 --methodology spec-kit [--dry-run]`.
   Supported choices live in `ains-orchestrator/profiles.yaml`; unsupported ones are refused with the reason. Gates default
   from the autonomy level (L3: all on; L4: G1, G2, G4 off). Then commit `targets.yaml` and `docs/targets.md`.
+- The orchestrator's own GitHub account (`AINS_BOT_LOGIN`, token `AINS_BOT_GITHUB_TOKEN` in `.env`): onboarding invites it to
+  every new repository with write access and accepts the invitation itself (step `bot collaborator`); `target verify`
+  checks the permission. With it, `--approval-mode review` works (real PR approvals by a person). Without it only
+  `label` mode works. A PR opened before a mode switch keeps the old way of approving.
 - Verify: `uv run ains target verify <repo> <KEY>` or the portal's "Run verify".
 - Remove: portal (typed confirmation, dry run first) or `uv run ains target remove <repo> [--delete-repo]`.
 - The sandbox `niloyray/ains-sandbox` / `AINSSB` stays as the permanent regression target; never remove it.

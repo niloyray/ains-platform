@@ -446,7 +446,6 @@ def poll(
     interval: int = typer.Option(0, "--interval", help="Seconds between cycles (default AINS_POLL_SECONDS or 60)"),
 ) -> None:
     """Poll Jira and the target repos; claim stories, advance sessions, review labelled PRs."""
-    use_bot_identity()
     rt = build_runtime(dry_run)
     poller = Poller(rt.config, rt.store, rt.jira, rt.engine_for)
     watcher = PRWatcher(rt.config, rt.store, rt.github, rt.workspace, rt.agents)
@@ -456,6 +455,7 @@ def poll(
     logging.Formatter.converter = time.gmtime
     logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per Jira call is noise
     setup_file_log(rt.store.path.parent, "orchestrator")
+    bot = use_bot_identity()
     log.info("poll loop started: every %ss, data in %s, work in %s", every, rt.store.path.parent, rt.workspace.root)
     while True:
         reload_config(rt, poller, watcher)
@@ -478,6 +478,7 @@ def poll(
                 "reviewed": wrep.reviewed,
                 "errors": rep.errors + wrep.errors,
                 "interval_s": every,
+                "github_login": bot or "owner",
             },
         )
         if once:

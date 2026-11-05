@@ -18,6 +18,7 @@
       <option value="label" {{ 'selected' if values.approval_mode != 'review' }}>label (single GitHub account: g3-approved / g3-rework)</option>
       <option value="review" {{ 'selected' if values.approval_mode == 'review' }}>review (separate orchestrator account: PR approve / request changes)</option>
     </select>
+    <p class="small">{% if bot_login %}The orchestrator acts as <b>{{ bot_login }}</b>; onboarding invites it to the new repository with write access and accepts the invitation, so <b>review</b> mode works: you approve with GitHub's own Approve button.{% else %}No orchestrator account is configured (<code>AINS_BOT_LOGIN</code>), so the orchestrator acts as your account and only <b>label</b> mode can work: GitHub does not let an account approve its own pull requests.{% endif %}</p>
   </div>
 
   <div class="card">
