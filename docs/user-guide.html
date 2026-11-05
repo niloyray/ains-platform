@@ -305,7 +305,7 @@ git push</code></pre>
 
 <figure>
 <div class="figwrap">
-<svg viewBox="0 0 1180 330" role="img" aria-label="A story moves through eight phases from writing to Done. Blue bands mark the five gates where a person decides. Rework arrows return from G1 to spec, from G2 to plan, and from G3 or a failed CI check to implement. At each gate the person may also pull the branch, edit the document or code, push, and then make the gate move.">
+<svg viewBox="0 0 1180 330" role="img" aria-label="A story moves through eight phases from writing to Done. Blue bands mark the five gates where a person decides. Rework arrows return from G1 to spec, from G2 to plan, and from G3 or a failed CI check to implement. At each gate the person may optionally pull the branch, edit the document or code, push, and then make the gate move.">
   <g font-family="IBM Plex Sans, Segoe UI, sans-serif" font-size="12" fill="currentColor">
     <!-- lanes -->
     <text x="8" y="70" font-size="11" fill="var(--human)" font-weight="600">PERSON</text>
@@ -356,9 +356,9 @@ git push</code></pre>
     <text x="910" y="88" text-anchor="middle" font-size="11">approve or label</text>
     <!-- at every gate the branch is yours to edit -->
     <g font-size="9.5" fill="var(--human)" text-anchor="middle" font-style="italic">
-      <text x="390" y="113">✎ or pull, edit spec.md, push</text>
-      <text x="640" y="113">✎ or pull, edit plan, push</text>
-      <text x="910" y="113">✎ or pull, fix code, push</text>
+      <text x="390" y="113">optional: pull, edit spec.md, push</text>
+      <text x="640" y="113">optional: pull, edit plan, push</text>
+      <text x="910" y="113">optional: pull, fix code, push</text>
     </g>
 
     <!-- merge + release -->
@@ -393,7 +393,7 @@ git push</code></pre>
   </g>
 </svg>
 </div>
-<figcaption>One story, left to right. The platform row is where agents run; the person row is where you decide. The status row shows what the Jira card says at that moment. The italic line under each gate is the third option: pull the branch, edit, push, then decide; every agent stage starts from the branch as it is on GitHub, so your edit is what the next agent reads.</figcaption>
+<figcaption>One story, left to right. The platform row is where agents run; the person row is where you decide. The status row shows what the Jira card says at that moment. The italic line under each gate is an optional third choice, never required: pull the branch, edit, push, then decide; every agent stage starts from the branch as it is on GitHub, so your edit is what the next agent reads.</figcaption>
 </figure>
 
 <div class="step"><div class="n">step<b>0</b></div><div>
@@ -443,7 +443,7 @@ git push</code></pre>
     <li>Open the PR link from the story's comment. Click the <b>Files changed</b> tab and read <code>specs/&lt;KEY&gt;/spec.md</code>. Ask: is this what I meant?</li>
     <li><b>Yes:</b> in Jira, move the story to <code>Planning</code>.</li>
     <li><b>No:</b> write a comment on the story saying what is wrong or missing, then move it to <code>Rework</code>. The newest comment is handed to the spec agent and it rewrites the spec. The story comes back to <code>Spec Review</code>.</li>
-    <li><b>Edit it yourself:</b> for a small correction, pull the story branch, change <code>spec.md</code>, commit with the key in front and push, then move to <code>Planning</code>. The plan agent starts from your version. The commands are in <a href="#editgate">Editing at a gate</a> below.</li>
+    <li><b>Optional, edit it yourself:</b> for a small correction, pull the story branch, change <code>spec.md</code>, commit with the key in front and push, then move to <code>Planning</code>. The plan agent starts from your version. The commands are in <a href="#editgate">Editing at a gate</a> below.</li>
   </ul>
 </div></div>
 
@@ -460,7 +460,7 @@ git push</code></pre>
     <li>Read <code>plan.md</code> and <code>tasks.md</code> under Files changed. Check the scope: nothing missing, nothing extra.</li>
     <li><b>Yes:</b> move the story to <code>Implementing</code>.</li>
     <li><b>No:</b> comment, then move to <code>Rework</code>. The plan agent runs again with your comment.</li>
-    <li><b>Edit it yourself:</b> pull the branch, change <code>plan.md</code> or <code>tasks.md</code>, commit and push, then move to <code>Implementing</code>. The implement agent works through your task list.</li>
+    <li><b>Optional, edit it yourself:</b> pull the branch, change <code>plan.md</code> or <code>tasks.md</code>, commit and push, then move to <code>Implementing</code>. The implement agent works through your task list.</li>
   </ul>
 </div></div>
 
@@ -484,7 +484,7 @@ git push</code></pre>
     <li><b>Yes:</b> in the right sidebar click the gear next to <b>Labels</b> and tick <code>g3-approved</code>.</li>
     <li><b>No:</b> write what should change as a comment at the bottom of the Conversation tab, then add the label <code>g3-rework</code>. The implement agent runs again with your comment, pushes, CI runs, the review agent reviews, and the PR waits for you again.</li>
     <li><b>CI is red:</b> do nothing. The orchestrator sends the failed test output back to the implement agent by itself, up to two rounds. After that the story goes to <code>Blocked</code> with a comment, and a person has to look.</li>
-    <li><b>Fix it yourself:</b> for a one-line fix, pull the branch, change the code, commit and push. CI and the review agent run again on your commit, and the PR waits for you again; then approve.</li>
+    <li><b>Optional, fix it yourself:</b> for a one-line fix, pull the branch, change the code, commit and push. CI and the review agent run again on your commit, and the PR waits for you again; then approve.</li>
   </ul>
   <p class="see"><b>Why a label and not the Approve button:</b> GitHub does not let an account approve a PR it opened itself. On a single-account setup the label carries the same meaning. With a separate orchestrator account the project can use <code>--approval-mode review</code> and the normal Approve button instead.</p>
   <p class="see"><b>The two approval modes, and the second account.</b> In <code>label</code> mode one GitHub account does everything: the orchestrator opens and merges PRs under your token, and you approve with the <code>g3-approved</code> label. In <code>review</code> mode the orchestrator has its own GitHub account, a plain second user with write access to the project repositories; its token sits in <code>.env</code> as <code>AINS_BOT_GITHUB_TOKEN</code> next to <code>AINS_BOT_LOGIN</code>. The orchestrator then opens, pushes and merges as that account, and you approve with GitHub's real review, Approve or Request changes, because the PR is no longer yours. Branch protection then also requires a code-owner review for the platform-owned files. Onboarding invites the bot account to every project and accepts the invitation with the bot's token, so nobody clicks an e-mail. A reviewer never needs a token: reviewing happens in the browser with the reviewer's own login. The platform engineer's own token stays in <code>.env</code> too, used for onboarding and verification, since creating repositories needs the owner. Switching a project from label to review takes effect for pull requests opened after the switch; a PR opened under your own account can only be approved by the label.</p>
@@ -536,8 +536,8 @@ cd ains-sandbox</code></pre>
 </ul>
 <p>Things that stay with the platform even when you work locally: the four platform-owned paths (section 6, a pull request touching them fails the guard), merging an agent's PR (the orchestrator does it after G3), and the Jira statuses the platform sets.</p>
 
-<h4 id="editgate" style="margin-top:14px">Editing at a gate, step by step</h4>
-<p>While a story waits at G1, G2 or G3 the branch is yours. The same five lines serve all three gates; only the file and the gate move differ:</p>
+<h4 id="editgate" style="margin-top:14px">Editing at a gate, step by step (optional)</h4>
+<p>None of this is required: a story goes through every gate with only the yes and no moves. But while a story waits at G1, G2 or G3 the branch is yours. The same five lines serve all three gates; only the file and the gate move differ:</p>
 <pre><code>git fetch
 git checkout REPOPOC01-13-load-the-watched-topics-as-seed-data   # the branch named in the story's Jira comment and on the PR
 # G1: edit specs/REPOPOC01-13/spec.md      G2: edit plan.md and tasks.md      G3: edit the code or tests
@@ -565,7 +565,7 @@ git push
   <tr><td>G5 production</td><td>staging approved</td><td>same run</td><td>Review deployments → production → Approve</td><td>Reject</td></tr>
 </table>
 </div>
-<p>At every one of G1, G2 and G3 you have a third choice besides yes and no: pull the branch, edit the spec, the plan or the code, push, and then make the gate move. The next agent starts from your commit. The state map shows it as the dashed loop on the three review states; the commands are under <a href="#editgate">Editing at a gate</a> in section 6.</p>
+<p>At every one of G1, G2 and G3 you have an optional third choice besides yes and no: pull the branch, edit the spec, the plan or the code, push, and then make the gate move. The next agent starts from your commit. The state map shows it as the dashed loop on the three review states; the commands are under <a href="#editgate">Editing at a gate</a> in section 6.</p>
 <p>There are <b>no GitHub labels for G1 and G2</b>. Those two gates are Jira moves, and the PR only carries the spec and the plan as a draft. The labels <code>g3-approved</code> and <code>g3-rework</code> exist for G3 alone. Every PR the platform opens says this in its description, under "How this PR moves". While a story waits at G1 or G2 the platform keeps its Jira status at <code>Spec Review</code> or <code>Plan Review</code>; if something else moves it, for example a drag on the board, the next poll cycle moves it back and records a <code>jira.restored</code> event.</p>
 <p>Gates are set per project in <code>targets.yaml</code>, for example <code>gates: {G1: on, G2: off, G3: on, G4: off, G5: on}</code>, or at onboarding with <code>--gates</code>. Changing the file is enough; the container reads it on the next poll. Which gates a project runs with is itself something the research can vary.</p>
 
@@ -574,7 +574,7 @@ git push
 
 <figure>
 <div class="figwrap">
-<svg viewBox="0 0 1420 580" role="img" aria-label="State machine. Jira lane: To Do, Ready, Specifying, Spec Review, Planning, Plan Review, Implementing, Code Review, Staging, Done, with Rework and Blocked as side states. GitHub pull request lane: draft, ready for review, ci green, g3-approved, merged, with ci red and g3-rework as side states that return to ready for review. Release lane: image built, staging approved, production approved. Blue arrows are moves a person makes, teal arrows the platform makes, grey arrows the CI or release workflow makes. Dashed loops on Spec Review, Plan Review and Code Review: the person may pull the branch, edit and push while the story waits there.">
+<svg viewBox="0 0 1420 580" role="img" aria-label="State machine. Jira lane: To Do, Ready, Specifying, Spec Review, Planning, Plan Review, Implementing, Code Review, Staging, Done, with Rework and Blocked as side states. GitHub pull request lane: draft, ready for review, ci green, g3-approved, merged, with ci red and g3-rework as side states that return to ready for review. Release lane: image built, staging approved, production approved. Blue arrows are moves a person makes, teal arrows the platform makes, grey arrows the CI or release workflow makes. Dashed loops on Spec Review, Plan Review and Code Review: optionally, the person may pull the branch, edit and push while the story waits there.">
   <defs>
     <marker id="fh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--human)"/></marker>
     <marker id="fm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--machine)"/></marker>
@@ -630,7 +630,7 @@ git push
       <path d="M860,70 C860,54 890,54 890,70"/>
     </g>
     <g text-anchor="middle" font-size="9" fill="var(--human)" font-style="italic">
-      <text x="415" y="50">pull, edit, push</text><text x="645" y="50">pull, edit, push</text><text x="875" y="50">pull, edit, push</text>
+      <text x="415" y="50">optional: pull, edit, push</text><text x="645" y="50">optional: pull, edit, push</text><text x="875" y="50">optional: pull, edit, push</text>
     </g>
     <!-- Rework: in from the two review states, back out to the two agent states -->
     <g stroke-width="1.6" fill="none">
@@ -725,8 +725,8 @@ git push
   </g>
 </svg>
 </div>
-<figcaption>Three state machines that move together. Blue nodes and arrows are where a person decides; teal arrows are moves the platform makes; grey arrows are moves the CI or release workflow makes. Red side states are the detours: Rework, Blocked, a red check, a rework label. The dashed loops on the three review states are the person's own edits: pull the branch, change the document or code, push, then make the gate move.</figcaption>
-<div class="legend"><span><i style="background:var(--human)"></i>a person moves it</span><span><i style="background:var(--machine)"></i>the platform moves it</span><span><i style="background:var(--muted)"></i>a GitHub workflow moves it</span><span><i style="background:var(--bad)"></i>detour state</span><span><i style="background:var(--human);opacity:.55"></i>dashed loop: you may pull, edit and push there</span></div>
+<figcaption>Three state machines that move together. Blue nodes and arrows are where a person decides; teal arrows are moves the platform makes; grey arrows are moves the CI or release workflow makes. Red side states are the detours: Rework, Blocked, a red check, a rework label. The dashed loops on the three review states are optional, the person's own edits: pull the branch, change the document or code, push, then make the gate move.</figcaption>
+<div class="legend"><span><i style="background:var(--human)"></i>a person moves it</span><span><i style="background:var(--machine)"></i>the platform moves it</span><span><i style="background:var(--muted)"></i>a GitHub workflow moves it</span><span><i style="background:var(--bad)"></i>detour state</span><span><i style="background:var(--human);opacity:.55"></i>dashed loop: optional, you may pull, edit and push there</span></div>
 </figure>
 
 <h3>Every move, in words</h3>
