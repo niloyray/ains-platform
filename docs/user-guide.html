@@ -551,6 +551,16 @@ git push
   <li><b>When to prefer Rework instead:</b> a change of direction. A Rework comment lets the agent redo the whole document consistently; a hand edit is for corrections you can make faster than you can describe.</li>
 </ul>
 
+<h3 id="maintain">Changing what is already Done: maintain and refactor</h3>
+<p>Always with a <b>new story</b>, never by moving a finished story backwards. Once a story is Done its branch is deleted, its PR is merged and its record in the platform is closed. Dragging the card back to Ready makes the platform try to claim it again, which collides with the closed record and logs "claim failed" every minute until you move it away; dragging it to Rework or Implementing does nothing, because those statuses are only read while a story waits at a gate. The one backward move that works is <code>Blocked</code> → <code>Ready</code>, which resumes a story that stopped mid-flight.</p>
+<p>Write the new story under the same epic, in the same shape as the others. Name the stories it changes and the behaviour that must stay the same. The agents read the merged code, the existing <code>specs/</code> and the constitution, so a refactor story gets a spec that says what is being restructured and a plan that lists the tests that must keep passing. A <i>Needs first</i> line keeps the order right when the change must land before the next feature.</p>
+<ul>
+  <li><b>A bug or a small change:</b> one story, "Fix X in Y", with the failing case as an acceptance criterion. Release it when nothing else in flight touches those files.</li>
+  <li><b>A refactor across several stories' code:</b> one story limited to structure, no behaviour change, acceptance criterion "all existing tests pass unchanged". Release it alone; it touches many files and would conflict with anything else in flight.</li>
+  <li><b>A change you would rather make by hand:</b> the human lane below. Branch from main, commit, open a PR; CI and the guard run, add <code>ai-review</code> if you want the review agent's opinion, merge it yourself.</li>
+</ul>
+<p>The Jira history then reads as a sequence of stories per epic. A story's spec stays the record of what was decided at the time; the new story records the change.</p>
+
 <h3>A pull request a person wrote</h3>
 <p>Developers can keep working the ordinary way. Add the label <code>ai-review</code> to any PR in an onboarded repository and the review agent reviews it once per new commit. Merging it is still a human decision; nothing else changes.</p>
 
